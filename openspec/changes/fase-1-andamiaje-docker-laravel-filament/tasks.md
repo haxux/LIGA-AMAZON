@@ -1,0 +1,73 @@
+# Tasks: Fase 1 — Andamiaje: Docker + Laravel 13 + Filament v5
+
+## Review Workload Forecast
+
+| Field | Value |
+|-------|-------|
+| Estimated changed lines | ~1500-2500+ (Laravel skeleton scaffold dominates: config/, database/, routes/, tests/, resources/, bootstrap/, public/ — mostly generated) |
+| 400-line budget risk | High |
+| Chained PRs recommended | Yes |
+| Suggested split | 4 work units — see below |
+| Delivery strategy | ask-on-risk |
+| Chain strategy | pending — user must pick before `sdd-apply` |
+
+Decision needed before apply: Yes
+Chained PRs recommended: Yes
+Chain strategy: pending
+400-line budget risk: High
+
+### Suggested Work Units
+
+| Unit | Goal | Likely PR | Notes |
+|------|------|-----------|-------|
+| 1 | Repo init + Laravel 13 scaffold (Phase 1) | PR 1 | Bulk is `composer create-project` generated output; recommend reviewers skim rather than line-review, or apply `size:exception` to this unit only |
+| 2 | Docker infra: Dockerfile, php.ini, nginx conf, compose, env (Phase 2) | PR 2 | Hand-written, ~150-200 lines, normal review |
+| 3 | Stack boot, migrations, stock test suite green (Phase 3-4) | PR 3 | Mostly verification steps, minimal diff |
+| 4 | Filament install + asset build wiring + docs (Phase 5-7) | PR 4 | Mixed generated (`AdminPanelProvider.php`) + hand-written (`vite.config.js`, `ARQUITECTURA.md`) |
+
+If `stacked-to-main` is chosen, order PR1 → PR2 → PR3 → PR4. If `feature-branch-chain`, PR1 targets the tracker branch, PR2 targets PR1's branch, etc. Orchestrator must ask user before `sdd-apply`.
+
+## Phase 1: Repository Init & Application Scaffold
+
+- [ ] 1.1 Run ephemeral `composer:2` container as UID/GID 1000:1000 with `COMPOSER_HOME=/tmp`: `composer create-project laravel/laravel /tmp/laravel "^13.0" --no-interaction --remove-vcs`, then `cp -a /tmp/laravel/. /app/` into the bind-mounted repo root
+- [ ] 1.2 Verify `.gitattributes` (ships from the skeleton) contains `* text=auto eol=lf`; extend `.gitignore` with Laravel defaults
+- [ ] 1.3 `git init`, `git add .`, first commit
+
+## Phase 2: Docker Infrastructure
+
+- [ ] 2.1 Create `docker/php/Dockerfile` (`php:8.3-fpm`, extensions `pdo_mysql bcmath gd zip intl exif opcache pcntl`, `ARG UID/GID` default 1000, remap `www-data`, `USER www-data`)
+- [ ] 2.2 Create `docker/php/php.ini` (`memory_limit=512M`, upload limits, dev opcache settings)
+- [ ] 2.3 Create `docker/nginx/default.conf` (front controller, `fastcgi_pass app:9000`, deny dotfiles except `.well-known`)
+- [ ] 2.4 Create `docker-compose.yml` with `app`/`web`/`db`/`node` services, `db_data` volume, `db` healthcheck, `app` `depends_on: db (service_healthy)`
+- [ ] 2.5 Create `.env.example` (`DB_PORT=3306`, `DB_PORT_HOST=33060`, `APP_PORT=8080`, `UID/GID=1000`); `cp .env.example .env`
+
+## Phase 3: Stack Boot & Environment Verification
+
+- [ ] 3.1 `docker compose up -d --build`; confirm `app`/`web`/`db`/`node` reach running state with no restart loops
+- [ ] 3.2 `docker compose exec app php artisan key:generate`
+- [ ] 3.3 Verify `storage/`, `bootstrap/cache/` are writable by `www-data` (`exec app touch storage/logs/probe && rm`)
+- [ ] 3.4 Smoke test: `curl -I http://localhost:8080` returns 200 (Laravel welcome)
+
+## Phase 4: Database & Stock Test Suite
+
+- [ ] 4.1 `docker compose exec app php artisan migrate --seed`; confirm clean run against `db`
+- [ ] 4.2 `docker compose exec app php artisan test`; confirm the stock Laravel suite passes
+
+**TDD note**: `strict_tdd: true` applies to Services/business logic (Fase 2+). Phase 4 verifies the stock, pre-existing Laravel test suite — there is no new logic to red-green-refactor here, and no meaningful unit test exists for pure config files (Dockerfile, nginx.conf, docker-compose.yml) in Phases 1-2. This phase is verification-first per the design's Testing Strategy, not exempted from the project's TDD rule.
+
+## Phase 5: Filament v5 Install
+
+- [ ] 5.1 `composer require filament/filament:"^5.0"`
+- [ ] 5.2 `php artisan filament:install --panels`; confirm `app/Providers/Filament/AdminPanelProvider.php` generated
+- [ ] 5.3 `php artisan make:filament-user` (interactive; no hardcoded/seeded credentials)
+- [ ] 5.4 Smoke test: `http://localhost:8080/admin` returns 200 Filament login; log in with the created user
+
+## Phase 6: Asset Build
+
+- [ ] 6.1 Edit `vite.config.js`: `server.host: '0.0.0.0'`, `hmr.host: 'localhost'`
+- [ ] 6.2 `docker compose run --rm node npm run build`; confirm compiled assets produced
+
+## Phase 7: Documentation & Final Verification
+
+- [ ] 7.1 Update `ARQUITECTURA.md` §6: scaffold step, `node` service, non-default MySQL port (`33060`), Filament install ordering
+- [ ] 7.2 Final checklist: all Proposal Success Criteria pass; `git status` clean of `vendor/`, `node_modules/`, `.env`

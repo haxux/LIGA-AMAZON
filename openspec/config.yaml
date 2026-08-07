@@ -1,0 +1,55 @@
+schema: spec-driven
+
+context: |
+  Liga Amazon — Laravel 13.x + Filament 5.x (admin) + Livewire 4.x, PHP 8.3+/8.4.
+  MySQL 8.0, Blade + Tailwind 3.x public frontend, Vite, Nginx + PHP-FPM, Docker.
+  Architecture: Laravel MVC + Services layer (e.g. StandingsService) for business
+  logic outside Model/Controller. Filament Resources own admin CRUD; thin
+  controllers. Migrations are the schema source of truth.
+  Domain: Season, Team, Player, Stadium, Matchday, Game, Standing (derived), User.
+  Status: nothing scaffolded yet (no Laravel install, no Docker files, no git repo).
+  Roadmap: Fase 0 done -> Fase 1 (andamiaje) is next.
+
+strict_tdd: true
+
+testing:
+  status: not yet available — no app code exists; Laravel not yet installed.
+  planned_runner: Pest (Laravel 13 default) or PHPUnit
+  planned_layers:
+    unit: Pest/PHPUnit unit tests (Services, e.g. StandingsService)
+    integration: Laravel feature tests (Filament Resources, HTTP routes)
+    e2e: not planned for the demo scope
+  coverage:
+    available: false
+    command: ""
+  quality_tools:
+    linter: Laravel Pint (PSR-12)
+    type_checker: none planned
+    formatter: Laravel Pint
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes (esp. migrations and Docker setup)
+    - Note which roadmap phase (Fase 1-6) the change belongs to
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Document architecture decisions with rationale
+    - Keep Services layer (not Controllers/Models) as home for business logic
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow Laravel/Filament conventions: thin controllers, Filament Resources for admin CRUD, migrations as schema source of truth
+    - English singular model names
+    - Conventional commits (feat/fix/docs/chore/refactor/test/style)
+    - PSR-12 via Laravel Pint
+    tdd: true
+    test_command: "php artisan test"
+  verify:
+    test_command: "php artisan test"
+    build_command: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas (e.g. schema-breaking migrations)
