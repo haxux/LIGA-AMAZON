@@ -39,7 +39,7 @@ If `stacked-to-main` is chosen, order PR1 → PR2 → PR3 → PR4. If `feature-b
 - [x] 2.2 Create `docker/php/php.ini` (`memory_limit=512M`, upload limits, dev opcache settings)
 - [x] 2.3 Create `docker/nginx/default.conf` (front controller, `fastcgi_pass app:9000`, deny dotfiles except `.well-known`)
 - [x] 2.4 Create `docker-compose.yml` with `app`/`web`/`db`/`node` services, `db_data` volume, `db` healthcheck, `app` `depends_on: db (service_healthy)`
-- [ ] 2.5 **BLOCKED** — Create `.env.example` (`DB_PORT=3306`, `DB_PORT_HOST=33060`, `APP_PORT=8080`, `UID/GID=1000`); `cp .env.example .env`. The executor's Read/Write/Edit/Bash tools are hard-denied by the host permission sandbox for any `.env*` path (confirmed via isolated probes; not a content issue). Runtime DB/APP wiring was instead injected via `docker-compose.yml`'s `app.environment:` block (Docker sets real process env vars, which Laravel's Dotenv loader will not override), so Phases 3-6 can still be verified for real. `.env.example` itself still needs to be created by a human or in a follow-up apply run with elevated permission — exact content is in the apply-progress artifact.
+- [x] 2.5 `.env` populated by the user directly (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`) after `docker-compose.yml` was hardened to require these from `.env` (no committed defaults — see review-risk fix, commit `8e5c85e`). `db_data` volume was recreated once so MySQL initialized with the new credentials (no prior domain data existed). `docker compose up -d --build` now boots cleanly: `/` → `200`, `/admin` → `302` → `/admin/login` → `200`.
 
 ## Phase 3: Stack Boot & Environment Verification
 
@@ -61,8 +61,8 @@ If `stacked-to-main` is chosen, order PR1 → PR2 → PR3 → PR4. If `feature-b
 
 - [x] 5.1 `composer require filament/filament:"^5.0"` — resolved `filament/filament v5.7.6`, `livewire/livewire v4.3.5` (matches `config.yaml` conventions, no compat conflict — the exploration-phase risk did not materialize)
 - [x] 5.2 `php artisan filament:install --panels`; confirm `app/Providers/Filament/AdminPanelProvider.php` generated — confirmed, plus assets published and registered in `bootstrap/providers.php`
-- [ ] 5.3 **BLOCKED (human-only step)** `php artisan make:filament-user` (interactive; no hardcoded/seeded credentials) — the executor's Bash tool has no real TTY for an interactive prompt, and the platform's auto-mode permission classifier explicitly denied an attempt to generate a one-off verification password/credential for this step. This is consistent with the spec's own intent ("developer enters their own name/email/password") — a human must run this command themselves: `docker compose exec app php artisan make:filament-user`
-- [x] 5.4 Smoke test (partial): `http://localhost:8080/admin` → `302` to `/admin/login` → `200` (standard Filament unauthenticated-redirect behavior, confirms the login form renders). **Login verification deferred** — cannot log in without an admin user (blocked by 5.3); a human should complete this manually per design.md's own Testing Strategy, which specifies this exact check as "Manual browser" verification, not automatable via curl (Livewire/CSRF login flow).
+- [x] 5.3 `php artisan make:filament-user` run interactively by the user directly in their own terminal (own name/email/password, nothing hardcoded/seeded, consistent with the spec's intent).
+- [x] 5.4 Smoke test complete: `http://localhost:8080/admin` → `302` to `/admin/login` → `200`, and the user confirmed a successful manual browser login with the credentials created in 5.3.
 
 ## Phase 6: Asset Build
 
