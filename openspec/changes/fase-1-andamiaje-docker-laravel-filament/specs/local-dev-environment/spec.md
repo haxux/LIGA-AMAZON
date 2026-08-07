@@ -30,7 +30,7 @@ The system MUST scaffold Laravel 13 using a one-off `composer:2` container (`doc
 
 ### Requirement: Docker Compose Stack Composition
 
-`docker-compose.yml` MUST define exactly four services: `app` (PHP-FPM 8.3), `web` (nginx:alpine, published on `8080:80`), `db` (mysql:8.0, published on a non-default host port `33060:3306`), and `node` (node:alpine).
+`docker-compose.yml` MUST define exactly four services: `app` (PHP-FPM 8.4), `web` (nginx:alpine, published on `8080:80`), `db` (mysql:8.0, published on a non-default host port `33061:3306`), and `node` (node:alpine).
 
 #### Scenario: Stack starts without restart loops
 
@@ -41,7 +41,7 @@ The system MUST scaffold Laravel 13 using a one-off `composer:2` container (`doc
 
 ### Requirement: PHP Runtime Image
 
-`docker/php/Dockerfile` MUST build a pure PHP 8.3-FPM runtime (required extensions + Composer binary) and MUST NOT generate or embed application code.
+`docker/php/Dockerfile` MUST build a pure PHP 8.4-FPM runtime (required extensions + Composer binary) and MUST NOT generate or embed application code.
 
 #### Scenario: PHP image is code-agnostic
 
@@ -66,7 +66,7 @@ The system MUST scaffold Laravel 13 using a one-off `composer:2` container (`doc
 
 #### Scenario: App reaches DB internally on non-default host port
 
-- GIVEN `db` publishes `33060:3306` on the host
+- GIVEN `db` publishes `33061:3306` on the host
 - WHEN the `app` container connects to the database
 - THEN it connects via the internal Docker network address `db:3306`, independent of the host port mapping
 

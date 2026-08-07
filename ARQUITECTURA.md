@@ -204,7 +204,7 @@ services:
       DB_PORT: "3306"
       DB_DATABASE: "${DB_DATABASE:-liga_amazon}"
       DB_USERNAME: "${DB_USERNAME:-liga}"
-      DB_PASSWORD: "${DB_PASSWORD:-secret}"
+      DB_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set in .env}"
     depends_on: { db: { condition: service_healthy } }
 
   web:
@@ -220,12 +220,12 @@ services:
     environment:
       MYSQL_DATABASE: "${DB_DATABASE:-liga_amazon}"
       MYSQL_USER: "${DB_USERNAME:-liga}"
-      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-secret}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD must be set in .env}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD must be set in .env}"
     ports: [ "${DB_PORT_HOST:-33061}:3306" ]
     volumes: [ "db_data:/var/lib/mysql" ]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_ROOT_PASSWORD:-secret}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD must be set in .env}"]
       interval: 5s
       retries: 20
 
