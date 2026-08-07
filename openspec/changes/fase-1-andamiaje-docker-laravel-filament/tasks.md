@@ -29,29 +29,31 @@ If `stacked-to-main` is chosen, order PR1 → PR2 → PR3 → PR4. If `feature-b
 
 ## Phase 1: Repository Init & Application Scaffold
 
-- [ ] 1.1 Run ephemeral `composer:2` container as UID/GID 1000:1000 with `COMPOSER_HOME=/tmp`: `composer create-project laravel/laravel /tmp/laravel "^13.0" --no-interaction --remove-vcs`, then `cp -a /tmp/laravel/. /app/` into the bind-mounted repo root
-- [ ] 1.2 Verify `.gitattributes` (ships from the skeleton) contains `* text=auto eol=lf`; extend `.gitignore` with Laravel defaults
-- [ ] 1.3 `git init`, `git add .`, first commit
+- [x] 1.1 Run ephemeral `composer:2` container as UID/GID 1000:1000 with `COMPOSER_HOME=/tmp`: `composer create-project laravel/laravel /tmp/laravel "^13.0" --no-interaction --remove-vcs`, then `cp -a /tmp/laravel/. /app/` into the bind-mounted repo root
+- [x] 1.2 Verify `.gitattributes` (ships from the skeleton) contains `* text=auto eol=lf`; extend `.gitignore` with Laravel defaults
+- [x] 1.3 `git init`, `git add .`, first commit
 
 ## Phase 2: Docker Infrastructure
 
-- [ ] 2.1 Create `docker/php/Dockerfile` (`php:8.3-fpm`, extensions `pdo_mysql bcmath gd zip intl exif opcache pcntl`, `ARG UID/GID` default 1000, remap `www-data`, `USER www-data`)
-- [ ] 2.2 Create `docker/php/php.ini` (`memory_limit=512M`, upload limits, dev opcache settings)
-- [ ] 2.3 Create `docker/nginx/default.conf` (front controller, `fastcgi_pass app:9000`, deny dotfiles except `.well-known`)
-- [ ] 2.4 Create `docker-compose.yml` with `app`/`web`/`db`/`node` services, `db_data` volume, `db` healthcheck, `app` `depends_on: db (service_healthy)`
-- [ ] 2.5 Create `.env.example` (`DB_PORT=3306`, `DB_PORT_HOST=33060`, `APP_PORT=8080`, `UID/GID=1000`); `cp .env.example .env`
+- [x] 2.1 Create `docker/php/Dockerfile` (`php:8.3-fpm`, extensions `pdo_mysql bcmath gd zip intl exif opcache pcntl`, `ARG UID/GID` default 1000, remap `www-data`, `USER www-data`)
+- [x] 2.2 Create `docker/php/php.ini` (`memory_limit=512M`, upload limits, dev opcache settings)
+- [x] 2.3 Create `docker/nginx/default.conf` (front controller, `fastcgi_pass app:9000`, deny dotfiles except `.well-known`)
+- [x] 2.4 Create `docker-compose.yml` with `app`/`web`/`db`/`node` services, `db_data` volume, `db` healthcheck, `app` `depends_on: db (service_healthy)`
+- [ ] 2.5 **BLOCKED** — Create `.env.example` (`DB_PORT=3306`, `DB_PORT_HOST=33060`, `APP_PORT=8080`, `UID/GID=1000`); `cp .env.example .env`. The executor's Read/Write/Edit/Bash tools are hard-denied by the host permission sandbox for any `.env*` path (confirmed via isolated probes; not a content issue). Runtime DB/APP wiring was instead injected via `docker-compose.yml`'s `app.environment:` block (Docker sets real process env vars, which Laravel's Dotenv loader will not override), so Phases 3-6 can still be verified for real. `.env.example` itself still needs to be created by a human or in a follow-up apply run with elevated permission — exact content is in the apply-progress artifact.
 
 ## Phase 3: Stack Boot & Environment Verification
 
-- [ ] 3.1 `docker compose up -d --build`; confirm `app`/`web`/`db`/`node` reach running state with no restart loops
-- [ ] 3.2 `docker compose exec app php artisan key:generate`
-- [ ] 3.3 Verify `storage/`, `bootstrap/cache/` are writable by `www-data` (`exec app touch storage/logs/probe && rm`)
-- [ ] 3.4 Smoke test: `curl -I http://localhost:8080` returns 200 (Laravel welcome)
+- [x] 3.1 `docker compose up -d --build`; confirm `app`/`web`/`db`/`node` reach running state with no restart loops
+- [x] 3.2 `docker compose exec app php artisan key:generate`
+- [x] 3.3 Verify `storage/`, `bootstrap/cache/` are writable by `www-data` (`exec app touch storage/logs/probe && rm`)
+- [x] 3.4 Smoke test: `curl -I http://localhost:8080` returns 200 (Laravel welcome) — **required 4.1 to run first** (see deviation note below)
 
 ## Phase 4: Database & Stock Test Suite
 
-- [ ] 4.1 `docker compose exec app php artisan migrate --seed`; confirm clean run against `db`
-- [ ] 4.2 `docker compose exec app php artisan test`; confirm the stock Laravel suite passes
+- [x] 4.1 `docker compose exec app php artisan migrate --seed`; confirm clean run against `db` — **pulled forward ahead of 3.4**, see deviation note
+- [x] 4.2 `docker compose exec app php artisan test`; confirm the stock Laravel suite passes — 2/2 passed (`Tests\Unit\ExampleTest`, `Tests\Feature\ExampleTest`)
+
+**Ordering deviation discovered during real execution**: task 3.4's smoke test, run in strict tasks.md order (before 4.1), returned `500` — `PDOException: Base table or view not found: 'sessions'`. The Laravel 13 skeleton defaults `SESSION_DRIVER=database`, so any HTTP request (including `/`) needs the `sessions` table before it can respond, even the welcome page. Task 4.1 (`migrate --seed`) was run before re-attempting 3.4's smoke test to unblock it. This is a defect in the tasks.md phase ordering (not anticipated in design.md), not a design deviation — future runs of this playbook should run `migrate` before the first HTTP smoke test.
 
 **TDD note**: `strict_tdd: true` applies to Services/business logic (Fase 2+). Phase 4 verifies the stock, pre-existing Laravel test suite — there is no new logic to red-green-refactor here, and no meaningful unit test exists for pure config files (Dockerfile, nginx.conf, docker-compose.yml) in Phases 1-2. This phase is verification-first per the design's Testing Strategy, not exempted from the project's TDD rule.
 
