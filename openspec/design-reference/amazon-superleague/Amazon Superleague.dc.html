@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: #FFB800; }
+  a { color: #FFB800; text-decoration: none; }
+  a:hover { color: #ffffff; }
+  ::selection { background: #FFB800; color: #1B1B1B; }
+</style>
+</helmet>
+<div style="position: fixed; z-index: 90; right: 16px; bottom: 16px; display: flex; gap: 4px; background: #1B1B1B; padding: 5px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-family: 'Barlow Condensed', sans-serif;">
+  <sc-for list="{{ vpTabs }}" as="tab" hint-placeholder-count="2">
+    <button type="button" onClick="{{ tab.onClick }}" style="{{ tab.style }}">{{ tab.label }}</button>
+  </sc-for>
+</div>
+<div style="{{ shellStyle }}">
+<div style="background: #FFB800; background-image: repeating-linear-gradient(115deg, rgba(0,0,0,0.045) 0px, rgba(0,0,0,0.045) 1px, transparent 1px, transparent 46px), repeating-linear-gradient(25deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 78px); font-family: Barlow, Helvetica, sans-serif; color: #1B1B1B; min-height: 100%; padding-bottom: 0;">
+
+  <header style="position: sticky; top: 0; z-index: 40; background: #1B1B1B; color: #ffffff;">
+    <div style="max-width: 1320px; margin: 0 auto; padding: 0 22px; display: flex; align-items: center; gap: 30px; min-height: 62px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: baseline; gap: 8px; padding: 8px 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 27px; letter-spacing: -0.01em; line-height: 1; color: #FFB800;">AMAZON</span>
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 27px; line-height: 1; letter-spacing: 0.14em; color: #ffffff;">SUPERLEAGUE</span>
+      </div>
+      <nav style="{{ navStyle }}">
+        <a href="#" style="color: #ffffff; padding: 6px 0; border-bottom: 3px solid #FFB800;" style-hover="color:#FFB800">Competiciones</a>
+        <a href="#tabla" style="color: rgba(255,255,255,0.72); padding: 6px 0; border-bottom: 3px solid transparent;" style-hover="color:#FFB800">Estadísticas</a>
+        <a href="#noticias" style="color: rgba(255,255,255,0.72); padding: 6px 0; border-bottom: 3px solid transparent;" style-hover="color:#FFB800">Noticias</a>
+        <a href="#" style="color: rgba(255,255,255,0.72); padding: 6px 0; border-bottom: 3px solid transparent;" style-hover="color:#FFB800">Transferencias</a>
+        <a href="#" style="color: rgba(255,255,255,0.72); padding: 6px 0; border-bottom: 3px solid transparent;" style-hover="color:#FFB800">Equipos</a>
+      </nav>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 14px;">
+        <div style="display: flex; border: 1px solid rgba(255,255,255,0.22); border-radius: 3px; overflow: hidden; font-family: 'IBM Plex Mono', monospace; font-size: 11px;">
+          <span style="padding: 5px 8px; background: #FFB800; color: #1B1B1B; font-weight: 500;">ES</span>
+          <span style="padding: 5px 8px; color: rgba(255,255,255,0.6);">EN</span>
+        </div>
+        <a href="#" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.12em; text-transform: uppercase; color: #1B1B1B; background: #FFB800; padding: 9px 18px; border-radius: 3px;" style-hover="background:#ffffff;color:#1B1B1B">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1320px; margin: 0 auto; padding: 18px 22px 0;">
+
+    <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: stretch;">
+      <article style="flex: 3 1 520px; min-width: 300px; background: #2B2B2B; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column;">
+        <div style="position: relative; height: 340px; background: #383838; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: flex-end; padding: 22px;">
+          <span style="position: absolute; top: 18px; left: 18px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.18em; background: #FFB800; color: #1B1B1B; padding: 5px 10px; border-radius: 2px;">NOTICIA DESTACADA</span>
+          <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: rgba(255,255,255,0.42); text-align: center;">foto principal 1600×900<br />celebración de gol</span>
+        </div>
+        <div style="padding: 22px 24px 26px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #FFB800; margin-bottom: 10px;">JORNADA 3 · MATCHWEEK 3</div>
+          <h1 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 40px; line-height: 1.02; letter-spacing: 0.005em; color: #ffffff; margin: 0 0 12px; text-wrap: pretty;">Haaland firma un triplete y Manaos FC se escapa en la cima</h1>
+          <p style="margin: 0; font-size: 16px; line-height: 1.55; color: rgba(255,255,255,0.66); max-width: 62ch; text-wrap: pretty;">El delantero llegó a nueve goles en tres jornadas y dejó a Iquitos United sin respuesta en el Arena Solimões. <span style="color: rgba(255,255,255,0.4);">Hat-trick hero sends Manaos four points clear.</span></p>
+        </div>
+      </article>
+
+      <div style="flex: 1 1 260px; min-width: 240px; display: flex; flex-direction: column; gap: 14px;">
+        <article style="flex: 1 1 0; background: #2B2B2B; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column;">
+          <div style="height: 132px; background: #383838; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: center; justify-content: center;">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em;">foto 800×450</span>
+          </div>
+          <div style="padding: 16px 18px 20px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #FFB800; margin-bottom: 8px;">FICHAJES</div>
+            <h3 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; line-height: 1.1; color: #ffffff; margin: 0;">Río Negro CF cierra la cesión de Rodrygo hasta enero</h3>
+          </div>
+        </article>
+        <article style="flex: 1 1 0; background: #2B2B2B; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column;">
+          <div style="height: 132px; background: #383838; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: center; justify-content: center;">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em;">foto 800×450</span>
+          </div>
+          <div style="padding: 16px 18px 20px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #FFB800; margin-bottom: 8px;">ARBITRAJE</div>
+            <h3 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; line-height: 1.1; color: #ffffff; margin: 0;">El VAR semiautomático llega a la Segunda División</h3>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div id="tabla" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: stretch; margin-top: 14px;">
+      <section style="flex: 3 1 520px; min-width: 300px; background: #2B2B2B; border-radius: 6px; padding: 22px 24px 14px;">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;">
+          <div>
+            <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1; color: #ffffff; margin: 0; letter-spacing: 0.03em;">TABLA DE POSICIONES</h2>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: rgba(255,255,255,0.38); margin-top: 6px;">LEAGUE TABLE · TEMPORADA 2026/27</div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{ divTabs }}" as="tab" hint-placeholder-count="2">
+              <button type="button" onClick="{{ tab.onClick }}" style="{{ tab.style }}">{{ tab.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 10px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: rgba(255,255,255,0.34); border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <span style="width: 26px;">POS</span>
+          <span style="flex: 1 1 auto;">EQUIPO</span>
+          <span style="{{ colHeadStyle }}">PJ</span>
+          <span style="{{ colHeadStyle }}">DG</span>
+          <span style="width: 34px; text-align: center; color: #FFB800;">PTS</span>
+          <span style="{{ formHeadStyle }}">FORMA</span>
+        </div>
+
+        <sc-for list="{{ rows }}" as="row" hint-placeholder-count="8">
+          <div style="{{ row.rowStyle }}" style-hover="background:rgba(255,255,255,0.045)">
+            <span style="width: 26px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.5);">{{ row.pos }}</span>
+            <span style="flex: 1 1 auto; display: flex; align-items: center; gap: 11px; min-width: 0;">
+              <span style="width: 22px; height: 22px; border-radius: 3px; background: {{ row.crest }}; flex: none;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 19px; color: #ffffff; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ row.team }}</span>
+            </span>
+            <span style="{{ colStyle }}">{{ row.pj }}</span>
+            <span style="{{ colStyle }}">{{ row.dg }}</span>
+            <span style="width: 34px; text-align: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: #FFB800;">{{ row.pts }}</span>
+            <span style="{{ formStyle }}">
+              <sc-for list="{{ row.form }}" as="f" hint-placeholder-count="5">
+                <span style="{{ f.style }}">{{ f.label }}</span>
+              </sc-for>
+            </span>
+          </div>
+        </sc-for>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 10px 8px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 16px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.06em;">
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; background: #FFB800; border-radius: 2px;"></span>{{ topZoneLabel }}</span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; background: #8A3B3B; border-radius: 2px;"></span>DESCENSO</span>
+          </div>
+          <a href="#" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.12em; color: #FFB800;">VER TABLA COMPLETA →</a>
+        </div>
+      </section>
+
+      <div style="flex: 1 1 260px; min-width: 240px; display: flex; flex-direction: column; gap: 14px;">
+        <section style="background: #2B2B2B; border-radius: 6px; padding: 18px 20px 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 0.06em; color: #ffffff;">PARTIDO DE LA SEMANA</span>
+            <span style="display: flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #6FE0A8;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #6FE0A8;"></span>EN VIVO 18:00</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1 1 0;">
+              <span style="width: 40px; height: 40px; border-radius: 4px; background: #4B6E8C;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 15px; color: #ffffff; text-align: center; line-height: 1.1;">Belém Athletic</span>
+            </div>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 26px; color: rgba(255,255,255,0.28);">VS</span>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1 1 0;">
+              <span style="width: 40px; height: 40px; border-radius: 4px; background: #8C6A3F;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 15px; color: #ffffff; text-align: center; line-height: 1.1;">Xingu Rangers</span>
+            </div>
+          </div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.38); text-align: center; margin: 14px 0 0; letter-spacing: 0.06em;">ESTADIO DO PARÁ · SÁB 15 AGO</div>
+        </section>
+
+        <section style="background: #2B2B2B; border-radius: 6px; padding: 18px 20px 20px;">
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 14px;">
+            <div>
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 0.06em; color: #ffffff;">LÍDERES</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: rgba(255,255,255,0.36); margin-top: 4px;">TOP SCORERS</div>
+            </div>
+            <div style="display: flex; gap: 5px;">
+              <sc-for list="{{ statTabs }}" as="tab" hint-placeholder-count="2">
+                <button type="button" onClick="{{ tab.onClick }}" style="{{ tab.style }}">{{ tab.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <sc-for list="{{ leaders }}" as="p" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 11px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.055);">
+              <span style="width: 32px; height: 32px; border-radius: 50%; background: #3D3D3D; flex: none;"></span>
+              <span style="flex: 1 1 auto; min-width: 0;">
+                <span style="display: block; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 17px; color: #ffffff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ p.name }}</span>
+                <span style="display: block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.36); letter-spacing: 0.06em; margin-top: 2px;">{{ p.team }}</span>
+              </span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; color: #FFB800;">{{ p.value }}</span>
+            </div>
+          </sc-for>
+        </section>
+
+        <section style="position: relative; background: #2B2B2B; border-radius: 6px; overflow: hidden; min-height: 148px; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: flex-end; padding: 18px;">
+          <span style="position: absolute; top: 16px; left: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: rgba(255,255,255,0.4);">thumbnail de video 800×450</span>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 21px; line-height: 1.1; color: #ffffff; max-width: 70%;">Resumen: los 10 mejores goles de la jornada</span>
+          <span style="position: absolute; right: 16px; bottom: 16px; width: 54px; height: 54px; border-radius: 50%; background: #FFB800; display: flex; align-items: center; justify-content: center; color: #1B1B1B; font-size: 17px; box-shadow: 0 6px 18px rgba(0,0,0,0.35);" style-hover="background:#ffffff">▶</span>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <section style="background: #1B1B1B; margin-top: 20px; padding: 26px 0 30px;">
+    <div style="max-width: 1320px; margin: 0 auto; padding: 0 22px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;">
+        <div>
+          <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1; letter-spacing: 0.04em; color: #ffffff; margin: 0;">{{ fixTitle }}</h2>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: rgba(255,255,255,0.38); margin-top: 6px;">{{ fixSubtitle }}</div>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <sc-for list="{{ fixTabs }}" as="tab" hint-placeholder-count="2">
+            <button type="button" onClick="{{ tab.onClick }}" style="{{ tab.style }}">{{ tab.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <sc-for list="{{ fixItems }}" as="m" hint-placeholder-count="4">
+          <div style="flex: 1 1 240px; min-width: 220px; background: #262626; border-radius: 5px; padding: 15px 16px; border-top: 3px solid #FFB800;" style-hover="background:#2F2F2F">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: rgba(255,255,255,0.36); margin-bottom: 12px;">{{ m.sub }}</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px;">
+              <span style="display: flex; align-items: center; gap: 9px; min-width: 0;">
+                <span style="width: 18px; height: 18px; border-radius: 3px; background: {{ m.homeCrest }}; flex: none;"></span>
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 18px; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.home }}</span>
+              </span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; color: {{ m.scoreColor }};">{{ m.homeScore }}</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="display: flex; align-items: center; gap: 9px; min-width: 0;">
+                <span style="width: 18px; height: 18px; border-radius: 3px; background: {{ m.awayCrest }}; flex: none;"></span>
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 18px; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.away }}</span>
+              </span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; color: {{ m.scoreColor }};">{{ m.awayScore }}</span>
+            </div>
+            <div style="margin-top: 13px; padding-top: 11px; border-top: 1px solid rgba(255,255,255,0.07); font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #FFB800;">{{ m.action }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <main id="noticias" style="max-width: 1320px; margin: 0 auto; padding: 16px 22px 0;">
+    <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: stretch;">
+      <section style="flex: 1 1 260px; min-width: 240px; background: #2B2B2B; border-radius: 6px; padding: 20px 20px 22px;">
+        <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: 0.06em; color: #ffffff; margin: 0;">FANTASY SUPERLEAGUE</h2>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: rgba(255,255,255,0.36); margin: 6px 0 16px;">ARMA TU EQUIPO · PLAY FREE</div>
+        <div style="height: 156px; border-radius: 4px; background: #383838; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: center; justify-content: center; text-align: center;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em;">ilustración fantasy<br />600×500</span>
+        </div>
+        <p style="font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.62); margin: 16px 0 18px;">Elige 15 jugadores, compite en tu liga privada y sigue los puntos en vivo cada jornada.</p>
+        <a href="#" style="display: block; text-align: center; background: #FFB800; color: #1B1B1B; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.12em; padding: 12px; border-radius: 3px;" style-hover="background:#ffffff">CREAR MI EQUIPO</a>
+      </section>
+
+      <section style="flex: 3 1 520px; min-width: 300px; background: #2B2B2B; border-radius: 6px; padding: 22px 24px 24px;">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;">
+          <div>
+            <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1; letter-spacing: 0.03em; color: #ffffff; margin: 0;">NOTICIAS</h2>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: rgba(255,255,255,0.38); margin-top: 6px;">LATEST NEWS</div>
+          </div>
+          <a href="#" style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.12em; color: #FFB800;">TODAS LAS NOTICIAS →</a>
+        </div>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+          <article style="flex: 1 1 210px; min-width: 200px;">
+            <div style="height: 128px; border-radius: 4px; background: #383838; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4);">foto 800×500</span>
+            </div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #FFB800; margin-bottom: 7px;">ENTREVISTA</div>
+            <h3 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 20px; line-height: 1.12; color: #ffffff; margin: 0 0 8px;">Bellingham: “Tapajós puede pelear el título este año”</h3>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.3);">HACE 2 H</div>
+          </article>
+          <article style="flex: 1 1 210px; min-width: 200px;">
+            <div style="height: 128px; border-radius: 4px; background: #383838; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4);">foto 800×500</span>
+            </div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #FFB800; margin-bottom: 7px;">LESIONES</div>
+            <h3 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 20px; line-height: 1.12; color: #ffffff; margin: 0 0 8px;">Musiala vuelve a los entrenamientos con Madeira City</h3>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.3);">HACE 5 H</div>
+          </article>
+          <article style="flex: 1 1 210px; min-width: 200px;">
+            <div style="height: 128px; border-radius: 4px; background: #383838; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4);">foto 800×500</span>
+            </div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #FFB800; margin-bottom: 7px;">CANTERA</div>
+            <h3 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 20px; line-height: 1.12; color: #ffffff; margin: 0 0 8px;">Lamine Yamal, el más joven en marcar en la Superleague</h3>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.3);">AYER</div>
+          </article>
+        </div>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <a href="#" style="flex: 1 1 210px; min-width: 200px; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="width: 64px; height: 48px; border-radius: 3px; background: #383838; flex: none;"></span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.15; color: #ffffff;">Iquitos United estrena su nueva grada sur</span>
+          </a>
+          <a href="#" style="flex: 1 1 210px; min-width: 200px; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="width: 64px; height: 48px; border-radius: 3px; background: #383838; flex: none;"></span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.15; color: #ffffff;">Calendario de la Copa Superleague: fechas confirmadas</span>
+          </a>
+          <a href="#" style="flex: 1 1 210px; min-width: 200px; display: flex; gap: 12px; align-items: flex-start;">
+            <span style="width: 64px; height: 48px; border-radius: 3px; background: #383838; flex: none;"></span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.15; color: #ffffff;">Marañón AC nombra a su nuevo director técnico</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer style="background: #1B1B1B; color: rgba(255,255,255,0.6); margin-top: 20px; padding: 34px 0 26px;">
+    <div style="max-width: 1320px; margin: 0 auto; padding: 0 22px; display: flex; gap: 34px; flex-wrap: wrap; justify-content: space-between;">
+      <div style="flex: 1 1 240px;">
+        <div style="display: flex; align-items: baseline; gap: 7px; margin-bottom: 12px;">
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 22px; color: #FFB800;">AMAZON</span>
+          <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 22px; letter-spacing: 0.14em; color: #ffffff;">SUPERLEAGUE</span>
+        </div>
+        <p style="font-size: 13px; line-height: 1.6; margin: 0; max-width: 34ch;">Liga profesional de fútbol de la cuenca amazónica. Primera y Segunda División.</p>
+      </div>
+      <div style="flex: 0 1 auto; display: flex; gap: 46px; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #FFB800; margin-bottom: 3px;">COMPETICIÓN</span>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Primera División</a>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Segunda División</a>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Copa Superleague</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #FFB800; margin-bottom: 3px;">CLUBES</span>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Equipos</a>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Estadios</a>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Transferencias</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #FFB800; margin-bottom: 3px;">CUENTA</span>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Iniciar sesión</a>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Panel de club</a>
+          <a href="#" style="font-size: 14px; color: rgba(255,255,255,0.6);">Prensa</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width: 1320px; margin: 22px auto 0; padding: 16px 22px 0; border-top: 1px solid rgba(255,255,255,0.09); font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.32);">© 2026 AMAZON SUPERLEAGUE · LIGA FICTICIA CON FINES DE DEMOSTRACIÓN</div>
+  </footer>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#FFB800&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#FFB800&quot;,&quot;#E8FF4D&quot;,&quot;#FF7A3D&quot;,&quot;#37E0A0&quot;]}}">
+class Component extends DCLogic {
+  state = { div: 'A', stat: 'goals', fix: 'next', vp: 'desktop' };
+
+  vpTabStyle(active) {
+    return {
+      fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '13px',
+      letterSpacing: '0.1em', textTransform: 'uppercase', padding: '7px 14px',
+      border: 'none', borderRadius: '999px', cursor: 'pointer',
+      background: active ? (this.props.accent || '#FFB800') : 'transparent',
+      color: active ? '#1B1B1B' : 'rgba(255,255,255,0.6)'
+    };
+  }
+
+  tabStyle(active, big) {
+    return {
+      fontFamily: "'Barlow Condensed', sans-serif",
+      fontWeight: 700,
+      fontSize: big ? '14px' : '11px',
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      padding: big ? '8px 14px' : '6px 9px',
+      border: 'none',
+      borderRadius: '3px',
+      cursor: 'pointer',
+      background: active ? (this.props.accent || '#FFB800') : 'rgba(255,255,255,0.08)',
+      color: active ? '#1B1B1B' : 'rgba(255,255,255,0.62)'
+    };
+  }
+
+  chip(l) {
+    const bg = l === 'G' ? '#1F7A4D' : l === 'E' ? '#5C5C5C' : '#8A3B3B';
+    return { label: l, style: { width: '18px', height: '18px', borderRadius: '2px', background: bg, color: '#fff', fontFamily: "'IBM Plex Mono', monospace", fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' } };
+  }
+
+  renderVals() {
+    const accent = this.props.accent || '#FFB800';
+    const tableA = [
+      ['Manaos FC', '#3F6B4A', 3, '+8', 9, 'GGG'],
+      ['Tapajós SC', '#7A3F52', 3, '+4', 7, 'GGE'],
+      ['Río Negro CF', '#2F4B7A', 3, '+3', 6, 'GPG'],
+      ['Amazonas Royals', '#6E4B8C', 3, '+2', 5, 'EGE'],
+      ['Belém Athletic', '#4B6E8C', 3, '0', 4, 'PGE'],
+      ['Madeira City', '#8C6A3F', 3, '-1', 4, 'GPE'],
+      ['Xingu Rangers', '#3F7A72', 3, '-2', 3, 'PGP'],
+      ['Solimões FC', '#7A5A3F', 3, '-4', 2, 'EEP'],
+      ['Iquitos United', '#5C5C5C', 3, '-5', 1, 'PPE'],
+      ['Marañón AC', '#8A3B3B', 3, '-5', 0, 'PPP']
+    ];
+    const tableB = [
+      ['Ucayali FC', '#3F6B4A', 3, '+6', 9, 'GGG'],
+      ['Napo Town', '#2F4B7A', 3, '+5', 7, 'GEG'],
+      ['Caquetá United', '#7A3F52', 3, '+1', 6, 'GGP'],
+      ['Juruá Athletic', '#6E4B8C', 3, '0', 4, 'EGP'],
+      ['Putumayo SC', '#8C6A3F', 3, '-3', 3, 'PPG'],
+      ['Purus City', '#5C5C5C', 3, '-4', 2, 'EEP'],
+      ['Guaviare CF', '#3F7A72', 3, '-2', 2, 'PEE'],
+      ['Yavarí Sporting', '#8A3B3B', 3, '-3', 1, 'PPE']
+    ];
+    const table = this.state.div === 'A' ? tableA : tableB;
+    const topCut = this.state.div === 'A' ? 3 : 2;
+    const rows = table.map((t, i) => ({
+      rowStyle: {
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '9px 10px 9px 7px',
+        borderBottom: '1px solid rgba(255,255,255,0.055)',
+        borderRadius: '3px',
+        borderLeft: '3px solid ' + (i < topCut ? '#FFB800' : i >= table.length - 2 ? '#8A3B3B' : 'transparent')
+      },
+      pos: String(i + 1).padStart(2, '0'),
+      team: t[0], crest: t[1], pj: t[2], dg: t[3], pts: t[4],
+      form: t[5].split('').map(l => this.chip(l))
+    }));
+
+    const goals = [
+      ['Erling Haaland', 'Manaos FC', 9],
+      ['Vinícius Júnior', 'Tapajós SC', 6],
+      ['Kylian Mbappé', 'Río Negro CF', 5],
+      ['Bukayo Saka', 'Belém Athletic', 4]
+    ];
+    const assists = [
+      ['Jude Bellingham', 'Tapajós SC', 7],
+      ['Lamine Yamal', 'Amazonas Royals', 5],
+      ['Cole Palmer', 'Madeira City', 4],
+      ['Mohamed Salah', 'Xingu Rangers', 3]
+    ];
+    const leaders = (this.state.stat === 'goals' ? goals : assists)
+      .map(p => ({ name: p[0], team: p[1], value: p[2] }));
+
+    const next = [
+      ['Manaos FC', '#3F6B4A', 'Solimões FC', '#7A5A3F', 'JORNADA 4 · SÁB 15 AGO', '17:00', 'RECORDATORIO'],
+      ['Belém Athletic', '#4B6E8C', 'Xingu Rangers', '#3F7A72', 'JORNADA 4 · SÁB 15 AGO', '18:00', 'VER EN VIVO'],
+      ['Río Negro CF', '#2F4B7A', 'Tapajós SC', '#7A3F52', 'JORNADA 4 · DOM 16 AGO', '16:30', 'RECORDATORIO'],
+      ['Madeira City', '#8C6A3F', 'Marañón AC', '#8A3B3B', 'JORNADA 4 · DOM 16 AGO', '19:00', 'ENTRADAS']
+    ];
+    const prev = [
+      ['Manaos FC', '#3F6B4A', 'Iquitos United', '#5C5C5C', 'JORNADA 3 · FINALIZADO', '4', '1'],
+      ['Tapajós SC', '#7A3F52', 'Amazonas Royals', '#6E4B8C', 'JORNADA 3 · FINALIZADO', '2', '2'],
+      ['Xingu Rangers', '#3F7A72', 'Río Negro CF', '#2F4B7A', 'JORNADA 3 · FINALIZADO', '0', '3'],
+      ['Solimões FC', '#7A5A3F', 'Madeira City', '#8C6A3F', 'JORNADA 3 · FINALIZADO', '1', '1']
+    ];
+    const isNext = this.state.fix === 'next';
+    const fixItems = (isNext ? next : prev).map(m => ({
+      home: m[0], homeCrest: m[1], away: m[2], awayCrest: m[3], sub: m[4],
+      homeScore: isNext ? m[5] : m[5],
+      awayScore: isNext ? '' : m[6],
+      scoreColor: isNext ? accent : '#ffffff',
+      action: isNext ? m[6] : 'RESUMEN Y ESTADÍSTICAS'
+    }));
+
+    const mob = this.state.vp === 'mobile';
+    return {
+      rows, leaders, fixItems,
+      navStyle: {
+        display: 'flex', alignItems: 'center', gap: mob ? '18px' : '26px',
+        flexWrap: mob ? 'nowrap' : 'wrap',
+        overflowX: mob ? 'auto' : 'visible',
+        maxWidth: mob ? '100%' : 'none',
+        fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600,
+        fontSize: mob ? '15px' : '16px', letterSpacing: '0.12em', textTransform: 'uppercase',
+        whiteSpace: 'nowrap'
+      },
+      topZoneLabel: this.state.div === 'A' ? 'CLASIFICACIÓN CONTINENTAL' : 'PLAY-OFF DE ASCENSO',
+      formHeadStyle: { width: mob ? '62px' : '108px', textAlign: 'right' },
+      formStyle: { width: mob ? '62px' : '108px', display: 'flex', gap: '3px', justifyContent: 'flex-end', overflow: 'hidden' },
+      colStyle: { width: '30px', textAlign: 'center', fontSize: '14px', color: 'rgba(255,255,255,0.6)', display: mob ? 'none' : 'block' },
+      colHeadStyle: { width: '30px', textAlign: 'center', display: mob ? 'none' : 'block' },
+      shellStyle: mob
+        ? { width: '412px', margin: '0 auto', boxShadow: '0 0 0 1px rgba(0,0,0,0.25), 0 24px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }
+        : { width: '100%' },
+      vpTabs: [
+        { label: 'Desktop', style: this.vpTabStyle(!mob), onClick: () => this.setState({ vp: 'desktop' }) },
+        { label: 'Móvil', style: this.vpTabStyle(mob), onClick: () => this.setState({ vp: 'mobile' }) }
+      ],
+      fixTitle: isNext ? 'PRÓXIMOS PARTIDOS' : 'RESULTADOS DE LA JORNADA',
+      fixSubtitle: isNext ? 'FIXTURES · JORNADA 4' : 'RESULTS · JORNADA 3',
+      divTabs: [
+        { label: 'Primera', style: this.tabStyle(this.state.div === 'A'), onClick: () => this.setState({ div: 'A' }) },
+        { label: 'Segunda', style: this.tabStyle(this.state.div === 'B'), onClick: () => this.setState({ div: 'B' }) }
+      ],
+      statTabs: [
+        { label: 'Goles', style: this.tabStyle(this.state.stat === 'goals'), onClick: () => this.setState({ stat: 'goals' }) },
+        { label: 'Asist.', style: this.tabStyle(this.state.stat === 'assists'), onClick: () => this.setState({ stat: 'assists' }) }
+      ],
+      fixTabs: [
+        { label: 'Próximos', style: this.tabStyle(isNext, true), onClick: () => this.setState({ fix: 'next' }) },
+        { label: 'Resultados', style: this.tabStyle(!isNext, true), onClick: () => this.setState({ fix: 'prev' }) }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

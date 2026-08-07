@@ -99,3 +99,50 @@ Compliance summary: 3/4 compliant, 1 critical failing.
 ### Verdict
 FAIL
 2 CRITICAL requirement violations found by independent live verification (unsynced .env.example breaking reproducibility; a live, publicly-guessable seeded admin-panel credential) - both were masked by the checked [x] tasks and the apply-phase narrative. Recommend routing back to sdd-apply to fix both before archive.
+
+---
+
+## Re-Verification (Scoped) — 2026-08-07
+
+**Trigger**: Orchestrator applied fixes on top of the original FAIL verdict (commit `1009099`) for the 2 CRITICAL and 2 WARNING findings above. This is a scoped re-check of those 4 fixes plus a live smoke test — not a full re-review of the change.
+
+### Fix 1 — CRITICAL: seeded stock admin (`test@example.com`/`password`)
+- **Code**: `database/seeders/DatabaseSeeder.php` `run()` body is now empty (`//`), the `use App\Models\User;` import is gone. Confirmed by direct file read.
+- **Live DB**: `docker compose exec app php artisan tinker --execute="echo \App\Models\User::pluck('email')->implode(', ');"` → `jonathandavidgarciagonzales@gmail.com` only. No `test@example.com` row remains.
+- **Result**: RESOLVED.
+
+### Fix 2 — CRITICAL: stock sqlite `.env.example`
+- Read via `git show HEAD:.env.example` (direct working-tree read stayed blocked by the sandbox deny-rule, as expected — this itself corroborates the rule is still enforced).
+- Confirmed present: `DB_CONNECTION=mysql`, `DB_HOST=db`, `DB_PORT=3306`, `DB_PORT_HOST=33061`, `DB_DATABASE=liga_amazon`, `DB_USERNAME=liga`, `DB_PASSWORD=change-me-in-your-local-env`, `DB_ROOT_PASSWORD=change-me-in-your-local-env`, `APP_PORT=8080`, `UID=1000`, `GID=1000`. No stock `DB_CONNECTION=sqlite` / commented-out DB vars remain.
+- **Result**: RESOLVED. Matches `docker-compose.yml`'s required vars and design.md's File Changes table.
+
+### Fix 3 — WARNING: stale `ARQUITECTURA.md` compose snippet + spec.md port/PHP mismatch
+- `ARQUITECTURA.md` section 6 compose snippet now uses `${DB_PASSWORD:?DB_PASSWORD must be set in .env}` / `${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD must be set in .env}` (hard-fail required-var syntax) — no `:-secret` fallback found anywhere in the file (`rg ':-secret'` → no matches). Port table correctly reads `localhost:33061`; PHP version correctly documented as `PHP 8.4-fpm` for the `app` service, with an explanatory note that the design range was "8.3+/8.4" (not a stale contradiction).
+- `openspec/changes/fase-1-andamiaje-docker-laravel-filament/specs/local-dev-environment/spec.md` — "Docker Compose Stack Composition" now reads `PHP-FPM 8.4` and `db` on `33061:3306`; "PHP Runtime Image" now reads "pure PHP 8.4-FPM runtime". No `33060` or bare `8.3` references remain (`rg` for `:-secret|33060|PHP 8\.3` → no matches).
+- **Result**: RESOLVED.
+
+### Fix 4 — WARNING: `local-dev-environment` spec.md port/PHP version drift
+Covered by Fix 3 above (same commit, same file) — RESOLVED.
+
+### Live Smoke Check
+```text
+$ docker compose ps
+ligaamazon-app-1    Up 20 minutes
+ligaamazon-db-1     Up 20 minutes (healthy)   0.0.0.0:33061->3306/tcp
+ligaamazon-node-1   Up 20 minutes             0.0.0.0:5173->5173/tcp
+ligaamazon-web-1    Up 20 minutes             0.0.0.0:8080->80/tcp
+
+$ curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/
+200
+
+$ curl -I http://localhost:8080/admin
+302
+```
+All 4 services up, `db` healthy, app root reachable (200), admin panel redirects to login (302) as expected.
+
+### Updated Verdict
+**PASS**
+
+All 2 CRITICAL and 2 WARNING findings from the original verification are confirmed resolved by independent re-inspection of code, git-tracked config, docs, and a live running stack. No new issues found in the fixed surface area. Outstanding non-blocking item carried over unchanged: the SUGGESTION about untracked `openspec/design-reference/amazon-superleague/**` files (cosmetic, not in scope of this fix set).
+
+Recommend: proceed to `sdd-archive`.

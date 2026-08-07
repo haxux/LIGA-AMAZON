@@ -56,7 +56,7 @@ Two §6 gaps closed: a `node` service satisfies `config.yaml` `verify.build_comm
 ## Risks
 
 | Risk | Likelihood | Mitigation |
-|------|------------|------------|
+|------|------------|-----------|
 | UID mismatch → unwritable `storage/`, `bootstrap/cache/` | High | Pin UID/GID in Dockerfile; `chown` after scaffold |
 | Nested `.git` from `create-project` | Med | Scaffold, remove nested `.git`, then `git init` |
 | CRLF breaking container scripts | Med | `.gitattributes` `eol=lf` committed first |
