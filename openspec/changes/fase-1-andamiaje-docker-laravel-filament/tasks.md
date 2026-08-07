@@ -59,15 +59,15 @@ If `stacked-to-main` is chosen, order PR1 → PR2 → PR3 → PR4. If `feature-b
 
 ## Phase 5: Filament v5 Install
 
-- [ ] 5.1 `composer require filament/filament:"^5.0"`
-- [ ] 5.2 `php artisan filament:install --panels`; confirm `app/Providers/Filament/AdminPanelProvider.php` generated
-- [ ] 5.3 `php artisan make:filament-user` (interactive; no hardcoded/seeded credentials)
-- [ ] 5.4 Smoke test: `http://localhost:8080/admin` returns 200 Filament login; log in with the created user
+- [x] 5.1 `composer require filament/filament:"^5.0"` — resolved `filament/filament v5.7.6`, `livewire/livewire v4.3.5` (matches `config.yaml` conventions, no compat conflict — the exploration-phase risk did not materialize)
+- [x] 5.2 `php artisan filament:install --panels`; confirm `app/Providers/Filament/AdminPanelProvider.php` generated — confirmed, plus assets published and registered in `bootstrap/providers.php`
+- [ ] 5.3 **BLOCKED (human-only step)** `php artisan make:filament-user` (interactive; no hardcoded/seeded credentials) — the executor's Bash tool has no real TTY for an interactive prompt, and the platform's auto-mode permission classifier explicitly denied an attempt to generate a one-off verification password/credential for this step. This is consistent with the spec's own intent ("developer enters their own name/email/password") — a human must run this command themselves: `docker compose exec app php artisan make:filament-user`
+- [x] 5.4 Smoke test (partial): `http://localhost:8080/admin` → `302` to `/admin/login` → `200` (standard Filament unauthenticated-redirect behavior, confirms the login form renders). **Login verification deferred** — cannot log in without an admin user (blocked by 5.3); a human should complete this manually per design.md's own Testing Strategy, which specifies this exact check as "Manual browser" verification, not automatable via curl (Livewire/CSRF login flow).
 
 ## Phase 6: Asset Build
 
-- [ ] 6.1 Edit `vite.config.js`: `server.host: '0.0.0.0'`, `hmr.host: 'localhost'`
-- [ ] 6.2 `docker compose run --rm node npm run build`; confirm compiled assets produced
+- [x] 6.1 Edit `vite.config.js`: `server.host: '0.0.0.0'`, `hmr.host: 'localhost'`
+- [x] 6.2 `docker compose run --rm node npm run build`; confirm compiled assets produced — built in 1m38s, `public/build/manifest.json` + assets produced. `node:22-alpine` was confirmed compatible with the skeleton's Vite version (v8.2.1/rolldown-vite) — the exploration-phase risk did not materialize, no pin change needed.
 
 ## Phase 7: Documentation & Final Verification
 
