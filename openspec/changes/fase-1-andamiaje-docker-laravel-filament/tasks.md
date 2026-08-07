@@ -71,5 +71,19 @@ If `stacked-to-main` is chosen, order PR1 → PR2 → PR3 → PR4. If `feature-b
 
 ## Phase 7: Documentation & Final Verification
 
-- [ ] 7.1 Update `ARQUITECTURA.md` §6: scaffold step, `node` service, non-default MySQL port (`33060`), Filament install ordering
-- [ ] 7.2 Final checklist: all Proposal Success Criteria pass; `git status` clean of `vendor/`, `node_modules/`, `.env`
+- [x] 7.1 Update `ARQUITECTURA.md` §6: scaffold step, `node` service, non-default MySQL port (documented as `33061`, not `33060` — see deviation note), Filament install ordering, PHP 8.4-fpm bump, and the `.env` permission-block workaround
+- [x] 7.2 Final checklist — see Success Criteria table below
+
+### Proposal Success Criteria — final status
+
+| Criterion | Status |
+|---|---|
+| `docker compose up -d --build` starts app/web/db/node with no restart loops | ✅ Pass |
+| `http://localhost:8080` → Laravel welcome (200) | ✅ Pass |
+| `http://localhost:8080/admin` → Filament login (200) | ✅ Pass (302→`/admin/login`→200, standard Filament behavior) |
+| The `make:filament-user` account logs in to `/admin` | ❌ **Not verified** — no admin user was created (see 5.3, blocked) |
+| `php artisan migrate --seed` runs cleanly; `php artisan test` passes | ✅ Pass (2/2 stock tests) |
+| `npm run build` succeeds inside the `node` service | ✅ Pass |
+| `git status` clean of `vendor/`, `node_modules/`, `.env` | ✅ Pass |
+
+5/6 criteria fully pass; 1 requires a human follow-up step (see Remaining Tasks in the return summary).
