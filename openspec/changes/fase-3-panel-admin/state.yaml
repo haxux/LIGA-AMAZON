@@ -54,16 +54,28 @@ phases:
   apply:
     status: in_progress
     artifact: openspec/changes/fase-3-panel-admin/apply-progress.md
-    checkpoint: "Units 1-2/4 done (21/40 tasks). HEAD branch fase-3/2-team-stadium, off fase-3/1-season-matchday. Next: unit 3 (fase-3/3-player, off fase-3/2-team-stadium tip), starting at task 3.1."
+    checkpoint: "Units 1-3/4 done (30/40 tasks). HEAD branch fase-3/3-player, off fase-3/2-team-stadium. Next: unit 4 (fase-3/4-game, off fase-3/3-player tip), starting at task 4.1."
     done_units:
       - { id: 1, name: season-matchday, branch: fase-3/1-season-matchday, tasks: "1.1-1.10", status: done }
       - { id: 2, name: team-stadium, branch: fase-3/2-team-stadium, tasks: "2.1-2.11", status: done }
-    test_suite: "56/56 passing (44 prior + 12 new), 135 assertions"
+      - { id: 3, name: player, branch: fase-3/3-player, tasks: "3.1-3.9", status: done }
+    test_suite: "67/67 passing (56 prior + 11 new), 171 assertions"
     design_correction_found: >
       D3/D2's Get type hint resolves to Filament\Schemas\Components\Utilities\Get
       in the installed 5.7.6 tree, not Filament\Forms\Get as the design.md snippet
       implies. Confirmed live via a TypeError on the injected closure parameter.
       Applies to Phase 4's D2 away_team_id rule() too.
+    design_gap_found_phase3: >
+      PlayerForm's team-scoped unique() rule silently stopped enforcing scoping
+      inside PlayersRelationManager because $get('team_id') resolves to null
+      when team_id isn't part of the RM's form schema (removed by design, set
+      via the relationship instead). Fixed by injecting $livewire into the
+      modifyRuleUsing closure and falling back to
+      $livewire->getOwnerRecord()->getKey() when $get('team_id') is blank and
+      $livewire instanceof RelationManager. Watch for the same class of gap in
+      Phase 4's GameForm/GamesRelationManager reuse (D2's away_team_id rule
+      compares against home_team_id, which stays in-schema in the RM, so this
+      specific failure mode should NOT recur there, but confirm live).
   verify:
     status: pending
   archive:

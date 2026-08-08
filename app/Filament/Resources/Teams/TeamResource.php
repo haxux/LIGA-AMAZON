@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Teams;
 use App\Filament\Resources\Teams\Pages\CreateTeam;
 use App\Filament\Resources\Teams\Pages\EditTeam;
 use App\Filament\Resources\Teams\Pages\ListTeams;
+use App\Filament\Resources\Teams\RelationManagers\PlayersRelationManager;
 use App\Filament\Resources\Teams\RelationManagers\StadiumRelationManager;
 use App\Filament\Resources\Teams\Schemas\TeamForm;
 use App\Filament\Resources\Teams\Tables\TeamsTable;
@@ -68,6 +69,7 @@ class TeamResource extends Resource
     {
         return [
             StadiumRelationManager::class,
+            PlayersRelationManager::class,
         ];
     }
 

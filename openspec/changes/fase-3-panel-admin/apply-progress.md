@@ -1,14 +1,14 @@
 # Apply Progress: Fase 3 — Panel admin: Filament Resources
 
-> In progress. Work units 1-2/4 complete (21/40 tasks). Continuing to unit 3.
+> In progress. Work units 1-3/4 complete (30/40 tasks). Continuing to unit 4.
 
 ## Current position
 
-- **HEAD branch**: `fase-3/2-team-stadium` (created off `fase-3/1-season-matchday` tip `5211e03`)
+- **HEAD branch**: `fase-3/3-player` (created off `fase-3/2-team-stadium` tip `b328179`)
 - **Chain** (stacked-to-main, each branching from the previous tip):
   1. `fase-3/1-season-matchday` (off `fase-2/5-storage-and-verify`) — done, commit `5211e03`
-  2. `fase-3/2-team-stadium` (off unit 1 tip) — **done, this batch**
-  3. `fase-3/3-player` (off unit 2 tip) — pending
+  2. `fase-3/2-team-stadium` (off unit 1 tip) — done, commit `b328179`
+  3. `fase-3/3-player` (off unit 2 tip) — **done, this batch**
   4. `fase-3/4-game` (off unit 3 tip) — pending
 
 None of the branches will be merged into `master`/each other — all left unmerged for user review, per `chain_strategy: stacked-to-main`, matching the Fase 2 pattern.
@@ -35,10 +35,18 @@ None of the branches will be merged into `master`/each other — all left unmerg
 - **2.9-2.10**: RED — deleting a Team referenced by a `Game` (via both the Edit-page header `DeleteAction` and the table row `DeleteAction`) reproduced the raw `QueryException` (restrictOnDelete FK) escaping to the test — exactly the V10 failure mode. GREEN — added `TeamResource::deleteAction()`, a shared static factory wrapping `$record->delete()` in `try/catch (QueryException)` → `Notification::make()->danger()->send(); $action->halt();`, reused by both `TeamsTable`'s row action and `EditTeam`'s header action (avoids duplicating the closure across the two sites, per design D4's stated risk of duplication if done inline). Strengthened with `assertNotified('Team cannot be deleted')` on both the header-action and row-action paths (2 separate test methods) rather than only checking the team still exists.
 - **2.11**: Full suite run — **56/56 passed** (44 from Phase 1 + 12 new: 10 `TeamResourceTest` + 2 `StadiumRelationManagerTest`), zero regressions.
 
-### Phase 3: Player — PENDING (3.1–3.9)
+### Phase 3: Player — ALL DONE (3.1–3.9), branch `fase-3/3-player`
+
+- **3.1-3.2**: `PlayerResourceTest.php` RED → `ComponentNotFoundException`. GREEN: generated via `php artisan make:filament-resource Player`. `PlayerForm` split into `configure()` (adds `team_id` Select) + a public static `teamAgnosticFields()` (`name`, `position` fixed `Select` from a `POSITIONS` const, `birth_date` DatePicker, `shirt_number` numeric 1-99 + team-scoped unique) — designed for reuse from the start (task 3.8 needs it), not refactored after the fact. `PlayersTable`: name/team.name/position badge/shirt_number + `SelectFilter position` and `SelectFilter team`. `navigationGroup` → `'League'`.
+- **3.3-3.4**: RED — duplicate `(team_id, shirt_number)` reproduced the raw `UniqueConstraintViolationException`. GREEN — team-scoped `unique()` (same `Get`-namespace pattern as Phases 1-2). Triangulated: cross-team duplicate shirt number allowed.
+- **3.5-3.6**: RED/GREEN converged in the same edit as 3.1-3.2 (table columns + filter were written alongside the form) — verified via `filterTable('position', 'Goalkeeper')->assertCanSeeTableRecords()/assertCanNotSeeTableRecords()`, which exercises 2 distinct positions in one seeded pair (already-triangulated by construction).
+- **3.7-3.8**: New `tests/Feature/PlayersRelationManagerTest.php`. RED — `Teams\RelationManagers\PlayersRelationManager` didn't exist → `ComponentNotFoundException`. GREEN — generated via `php artisan make:filament-relation-manager Team players name`; **removed the generator's default `AssociateAction`/`DissociateAction`/`DissociateBulkAction`** (players.team_id is a non-nullable FK — dissociation doesn't fit the domain, and the spec only asks for "add directly to team"); form reuses `PlayerForm::teamAgnosticFields()` unchanged.
+  **Design gap found and fixed (not in design.md — flagging per apply-phase rules)**: a third RED test proved `PlayerForm`'s team-scoped `unique()` rule silently stopped enforcing scoping *inside* the RelationManager — `$get('team_id')` resolves to `null` there because `team_id` isn't part of the RM's form schema (by design, it's removed and set via the relationship), so the `Rule::unique()->where('team_id', null)` clause never matched, and a genuine duplicate `UniqueConstraintViolationException` reached the test raw. Root-caused by reading `Filament\Schemas\Components\Utilities\Get::__invoke()`'s fallback (`data_get($livewire, $path)` when no sibling component matches). Fixed by injecting `$livewire` into the `modifyRuleUsing` closure and falling back to `$livewire->getOwnerRecord()->getKey()` when `$get('team_id')` is blank and `$livewire instanceof RelationManager`. This is the Player-side analogue of the D2/D3 `Get`-namespace correction, and matters more broadly for Phase 4's Game guard reuse inside `GamesRelationManager` — flagged there too.
+- **3.9**: Full suite run — **67/67 passed** (56 from Phase 2 + 11 new: 8 `PlayerResourceTest` + 3 `PlayersRelationManagerTest`), zero regressions.
+
 ### Phase 4: Game — PENDING (4.1–4.10)
 
-## Test suite status (end of Phase 2, single full-suite invocation — task 2.11)
+## Test suite status (end of Phase 3, single full-suite invocation — task 3.9)
 
 | Test file | Status | Count |
 |---|---|---|
@@ -49,13 +57,15 @@ None of the branches will be merged into `master`/each other — all left unmerg
 | `Tests\Feature\GameGuardTest` | PASS | 5/5 |
 | `Tests\Feature\MatchdayResourceTest` | PASS | 7/7 |
 | `Tests\Feature\PlayerFactoryTest` | PASS | 1/1 |
+| `Tests\Feature\PlayerResourceTest` | PASS | 8/8 |
+| `Tests\Feature\PlayersRelationManagerTest` | PASS | 3/3 |
 | `Tests\Feature\RelationshipTest` | PASS | 6/6 |
 | `Tests\Feature\SchemaMigrationTest` | PASS | 10/10 |
 | `Tests\Feature\SeasonResourceTest` | PASS | 6/6 |
 | `Tests\Feature\StadiumRelationManagerTest` | PASS | 2/2 |
 | `Tests\Feature\TeamResourceTest` | PASS | 10/10 |
 
-**Total: 56/56 tests, 135 assertions.**
+**Total: 67/67 tests, 171 assertions.**
 
 ## TDD Cycle Evidence (Phase 1)
 
@@ -92,3 +102,20 @@ None of the branches will be merged into `master`/each other — all left unmerg
 - **Layers used**: Feature/Livewire (12 new, this phase), Feature/Livewire + Unit (44, carried)
 - **Approval tests**: None — no refactoring tasks in this phase
 - **Pure functions created**: 0 (declarative Filament configuration); one shared static factory (`TeamResource::deleteAction()`) extracted to eliminate duplication (task 2.10's REFACTOR step)
+
+## TDD Cycle Evidence (Phase 3)
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| 3.1-3.2 | `tests/Feature/PlayerResourceTest.php` | Feature (Livewire) | ✅ 56/56 (cumulative baseline) | ✅ `ComponentNotFoundException` confirmed | ✅ 5/5 passed | ✅ create+edit round-trip, 2 scenarios | ➖ None needed |
+| 3.3-3.4 | `tests/Feature/PlayerResourceTest.php` | Feature (Livewire) | ✅ 5/5 (prior tests in file) | ✅ raw `UniqueConstraintViolationException` confirmed | ✅ `assertHasFormErrors(['shirt_number'])` passed | ✅ 2 cases: same-team rejected, cross-team allowed | ➖ None needed |
+| 3.5-3.6 | `tests/Feature/PlayerResourceTest.php` | Feature (Livewire) | ✅ 7/7 (prior tests in file) | ✅ written alongside 3.1-3.2 (table/filter absent until this GREEN) | ✅ `filterTable('position','Goalkeeper')` + `assertCanSeeTableRecords`/`assertCanNotSeeTableRecords` passed | ✅ 2 distinct positions seeded, both assertions exercised | ➖ None needed |
+| 3.7-3.8 | `tests/Feature/PlayersRelationManagerTest.php` | Feature (Livewire, RelationManager table action) | N/A (new file) | ✅ `ComponentNotFoundException` confirmed; 3rd test (`duplicate_shirt_number_within_the_relation_managers_team`) independently RED'd a real `UniqueConstraintViolationException` proving the `$get('team_id')` scoping gap | ✅ 3/3 passed after both the RM scaffold and the `$livewire`-fallback fix | ✅ list-scoping, create-adds-to-team, and duplicate-rejected-in-RM-context — 3 distinct scenarios | ✅ generator's unwanted `AssociateAction`/`DissociateAction`/`DissociateBulkAction` removed (non-nullable FK, out of domain scope) |
+| 3.9 | All 11 new + 56 carried files, full suite | Full-suite re-run | ✅ 56/56 baseline | N/A (pre-existing + already-green new tests) | ✅ 67/67 passed | N/A | N/A |
+
+### Test Summary (Phase 3)
+- **Total tests written this phase**: 11 (8 `PlayerResourceTest` + 3 `PlayersRelationManagerTest`)
+- **Total tests passing (cumulative)**: 67/67
+- **Layers used**: Feature/Livewire (11 new, this phase), Feature/Livewire + Unit (56, carried)
+- **Approval tests**: None — no refactoring tasks in this phase
+- **Pure functions created**: 0 (declarative Filament configuration); `PlayerForm::teamAgnosticFields()` extracted as a reusable field-set (design-driven, not a REFACTOR-step extraction)

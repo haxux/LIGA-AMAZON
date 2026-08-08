@@ -56,15 +56,15 @@ Test runner: `docker compose exec app php artisan test`. Each RED/GREEN pair map
 
 ## Phase 3: Player (`fase-3/3-player`) — spec: "Player via PlayerResource and RelationManager"
 
-- [ ] 3.1 RED `tests/Feature/PlayerResourceTest.php`: List/Create/Edit render 200 + round-trip
-- [ ] 3.2 GREEN `Players/PlayerResource.php` + `Schemas/PlayerForm.php` + `Tables/PlayersTable.php` + `Pages/*` — team_id Select, name, position fixed `Select`, birth_date, shirt_number
-- [ ] 3.3 RED: duplicate `players(team_id, shirt_number)` -> form error (D3)
-- [ ] 3.4 GREEN: team-scoped `unique()` on `PlayerForm` shirt_number field
-- [ ] 3.5 RED: `PlayersTable` `SelectFilter position` returns only matching records
-- [ ] 3.6 GREEN: badge `position` column + `SelectFilter` on `PlayersTable`
-- [ ] 3.7 RED: `PlayersRelationManager` on team A lists only A's players; create adds directly to team
-- [ ] 3.8 GREEN `Teams/RelationManagers/PlayersRelationManager.php` reusing `PlayerForm` minus `team_id` + wire `TeamResource::getRelations()`
-- [ ] 3.9 Run full suite, confirm green
+- [x] 3.1 RED `tests/Feature/PlayerResourceTest.php`: List/Create/Edit render 200 + round-trip
+- [x] 3.2 GREEN `Players/PlayerResource.php` + `Schemas/PlayerForm.php` + `Tables/PlayersTable.php` + `Pages/*` — team_id Select, name, position fixed `Select`, birth_date, shirt_number
+- [x] 3.3 RED: duplicate `players(team_id, shirt_number)` -> form error (D3)
+- [x] 3.4 GREEN: team-scoped `unique()` on `PlayerForm` shirt_number field
+- [x] 3.5 RED: `PlayersTable` `SelectFilter position` returns only matching records
+- [x] 3.6 GREEN: badge `position` column + `SelectFilter` on `PlayersTable`
+- [x] 3.7 RED: `PlayersRelationManager` on team A lists only A's players; create adds directly to team
+- [x] 3.8 GREEN `Teams/RelationManagers/PlayersRelationManager.php` reusing `PlayerForm` minus `team_id` + wire `TeamResource::getRelations()`
+- [x] 3.9 Run full suite, confirm green
 
 ## Phase 4: Game (`fase-3/4-game`) — spec: "Game via GameResource and RelationManager", D2 guard
 
