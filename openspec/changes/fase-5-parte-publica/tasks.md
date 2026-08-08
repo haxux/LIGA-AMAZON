@@ -94,10 +94,10 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 7 — `fase-5/7-design-tokens`
 
-- [ ] 7.1 Modify `vite.config.js`: replace the single `bunny('Instrument Sans')` entry with `bunny('Barlow Condensed', [500,600,700,800])`, `bunny('Barlow', [400,500,600,700])`, `bunny('IBM Plex Mono', [400,500])` (D10 — Laravel 13's native `laravel-vite-plugin/fonts` mechanism; no `<link preconnect>`, no CSS `@import`).
-- [ ] 7.2 Modify `resources/css/app.css` `@theme`: replace `--font-sans` (Barlow), add `--font-display` (Barlow Condensed), `--font-mono` (IBM Plex Mono), and the 8 brand/ink/surface/win/draw/loss color tokens per D10.
-- [ ] 7.3 Fix doc drift: `ARQUITECTURA.md` §2 and `openspec/config.yaml` context block — "Tailwind 3.x" → "Tailwind 4.x".
-- [ ] 7.4 Verify: `npm run build` green; confirm Filament admin panel unaffected (no `->viteTheme()` registered, doesn't consume `app.css`).
+- [x] 7.1 Modify `vite.config.js`: replace the single `bunny('Instrument Sans')` entry with `bunny('Barlow Condensed', [500,600,700,800])`, `bunny('Barlow', [400,500,600,700])`, `bunny('IBM Plex Mono', [400,500])` (D10 — Laravel 13's native `laravel-vite-plugin/fonts` mechanism; no `<link preconnect>`, no CSS `@import`).
+- [x] 7.2 Modify `resources/css/app.css` `@theme`: replace `--font-sans` (Barlow), add `--font-display` (Barlow Condensed), `--font-mono` (IBM Plex Mono), and the 8 brand/ink/surface/win/draw/loss color tokens per D10.
+- [x] 7.3 Fix doc drift: `ARQUITECTURA.md` §2 and `openspec/config.yaml` context block — "Tailwind 3.x" → "Tailwind 4.x".
+- [x] 7.4 Verify: `npm run build` green; confirm Filament admin panel unaffected (no `->viteTheme()` registered, doesn't consume `app.css`).
 
 ## Unit 8 — `fase-5/8-public-standings-fixtures`
 

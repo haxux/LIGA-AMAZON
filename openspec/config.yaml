@@ -2,7 +2,7 @@ schema: spec-driven
 
 context: |
   Liga Amazon — Laravel 13.x + Filament 5.x (admin) + Livewire 4.x, PHP 8.3+/8.4.
-  MySQL 8.0, Blade + Tailwind 3.x public frontend, Vite, Nginx + PHP-FPM, Docker.
+  MySQL 8.0, Blade + Tailwind 4.x public frontend, Vite, Nginx + PHP-FPM, Docker.
   Architecture: Laravel MVC + Services layer (e.g. StandingsService) for business
   logic outside Model/Controller. Filament Resources own admin CRUD; thin
   controllers. Migrations are the schema source of truth.

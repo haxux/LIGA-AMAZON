@@ -27,7 +27,7 @@ un panel de administración completo con Filament y una vista pública básica.
 | Panel admin | Filament | 5.x |
 | Reactividad admin | Livewire | 4.x (incluido en Filament v5) |
 | Base de datos | MySQL | 8.0 |
-| Frontend público | Blade + Tailwind CSS | Tailwind 3.x |
+| Frontend público | Blade + Tailwind CSS | Tailwind 4.x |
 | Build assets | Vite | incluido en Laravel |
 | Servidor web | Nginx | estable |
 | Ejecución PHP | PHP-FPM | 8.3+ |
