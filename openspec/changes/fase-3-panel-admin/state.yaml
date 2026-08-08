@@ -1,0 +1,96 @@
+change: fase-3-panel-admin
+title: "Fase 3 — Panel admin: Recursos de Filament para equipos, jugadores, jornadas y partidos"
+artifact_store: openspec
+last_updated: 2026-08-08
+
+session_settings:
+  execution_mode: interactive
+  delivery_strategy: auto-chain
+  chain_strategy: stacked-to-main
+
+phases:
+  exploration:
+    status: done
+    artifact: openspec/changes/fase-3-panel-admin/exploration.md
+  proposal:
+    status: done
+    artifact: openspec/changes/fase-3-panel-admin/proposal.md
+  spec:
+    status: done
+    artifacts:
+      - openspec/changes/fase-3-panel-admin/specs/admin-league-crud/spec.md
+      - openspec/changes/fase-3-panel-admin/specs/admin-panel/spec.md
+  design:
+    status: done
+    artifact: openspec/changes/fase-3-panel-admin/design.md
+    note: >
+      Live-verified against installed filament/filament 5.7.6 vendor source
+      (not docs/blog posts): separate Schemas/+Tables/ file layout confirmed,
+      resource lives under a plural-model subdirectory, relation managers are
+      plural (PlayersRelationManager, GamesRelationManager — corrects the
+      proposal's singular naming). Game's home/away-team guard does NOT
+      surface to the user by default (Livewire swallows the ValidationException
+      silently) — resolved via a closure rule() on away_team_id with an (int)
+      cast, since Laravel's built-in different() rule uses strict === and
+      passes on int-vs-string mismatches. D3 adds mirrored form unique() rules
+      for 4 pre-existing DB composite uniques (not in spec, flagged as optional
+      cut — kept: surfaces existing Fase 2 DB constraints cleanly, no new
+      invariant introduced, consistent with "field-level validity only" scope).
+  tasks:
+    status: done
+    artifact: openspec/changes/fase-3-panel-admin/tasks.md
+    task_count: 40
+    work_units:
+      - { id: 1, name: season-matchday, branch: fase-3/1-season-matchday, base: fase-2/5-storage-and-verify }
+      - { id: 2, name: team-stadium, branch: fase-3/2-team-stadium, base: fase-3/1-season-matchday }
+      - { id: 3, name: player, branch: fase-3/3-player, base: fase-3/2-team-stadium }
+      - { id: 4, name: game, branch: fase-3/4-game, base: fase-3/3-player }
+    review_workload_forecast:
+      estimated_changed_lines: "~1500-2000"
+      budget_risk_400_lines: High
+      chained_prs_recommended: true
+      chain_strategy: stacked-to-main
+      decision_needed_before_apply: false
+  apply:
+    status: in_progress
+    artifact: openspec/changes/fase-3-panel-admin/apply-progress.md
+    checkpoint: "Unit 1/4 done (10/40 tasks). HEAD branch fase-3/1-season-matchday, off fase-2/5-storage-and-verify. Next: unit 2 (fase-3/2-team-stadium, off fase-3/1-season-matchday tip), starting at task 2.1."
+    done_units:
+      - { id: 1, name: season-matchday, branch: fase-3/1-season-matchday, tasks: "1.1-1.10", status: done }
+    test_suite: "44/44 passing (31 baseline + 13 new), 90 assertions"
+    design_correction_found: >
+      D3/D2's Get type hint resolves to Filament\Schemas\Components\Utilities\Get
+      in the installed 5.7.6 tree, not Filament\Forms\Get as the design.md snippet
+      implies. Confirmed live via a TypeError on the injected closure parameter.
+      Applies to Phase 4's D2 away_team_id rule() too.
+  verify:
+    status: pending
+  archive:
+    status: pending
+
+decisions_locked:
+  - "Stadium: RelationManager-only under TeamResource, no standalone StadiumResource/nav item"
+  - "Player: standalone PlayerResource (league-wide search/filter by position) AND PlayersRelationManager on TeamResource (squad-building)"
+  - "Season: standalone SeasonResource in scope (unnamed in roadmap, but no other UI path to create a second season)"
+  - "canAccessPanel() role restriction stays deferred beyond Fase 3 — no spatie/permission, no filament-shield, any authenticated user reaches /admin"
+  - "Game: standalone GameResource (cross-matchday lookup/correction) AND GamesRelationManager on MatchdayResource (entering a round's 5 results)"
+  - "Filament 5.7.6 file layout: app/Filament/Resources/{PluralModel}/{Model}Resource.php + Schemas/{Model}Form.php (singular) + Tables/{PluralModel}Table.php (plural) + Pages/"
+  - "Game guard surfaced via closure rule() on away_team_id form field (not different(), not a form-level custom validator elsewhere) — travels correctly into GamesRelationManager's embedded form"
+  - "Deletion: no pre-check guard before restrictOnDelete FKs (spec-honored, DB still rejects) — one post-DB try/catch -> Notification::danger() on TeamResource only, per design D4"
+  - "Demo scope assumptions from proposal's unanswerable question round: single trusted operator, field-level validation only (no structural/league-integrity enforcement), hard deletes with existing cascade/restrict behavior, no bulk import/audit/soft-delete — consistent with ARQUITECTURA.md's stated demo-functional scope, not re-confirmed with user as redundant"
+
+out_of_scope_this_change:
+  - "StandingsService / computed classification table — Fase 4"
+  - "Public Blade views (calendar/results/table for fans) — Fase 5"
+  - "Divisions, player match-level stats, News/Article — deferred per Fase 2 Future-Proofing Check"
+  - "canAccessPanel() role/permission implementation — deferred beyond Fase 3"
+  - "Filament installation itself — already done in archived Fase 1 change"
+  - "Bulk import, audit trails, soft-delete, optimistic locking on concurrent score edits"
+
+next_action_if_resuming: >
+  Tasks phase is done (tasks.md written, 40 tasks across 4 stacked work units,
+  mirroring design.md's grouping). Next phase is sdd-apply, starting with work
+  unit 1 (fase-3/1-season-matchday, base fase-2/5-storage-and-verify). Delivery
+  strategy auto-chain resolves "Decision needed before apply" to No — apply may
+  proceed directly through the 4 stacked branches without stopping to ask.
+  strict_tdd is active: every implementation task has a preceding RED test task.
