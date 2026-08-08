@@ -18,12 +18,8 @@
                 <div class="flex items-center gap-4 text-sm">
                     <a href="{{ route('site.standings') }}" class="hover:text-brand">Clasificación</a>
                     <a href="{{ route('site.fixtures') }}" class="hover:text-brand">Partidos</a>
-                    @if (Route::has('site.scorers'))
-                        <a href="{{ route('site.scorers') }}" class="hover:text-brand">Goleadores</a>
-                    @endif
-                    @if (Route::has('site.news.index'))
-                        <a href="{{ route('site.news.index') }}" class="hover:text-brand">Noticias</a>
-                    @endif
+                    <a href="{{ route('site.scorers') }}" class="hover:text-brand">Goleadores</a>
+                    <a href="{{ route('site.news.index') }}" class="hover:text-brand">Noticias</a>
                 </div>
             </nav>
         </header>

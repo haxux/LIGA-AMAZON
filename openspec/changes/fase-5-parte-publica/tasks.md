@@ -114,9 +114,9 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 9 — `fase-5/9-public-scorers-news`
 
-- [ ] 9.1 RED: `ScorersPageTest` (create — top scorers+assisters render, zero-event player omitted, short-list no placeholders, max 10 of each, renders empty on fresh seed with zero events). Must fail.
-- [ ] 9.2 RED: `NewsPageTest` (create — published newest-first, drafts/future hidden, detail by slug renders published, detail 404 for draft, detail 404 for unknown slug). Must fail.
-- [ ] 9.3 GREEN: `ScorersController::__invoke` (`GoalscorersService::topScorers`/`topAssisters`); `NewsController::index`/`show` (`News::published()`, `show(string $slug)` not route-model-binding — visibility rule stays in one place).
-- [ ] 9.4 GREEN: `x-site.scorer-list`, `x-site.news-card` components; `resources/views/site/scorers.blade.php`, `site/news/index.blade.php`, `site/news/show.blade.php`.
-- [ ] 9.5 GREEN: `routes/web.php` — `GET /goleadores` → `site.scorers`, `GET /noticias` → `site.news.index`, `GET /noticias/{slug}` → `site.news.show` (declared after `/noticias`).
-- [ ] 9.6 Verify: `php artisan test` full suite green — all 32 spec scenarios across the 4 delta specs pass; `npm run build` green; manual smoke of all 4 public pages against `migrate:fresh --seed` demo data.
+- [x] 9.1 RED: `ScorersPageTest` (create — top scorers+assisters render, zero-event player omitted, short-list no placeholders, max 10 of each, renders empty on fresh seed with zero events). Must fail.
+- [x] 9.2 RED: `NewsPageTest` (create — published newest-first, drafts/future hidden, detail by slug renders published, detail 404 for draft, detail 404 for unknown slug). Must fail.
+- [x] 9.3 GREEN: `ScorersController::__invoke` (`GoalscorersService::topScorers`/`topAssisters`); `NewsController::index`/`show` (`News::published()`, `show(string $slug)` not route-model-binding — visibility rule stays in one place).
+- [x] 9.4 GREEN: `x-site.scorer-list`, `x-site.news-card` components; `resources/views/site/scorers.blade.php`, `site/news/index.blade.php`, `site/news/show.blade.php`.
+- [x] 9.5 GREEN: `routes/web.php` — `GET /goleadores` → `site.scorers`, `GET /noticias` → `site.news.index`, `GET /noticias/{slug}` → `site.news.show` (declared after `/noticias`).
+- [x] 9.6 Verify: `php artisan test` full suite green — all 32 spec scenarios across the 4 delta specs pass; `npm run build` green; manual smoke of all 4 public pages against `migrate:fresh --seed` demo data.
