@@ -1,0 +1,84 @@
+change: fase-4-standings-service
+title: "Fase 4 — Lógica de liga: StandingsService (cálculo de la tabla de posiciones)"
+artifact_store: openspec
+last_updated: 2026-08-08
+last_phase_completed: apply
+
+session_settings:
+  execution_mode: interactive
+  delivery_strategy: auto-chain
+  chain_strategy: stacked-to-main
+
+phases:
+  exploration:
+    status: done
+    artifact: openspec/changes/fase-4-standings-service/exploration.md
+  proposal:
+    status: done
+    artifact: openspec/changes/fase-4-standings-service/proposal.md
+  spec:
+    status: done
+    artifact: openspec/changes/fase-4-standings-service/specs/league-standings/spec.md
+  design:
+    status: done
+    artifact: openspec/changes/fase-4-standings-service/design.md
+  tasks:
+    status: done
+    artifact: openspec/changes/fase-4-standings-service/tasks.md
+    task_count: 22
+    work_units:
+      - { id: 1, name: standings-service, branch: fase-4/1-standings-service, base: fase-3/4-game }
+    review_workload_forecast:
+      estimated_changed_lines: "~370"
+      budget_risk_400_lines: Low
+      chained_prs_recommended: false
+      chain_strategy: stacked-to-main
+      decision_needed_before_apply: false
+  apply:
+    status: done
+    artifact: openspec/changes/fase-4-standings-service/apply-progress.md
+    checkpoint: "All 22/22 tasks complete across 5 phases. 90/90 full suite (78 baseline + 12 new StandingsServiceTest), zero regressions. Branch fase-4/1-standings-service (base fase-3/4-game) committed and left unmerged per stacked-to-main. Ready for sdd-verify."
+    done_units:
+      - { id: 1, name: standings-service, branch: fase-4/1-standings-service, tasks_done: "22/22" }
+  verify:
+    status: pending
+  archive:
+    status: pending
+
+decisions_locked:
+  - "Tie-break: goal difference, then goals for (no head-to-head, no alphabetical) — both computed from already-available data"
+  - "Fase 4 stays a pure service — no Filament widget, no Blade view, no route exposing standings. Public display is Fase 5's job, per ARQUITECTURA.md's explicit phase split and Fase 3's own spec (which already excluded StandingsService)"
+  - "Standings are NOT persisted, NOT cached — computed live from Game rows on every call, per ARQUITECTURA.md's 'se deriva, no se guarda como fuente de verdad' principle"
+  - "Scoping: by matchday.season_id (not Team.season_id alone) — schema does not guarantee a game's teams share its matchday's season, must scope defensively"
+  - "'Played' signal: BOTH home_score and away_score non-null. A half-entered result (one score set, one null) counts as not played, same binary rule as Fase 2's no-status-enum design — not re-litigated as ambiguous, it's the natural extension of Fase 2's decisions_locked rule"
+  - "Single-season scope only — forSeason(Season $season) is the sole entry point, no all-time/aggregate table. Consistent with Fase 2's declined is_current/active-season flag (no multi-season UX built anywhere yet)"
+  - "Points: 3 win / 1 draw / 0 loss, no deductions/bonuses/sanctions — matches ARQUITECTURA.md §4 verbatim, not ambiguous"
+  - "Zero-game teams appear in the table as an all-zero row (played=0, points=0, etc.) rather than being excluded until they've played — user-confirmed 2026-08-08, standard real-league table convention"
+  - "Recommended technical approach from exploration (design to confirm/finalize): one query fetching a season's played games (via matchday->season), fold to per-team stats in a PHP Collection, sort by points desc -> GD desc -> GF desc. Return shape (array vs DTO/value object) and DI style are open design questions — no existing app/Services/ precedent in this codebase (Fase 4 is the first Service class)"
+  - "DESIGN D1 — Return shape: Illuminate\\Support\\Collection<int, StandingRow> of readonly value objects, NOT associative arrays. StandingRow is a `final class` in App\\Services with public readonly snake_case properties (team, played, won, drawn, lost, goals_for, goals_against) plus goal_difference and points DERIVED IN THE CONSTRUCTOR so they can never disagree with the counters. No position/rank property — rank is the 1-based collection index ($loop->iteration in Blade). Row carries the whole Team model so Fase 5 can render crest_path/short_name without a second lookup"
+  - "DESIGN D2 — Method signature: `public function forSeason(Season $season): Collection` is the sole public method on a stateless `final class StandingsService` with NO constructor arguments (only collaborators are Eloquent statics; nothing to inject). Instance method, NOT static — keeps the zero-arg class container-auto-resolvable so a Fase 5 controller can type-hint it, and keeps a future caching decorator possible. No service-provider binding needed"
+  - "DESIGN D3 — TWO queries, not one: (a) Team::where('season_id',…)->orderBy('id')->get() seeds the accumulator (zero-game teams cannot come from games alone), (b) Game::whereNotNull('home_score')->whereNotNull('away_score')->whereHas('matchday', season_id)->get([4 cols]). A single private accumulate() called twice with swapped args IS the home/away symmetry. No ->with(homeTeam/awayTeam) — the roster query already hydrated them"
+  - "DESIGN D4 — Sort: `->sortBy([['points','desc'],['goal_difference','desc'],['goals_for','desc']])->values()`. Verified in vendor: array-of-comparisons delegates to sortByMany()'s single uasort, stable since PHP 8.0 (project requires ^8.3), so no stable-sort workaround. Explicit nested form avoids sortBy's is_callable([a,b]) trap. Full tie falls back to roster orderBy('id') — deterministic; orderBy('name') deliberately avoided because alphabetical is a rejected tie-break"
+  - "DESIGN D5 — Defensive: a team referenced by a season's game but absent from that season's roster is IGNORED (isset guard in accumulate()), never given a row; the in-roster opponent still gets its stats. Unreachable via Filament, defense in depth"
+  - "DESIGN — File locations: app/Services/StandingsService.php + app/Services/StandingRow.php (namespace App\\Services). NOT app/DTOs/ — a second top-level namespace for one class is premature and ARQUITECTURA.md names only the Services layer; moving later is a namespace-only refactor"
+  - "DESIGN — Tests go in tests/Feature/StandingsServiceTest.php, NOT tests/Unit/ as proposal.md said: tests/Unit extends bare PHPUnit\\Framework\\TestCase (no app boot, no DB) and this service reads through Eloquent. Same call Fase 2 made for its 'unit' rows"
+
+out_of_scope_this_change:
+  - "Filament widget/admin preview of standings — explicitly deferred"
+  - "Public Blade views (calendar/results/table for fans) — Fase 5"
+  - "Persisted standings table or any caching layer"
+  - "Head-to-head or any tie-break beyond goal-difference-then-goals-for"
+  - "Point deductions/sanctions/administrative adjustments"
+  - "Multi-season/all-time aggregate tables"
+
+next_action_if_resuming: >
+  Apply phase done. All 22/22 tasks complete on branch
+  fase-4/1-standings-service (base fase-3/4-game), committed and left
+  unmerged per stacked-to-main. app/Services/StandingRow.php and
+  app/Services/StandingsService.php implemented exactly per design D1-D5;
+  tests/Feature/StandingsServiceTest.php has 12 tests covering all 7 spec
+  scenarios plus the 5 design-level supplementary cases. Full suite:
+  90/90 passing (78 baseline Fase 2/3 + 12 new), zero regressions. See
+  openspec/changes/fase-4-standings-service/apply-progress.md for full
+  TDD cycle evidence and 3 flagged (non-blocking) deviations. Next phase
+  is sdd-verify.
