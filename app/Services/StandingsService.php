@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Season;
 use App\Models\Team;
@@ -20,10 +21,36 @@ final class StandingsService
      */
     public function forSeason(Season $season): Collection
     {
-        $rows = Team::query()
-            ->where('season_id', $season->getKey())
-            ->orderBy('id')
-            ->get()
+        return $this->buildTable(
+            Team::query()->where('season_id', $season->getKey())->orderBy('id')->get(),
+            $season->getKey(),
+        );
+    }
+
+    /**
+     * @return Collection<int, StandingRow> ordered points desc, goal_difference desc, goals_for desc
+     */
+    public function forDivision(Division $division): Collection
+    {
+        return $this->buildTable(
+            Team::query()->where('division_id', $division->getKey())->orderBy('id')->get(),
+            $division->season_id,
+        );
+    }
+
+    /**
+     * Shared fold, extracted from what used to be forSeason()'s own body
+     * (design D3): both public methods query the same season-scoped game
+     * set — only the roster (row universe) narrows for forDivision(). The
+     * accumulate() isset() roster guard then does the rest for free: a
+     * cross-division game credits only the in-division side, with no extra
+     * filtering on the games query itself.
+     *
+     * @return Collection<int, StandingRow> ordered points desc, goal_difference desc, goals_for desc
+     */
+    private function buildTable(Collection $teams, int $seasonId): Collection
+    {
+        $rows = $teams
             ->mapWithKeys(fn (Team $team) => [$team->getKey() => [
                 'team' => $team,
                 'played' => 0,
@@ -38,7 +65,7 @@ final class StandingsService
         $games = Game::query()
             ->whereNotNull('home_score')
             ->whereNotNull('away_score')
-            ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $season->getKey()))
+            ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $seasonId))
             ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score']);
 
         foreach ($games as $game) {

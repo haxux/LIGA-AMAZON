@@ -63,10 +63,10 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 3 — `fase-5/3-standings-for-division`
 
-- [ ] 3.1 RED: `StandingsServiceTest` += 4-5 methods for `forDivision()` (division-only scoping, cross-division opponent credited, zero-game/empty-division edge cases, tie-break order matches `forSeason()`). Must fail. Existing 12 Fase-4 methods stay untouched (regression pin).
-- [ ] 3.2 GREEN: add public `forDivision(Division $division): Collection`.
-- [ ] 3.3 REFACTOR: extract private `buildTable(Collection $teams, int $seasonId)`; `forSeason()` becomes a 4-line delegation with unchanged signature/behavior (D3). `accumulate()` untouched.
-- [ ] 3.4 Verify: all Fase-4 `StandingsServiceTest` methods + new ones green; full suite green.
+- [x] 3.1 RED: `StandingsServiceTest` += 4-5 methods for `forDivision()` (division-only scoping, cross-division opponent credited, zero-game/empty-division edge cases, tie-break order matches `forSeason()`). Must fail. Existing 12 Fase-4 methods stay untouched (regression pin).
+- [x] 3.2 GREEN: add public `forDivision(Division $division): Collection`.
+- [x] 3.3 REFACTOR: extract private `buildTable(Collection $teams, int $seasonId)`; `forSeason()` becomes a 4-line delegation with unchanged signature/behavior (D3). `accumulate()` untouched.
+- [x] 3.4 Verify: all Fase-4 `StandingsServiceTest` methods + new ones green; full suite green.
 
 ## Unit 4 — `fase-5/4-news`
 

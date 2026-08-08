@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Season;
@@ -311,5 +312,94 @@ class StandingsServiceTest extends TestCase
         $this->assertSame($playedGames->count() * 2, $rows->sum('played'));
         $this->assertSame(($decisiveCount * 3) + ($drawCount * 2), $rows->sum('points'));
         $this->assertSame($rows->sum('goals_against'), $rows->sum('goals_for'));
+    }
+
+    public function test_for_division_only_includes_that_divisions_teams(): void
+    {
+        $season = Season::factory()->create();
+        $divisionA = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        $divisionB = Division::factory()->create(['season_id' => $season->id, 'name' => 'Segunda']);
+        $teamX = Team::factory()->for($season)->create(['division_id' => $divisionA->id]);
+        $teamY = Team::factory()->for($season)->create(['division_id' => $divisionA->id]);
+        $teamZ = Team::factory()->for($season)->create(['division_id' => $divisionB->id]);
+
+        $rows = (new StandingsService)->forDivision($divisionA);
+        $teamIds = $rows->map(fn (StandingRow $r) => $r->team->id)->all();
+
+        $this->assertSame(2, $rows->count());
+        $this->assertContains($teamX->id, $teamIds);
+        $this->assertContains($teamY->id, $teamIds);
+        $this->assertNotContains($teamZ->id, $teamIds);
+    }
+
+    public function test_for_division_credits_a_cross_division_opponents_game_to_the_in_division_team(): void
+    {
+        $season = Season::factory()->create();
+        $matchday = Matchday::factory()->for($season)->create();
+        $divisionA = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        $divisionB = Division::factory()->create(['season_id' => $season->id, 'name' => 'Segunda']);
+        $teamX = Team::factory()->for($season)->create(['division_id' => $divisionA->id]);
+        $teamZ = Team::factory()->for($season)->create(['division_id' => $divisionB->id]);
+
+        // Team X (division A) beats team Z (division B).
+        $this->playGame($matchday, $teamX, $teamZ, 3, 1);
+
+        $rows = (new StandingsService)->forDivision($divisionA);
+        $rowX = $rows->firstWhere(fn (StandingRow $r) => $r->team->is($teamX));
+
+        $this->assertNotNull($rowX);
+        $this->assertSame(1, $rowX->played);
+        $this->assertSame(1, $rowX->won);
+        $this->assertSame(3, $rowX->goals_for);
+        $this->assertSame(1, $rowX->goals_against);
+    }
+
+    public function test_for_division_zero_game_team_appears_as_an_all_zero_row(): void
+    {
+        $season = Season::factory()->create();
+        $division = Division::factory()->create(['season_id' => $season->id]);
+        $team = Team::factory()->for($season)->create(['division_id' => $division->id]);
+
+        $rows = (new StandingsService)->forDivision($division);
+        $row = $rows->firstWhere(fn (StandingRow $r) => $r->team->is($team));
+
+        $this->assertNotNull($row);
+        $this->assertSame(0, $row->played);
+        $this->assertSame(0, $row->points);
+    }
+
+    public function test_for_division_orders_by_points_then_goal_difference_then_goals_for(): void
+    {
+        $season = Season::factory()->create();
+        $matchday = Matchday::factory()->for($season)->create();
+        $division = Division::factory()->create(['season_id' => $season->id]);
+
+        $teamA = Team::factory()->for($season)->create(['division_id' => $division->id, 'name' => 'Div Team A']);
+        $teamB = Team::factory()->for($season)->create(['division_id' => $division->id, 'name' => 'Div Team B']);
+        $fillerA = Team::factory()->for($season)->create(['division_id' => $division->id]);
+        $fillerB = Team::factory()->for($season)->create(['division_id' => $division->id]);
+
+        // Both teams win with 3 points; A has a bigger goal difference.
+        $this->playGame($matchday, $teamA, $fillerA, 4, 0); // A: +4 GD, 3 pts
+        $this->playGame($matchday, $teamB, $fillerB, 1, 0); // B: +1 GD, 3 pts
+
+        $rows = (new StandingsService)->forDivision($division);
+        $order = $rows
+            ->filter(fn (StandingRow $r) => in_array($r->team->id, [$teamA->id, $teamB->id], true))
+            ->map(fn (StandingRow $r) => $r->team->name)
+            ->values()
+            ->all();
+
+        $this->assertSame(['Div Team A', 'Div Team B'], $order);
+    }
+
+    public function test_for_division_returns_an_empty_collection_for_an_empty_division(): void
+    {
+        $season = Season::factory()->create();
+        $division = Division::factory()->create(['season_id' => $season->id]);
+
+        $rows = (new StandingsService)->forDivision($division);
+
+        $this->assertTrue($rows->isEmpty());
     }
 }
