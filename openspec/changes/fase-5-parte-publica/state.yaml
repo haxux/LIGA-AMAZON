@@ -85,7 +85,10 @@ phases:
       - { id: 8, name: public-standings-fixtures, branch: fase-5/8-public-standings-fixtures, base: fase-5/7-design-tokens }
       - { id: 9, name: public-scorers-news, branch: fase-5/9-public-scorers-news, base: fase-5/8-public-standings-fixtures }
   apply:
-    status: pending
+    status: in_progress
+    artifact: openspec/changes/fase-5-parte-publica/apply-progress.md
+    checkpoint: "Units 1-2 done (20/60 tasks). Current branch fase-5/2-divisions-schema, commit ce53471. Next: unit 3 task 3.1 on new branch fase-5/3-standings-for-division."
+    done_units: [1, 2]
   verify:
     status: pending
   archive:
