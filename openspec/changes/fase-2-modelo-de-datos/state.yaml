@@ -1,0 +1,71 @@
+change: fase-2-modelo-de-datos
+title: "Fase 2 — Modelo de datos: migraciones, modelos y relaciones"
+artifact_store: openspec
+last_updated: 2026-08-07
+
+session_settings:
+  execution_mode: interactive
+  delivery_strategy: auto-chain
+  chain_strategy: stacked-to-main
+
+phases:
+  exploration:
+    status: done
+    artifact: openspec/changes/fase-2-modelo-de-datos/exploration.md
+  proposal:
+    status: done
+    artifact: openspec/changes/fase-2-modelo-de-datos/proposal.md
+  spec:
+    status: done
+    artifacts:
+      - openspec/changes/fase-2-modelo-de-datos/specs/league-data-model/spec.md
+      - openspec/changes/fase-2-modelo-de-datos/specs/public-file-storage/spec.md
+  design:
+    status: done
+    artifact: openspec/changes/fase-2-modelo-de-datos/design.md
+    note: "Future-Proofing Check section added after user feedback on 2026-08-07 (see memory: feedback-schema-extensibility)"
+  tasks:
+    status: done
+    artifact: openspec/changes/fase-2-modelo-de-datos/tasks.md
+    task_count: 28
+    work_units:
+      - { id: 1, name: migrations, branch: fase-2/1-migrations }
+      - { id: 2, name: models, branch: fase-2/2-models }
+      - { id: 3, name: factories, branch: fase-2/3-factories }
+      - { id: 4, name: seeder, branch: fase-2/4-seeder }
+      - { id: 5, name: storage-and-verify, branch: fase-2/5-storage-and-verify }
+  apply:
+    status: in_progress
+    artifact: openspec/changes/fase-2-modelo-de-datos/apply-progress.md
+    note: "Running as a single sdd-apply agent invocation processing all 5 stacked work-unit branches sequentially. Branches are stacked (unit N branches off unit N-1's tip), none merged to master yet — left for user review. No GitHub remote configured, so 'PR boundaries' are local branch boundaries only."
+  verify:
+    status: pending
+  archive:
+    status: pending
+
+decisions_locked:
+  - "Game.home_score/away_score nullable = not played, no status enum"
+  - "Team.crest_path = real uploaded image file; storage groundwork in this change, Filament UI itself is Fase 3"
+  - "Storage serving: storage:link attempt, nginx alias (docker/nginx/default.conf) committed as fallback; apply records which mechanism actually serves"
+  - "FK strategy: cascadeOnDelete for single-owner chains, restrictOnDelete on Game.home_team_id/away_team_id"
+  - "PHPUnit only for strict_tdd tests (Pest not installed)"
+  - "home_team_id <> away_team_id enforced via Game::booted() Eloquent guard (ValidationException), not raw SQL CHECK"
+  - "No is_current/active-season flag on Season (explicitly declined by user)"
+  - "Seed: 1 season, 10 teams (Fase-5 mockup division A names), 180 players, 18 matchdays, 90 games, MD 1-10 scored / 11-18 null, crest_path null in seed data"
+  - "DatabaseSeeder uses WithoutModelEvents (pre-existing) — seeder guarantees distinct teams by construction (circle-method round-robin), does not rely on the Game guard"
+
+out_of_scope_this_change:
+  - "Division/sub-league support within a Season — deferred, additive-migration-friendly per Future-Proofing Check"
+  - "News/Article entity — deferred, unrelated to this schema"
+  - "Player match-level event stats (goals/assists/cards) — deferred, additive table when built"
+  - "Filament Resources (admin CRUD for these models) — Fase 3"
+  - "StandingsService (computing the table) — Fase 4"
+  - "Public Blade views — Fase 5"
+
+next_action_if_resuming: >
+  Check apply-progress.md and `git branch --list 'fase-2/*'` for how far the
+  sdd-apply run got. If apply is still "in_progress" per this file but the
+  agent that was running it is gone (session ended), re-launch sdd-apply
+  with apply-progress continuity (read openspec/changes/fase-2-modelo-de-datos/apply-progress.md
+  first, merge new progress into it, don't overwrite). Do not re-ask the
+  user execution_mode/delivery_strategy/chain_strategy — they're cached above.
