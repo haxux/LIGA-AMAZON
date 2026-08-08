@@ -2,7 +2,7 @@ change: fase-4-standings-service
 title: "Fase 4 — Lógica de liga: StandingsService (cálculo de la tabla de posiciones)"
 artifact_store: openspec
 last_updated: 2026-08-08
-last_phase_completed: apply
+last_phase_completed: archive
 
 session_settings:
   execution_mode: interactive
@@ -12,19 +12,19 @@ session_settings:
 phases:
   exploration:
     status: done
-    artifact: openspec/changes/fase-4-standings-service/exploration.md
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/exploration.md
   proposal:
     status: done
-    artifact: openspec/changes/fase-4-standings-service/proposal.md
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/proposal.md
   spec:
     status: done
-    artifact: openspec/changes/fase-4-standings-service/specs/league-standings/spec.md
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/specs/league-standings/spec.md
   design:
     status: done
-    artifact: openspec/changes/fase-4-standings-service/design.md
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/design.md
   tasks:
     status: done
-    artifact: openspec/changes/fase-4-standings-service/tasks.md
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/tasks.md
     task_count: 22
     work_units:
       - { id: 1, name: standings-service, branch: fase-4/1-standings-service, base: fase-3/4-game }
@@ -36,14 +36,19 @@ phases:
       decision_needed_before_apply: false
   apply:
     status: done
-    artifact: openspec/changes/fase-4-standings-service/apply-progress.md
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/apply-progress.md
     checkpoint: "All 22/22 tasks complete across 5 phases. 90/90 full suite (78 baseline + 12 new StandingsServiceTest), zero regressions. Branch fase-4/1-standings-service (base fase-3/4-game) committed and left unmerged per stacked-to-main. Ready for sdd-verify."
     done_units:
       - { id: 1, name: standings-service, branch: fase-4/1-standings-service, tasks_done: "22/22" }
   verify:
-    status: pending
+    status: done
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/verify-report.md
+    verdict: PASS
+    checkpoint: "90/90 tests independently re-run and passing. All 7 spec scenarios COMPLIANT with real covering tests. All 22 tasks confirmed complete and matching code state. All 3 apply-phase flagged deviations spot-checked and hold up. UI-boundary lock confirmed via diff (only app/Services, tests/Feature, openspec touched). Zero CRITICAL, zero WARNING. Ready for sdd-archive."
   archive:
-    status: pending
+    status: done
+    artifact: openspec/changes/archive/2026-08-08-fase-4-standings-service/archive-report.md
+    checkpoint: "Change fully archived. Delta spec synced to openspec/specs/league-standings/spec.md. All artifacts moved to openspec/changes/archive/2026-08-08-fase-4-standings-service/. Traceability preserved in archive report with full observation chain."
 
 decisions_locked:
   - "Tie-break: goal difference, then goals for (no head-to-head, no alphabetical) — both computed from already-available data"
@@ -71,14 +76,8 @@ out_of_scope_this_change:
   - "Point deductions/sanctions/administrative adjustments"
   - "Multi-season/all-time aggregate tables"
 
-next_action_if_resuming: >
-  Apply phase done. All 22/22 tasks complete on branch
-  fase-4/1-standings-service (base fase-3/4-game), committed and left
-  unmerged per stacked-to-main. app/Services/StandingRow.php and
-  app/Services/StandingsService.php implemented exactly per design D1-D5;
-  tests/Feature/StandingsServiceTest.php has 12 tests covering all 7 spec
-  scenarios plus the 5 design-level supplementary cases. Full suite:
-  90/90 passing (78 baseline Fase 2/3 + 12 new), zero regressions. See
-  openspec/changes/fase-4-standings-service/apply-progress.md for full
-  TDD cycle evidence and 3 flagged (non-blocking) deviations. Next phase
-  is sdd-verify.
+archive_summary:
+  archived_date: 2026-08-08
+  archive_location: openspec/changes/archive/2026-08-08-fase-4-standings-service
+  main_spec_created: openspec/specs/league-standings/spec.md
+  status_message: "SDD cycle complete. Change fully archived and ready for git branch merge review."
