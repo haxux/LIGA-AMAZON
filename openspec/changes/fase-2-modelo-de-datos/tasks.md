@@ -57,9 +57,9 @@ Chain strategy: pending
 
 ## Phase 4: Seeder
 
-- [ ] 4.1 RED `tests/Feature/DatabaseSeederTest.php`: post-seed counts 1/10/10/180/18/90; MD11+ scores null; no equal-team game; all `crest_path` null (Row 9). Must fail.
-- [ ] 4.2 GREEN `database/seeders/DatabaseSeeder.php` — FK order, circle-method double round-robin (10 teams→18 matchdays×5 games), MD1-10 scored/MD11-18 null. Confirm 4.1 green.
-- [ ] 4.3 Docblock note (D3): `WithoutModelEvents` mutes the Game guard; distinct teams guaranteed by circle-method construction, not the guard.
+- [x] 4.1 RED `tests/Feature/DatabaseSeederTest.php`: post-seed counts 1/10/10/180/18/90; MD11+ scores null; no equal-team game; all `crest_path` null (Row 9). Must fail. (Two assertions — "no equal-team game" / "no crest_path" — initially passed vacuously on zero seeded rows; strengthened with a precondition count assertion in the same test before treating RED as valid, per assertion-quality rules.)
+- [x] 4.2 GREEN `database/seeders/DatabaseSeeder.php` — FK order, circle-method double round-robin (10 teams→18 matchdays×5 games), MD1-10 scored/MD11-18 null. Confirm 4.1 green. All 5 DatabaseSeederTest assertions pass (1/10/10/180/18/90 counts, 50 played MD1-10, 40 unplayed MD11-18, 0 equal-team games, 0 non-null crest_path).
+- [x] 4.3 Docblock note (D3): `WithoutModelEvents` mutes the Game guard; distinct teams guaranteed by circle-method construction, not the guard. (In `DatabaseSeeder` class docblock.)
 
 ## Phase 5: Storage / nginx
 
