@@ -52,19 +52,20 @@ phases:
       chain_strategy: stacked-to-main
       decision_needed_before_apply: false
   apply:
-    status: in_progress
+    status: done
     artifact: openspec/changes/fase-3-panel-admin/apply-progress.md
-    checkpoint: "Units 1-3/4 done (30/40 tasks). HEAD branch fase-3/3-player, off fase-3/2-team-stadium. Next: unit 4 (fase-3/4-game, off fase-3/3-player tip), starting at task 4.1."
+    checkpoint: "All 4 units done (40/40 tasks). HEAD branch fase-3/4-game, off fase-3/3-player. Ready for sdd-verify. All 4 branches (fase-3/1-season-matchday, fase-3/2-team-stadium, fase-3/3-player, fase-3/4-game) left unmerged and stacked, per stacked-to-main, for user review."
     done_units:
       - { id: 1, name: season-matchday, branch: fase-3/1-season-matchday, tasks: "1.1-1.10", status: done }
       - { id: 2, name: team-stadium, branch: fase-3/2-team-stadium, tasks: "2.1-2.11", status: done }
       - { id: 3, name: player, branch: fase-3/3-player, tasks: "3.1-3.9", status: done }
-    test_suite: "67/67 passing (56 prior + 11 new), 171 assertions"
+      - { id: 4, name: game, branch: fase-3/4-game, tasks: "4.1-4.10", status: done }
+    test_suite: "78/78 passing (31 Fase-2 baseline + 47 new), 211 assertions, zero regressions"
     design_correction_found: >
       D3/D2's Get type hint resolves to Filament\Schemas\Components\Utilities\Get
       in the installed 5.7.6 tree, not Filament\Forms\Get as the design.md snippet
       implies. Confirmed live via a TypeError on the injected closure parameter.
-      Applies to Phase 4's D2 away_team_id rule() too.
+      Applied consistently across Phases 1-4.
     design_gap_found_phase3: >
       PlayerForm's team-scoped unique() rule silently stopped enforcing scoping
       inside PlayersRelationManager because $get('team_id') resolves to null
@@ -72,10 +73,17 @@ phases:
       via the relationship instead). Fixed by injecting $livewire into the
       modifyRuleUsing closure and falling back to
       $livewire->getOwnerRecord()->getKey() when $get('team_id') is blank and
-      $livewire instanceof RelationManager. Watch for the same class of gap in
-      Phase 4's GameForm/GamesRelationManager reuse (D2's away_team_id rule
-      compares against home_team_id, which stays in-schema in the RM, so this
-      specific failure mode should NOT recur there, but confirm live).
+      $livewire instanceof RelationManager. Confirmed in Phase 4 that this
+      specific failure mode does NOT recur for GameForm's D2 guard, since
+      home_team_id (the field the guard reads) stays in-schema inside
+      GamesRelationManager — only matchday_id is removed there.
+    d2_guard_live_confirmation: >
+      Phase 4 reproduced design.md's V6 finding with a real failing assertion
+      before the fix: the Game model's ValidationException IS caught by
+      Livewire (errors bag non-empty) but lands under the unprefixed
+      away_team_id key, invisible to the field wrapper checking
+      data.away_team_id. The closure rule() on away_team_id (D2) is confirmed
+      as the correct and necessary fix, not a defensive/optional addition.
   verify:
     status: pending
   archive:

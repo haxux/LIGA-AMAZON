@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Matchdays;
 use App\Filament\Resources\Matchdays\Pages\CreateMatchday;
 use App\Filament\Resources\Matchdays\Pages\EditMatchday;
 use App\Filament\Resources\Matchdays\Pages\ListMatchdays;
+use App\Filament\Resources\Matchdays\RelationManagers\GamesRelationManager;
 use App\Filament\Resources\Matchdays\Schemas\MatchdayForm;
 use App\Filament\Resources\Matchdays\Tables\MatchdaysTable;
 use App\Models\Matchday;
@@ -36,7 +37,7 @@ class MatchdayResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            GamesRelationManager::class,
         ];
     }
 

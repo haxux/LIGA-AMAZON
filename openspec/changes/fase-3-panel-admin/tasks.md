@@ -68,13 +68,13 @@ Test runner: `docker compose exec app php artisan test`. Each RED/GREEN pair map
 
 ## Phase 4: Game (`fase-3/4-game`) — spec: "Game via GameResource and RelationManager", D2 guard
 
-- [ ] 4.1 RED `tests/Feature/GameResourceTest.php`: List/Create/Edit render 200 + round-trip
-- [ ] 4.2 GREEN `Games/GameResource.php` + `Schemas/GameForm.php` + `Tables/GamesTable.php` + `Pages/*` — matchday_id Select (custom option label), home_team_id Select `->live()`, away_team_id Select, kickoff_at, home_score/away_score nullable numeric (no default)
-- [ ] 4.3 RED: equal home/away team -> `assertHasFormErrors(['away_team_id'])`, `Game::count()` unchanged; repeat with int-vs-string mismatched types (pins V7)
-- [ ] 4.4 GREEN: closure `rule()` on `away_team_id` — `(int) $value === (int) $get('home_team_id')` fails with message
-- [ ] 4.5 RED: empty score inputs persist as `null`, not `0` (pins V8)
-- [ ] 4.6 GREEN: confirm `home_score`/`away_score` have no `->default(0)`/`dehydrateStateUsing` (should already pass per V8; adjust only if RED fails)
-- [ ] 4.7 RED: `GamesRelationManager` on a matchday lists/edits only that matchday's games; equal-team guard still fires inside the RM modal
-- [ ] 4.8 GREEN: extract `GameForm::teamAndScoreFields()` static method; `Matchdays/RelationManagers/GamesRelationManager.php` reuses it minus `matchday_id`; wire `MatchdayResource::getRelations()`
-- [ ] 4.9 Run full suite, confirm green, confirm zero Fase 2 regressions (Testing Strategy #10)
-- [ ] 4.10 Verify `canAccessPanel()` was not added anywhere in this change (admin-panel delta: role restriction stays deferred beyond Fase 3) — `rg canAccessPanel app/`, expect no new matches
+- [x] 4.1 RED `tests/Feature/GameResourceTest.php`: List/Create/Edit render 200 + round-trip
+- [x] 4.2 GREEN `Games/GameResource.php` + `Schemas/GameForm.php` + `Tables/GamesTable.php` + `Pages/*` — matchday_id Select (custom option label), home_team_id Select `->live()`, away_team_id Select, kickoff_at, home_score/away_score nullable numeric (no default)
+- [x] 4.3 RED: equal home/away team -> `assertHasFormErrors(['away_team_id'])`, `Game::count()` unchanged; repeat with int-vs-string mismatched types (pins V7)
+- [x] 4.4 GREEN: closure `rule()` on `away_team_id` — `(int) $value === (int) $get('home_team_id')` fails with message
+- [x] 4.5 RED: empty score inputs persist as `null`, not `0` (pins V8)
+- [x] 4.6 GREEN: confirm `home_score`/`away_score` have no `->default(0)`/`dehydrateStateUsing` (should already pass per V8; adjust only if RED fails)
+- [x] 4.7 RED: `GamesRelationManager` on a matchday lists/edits only that matchday's games; equal-team guard still fires inside the RM modal
+- [x] 4.8 GREEN: extract `GameForm::teamAndScoreFields()` static method; `Matchdays/RelationManagers/GamesRelationManager.php` reuses it minus `matchday_id`; wire `MatchdayResource::getRelations()`
+- [x] 4.9 Run full suite, confirm green, confirm zero Fase 2 regressions (Testing Strategy #10)
+- [x] 4.10 Verify `canAccessPanel()` was not added anywhere in this change (admin-panel delta: role restriction stays deferred beyond Fase 3) — `rg canAccessPanel app/`, expect no new matches
