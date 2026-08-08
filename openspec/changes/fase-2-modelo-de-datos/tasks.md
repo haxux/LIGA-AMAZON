@@ -44,9 +44,9 @@ Chain strategy: pending
 
 ## Phase 2: Models
 
-- [ ] 2.1 RED `tests/Feature/GameGuardTest.php`: equal home/away team (incl. string `'3'`/`'3'`) throws `ValidationException` (Row 6); same save inside `Model::withoutEvents()` NOT blocked (Row 7). Must fail.
-- [ ] 2.2 GREEN create `app/Models/{Season,Team,Player,Stadium,Matchday,Game}.php` — `#[Fillable]` + `casts()` + relationships per design's wiring table.
-- [ ] 2.3 GREEN add `Game::booted()` `saving` guard (int-cast comparison, D2). Confirm 2.1 green.
+- [x] 2.1 RED `tests/Feature/GameGuardTest.php`: equal home/away team (incl. string `'3'`/`'3'`) throws `ValidationException` (Row 6); same save inside `Model::withoutEvents()` NOT blocked (Row 7). Must fail.
+- [x] 2.2 GREEN create `app/Models/{Season,Team,Player,Stadium,Matchday,Game}.php` — `#[Fillable]` + `casts()` + relationships per design's wiring table.
+- [x] 2.3 GREEN add `Game::booted()` `saving` guard (int-cast comparison, D2). Confirm 2.1 green.
 
 ## Phase 3: Factories
 
