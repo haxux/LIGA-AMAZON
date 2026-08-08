@@ -4,13 +4,14 @@ Strict TDD mode active. Test runner: `docker compose exec app php artisan test`.
 Chain strategy: stacked-to-main. Each work unit is its own branch, based on the
 previous unit's tip, left unmerged for user review (matches Fase 2/3/4 pattern).
 
-## Current position
+## Current position — CHANGE COMPLETE
 
-- **Last completed unit**: 8b (`fase-5/8b-public-fixtures`, completing unit 8)
-- **Current branch**: `fase-5/8b-public-fixtures`
-- **Last commit**: `4d2fb2d` feat(fase-5): add public fixtures page
-- **Next task to resume at**: 9.1 (RED: `ScorersPageTest`), on a new branch `fase-5/9-public-scorers-news` based on `fase-5/8b-public-fixtures` (**not** `fase-5/8-public-standings-fixtures` — that name was never created; unit 8 was split, see below)
-- **Full suite status as of last checkpoint**: 155/155 passing (`php artisan test`); `npm run build` green
+- **Status**: ALL 60 TASKS DONE across all 9 work units (unit 8 delivered as two sub-commits, 8 and 8b)
+- **Last completed unit**: 9 (`fase-5/9-public-scorers-news`) — the final unit
+- **Current branch**: `fase-5/9-public-scorers-news`
+- **Last commit**: `09adfd4` feat(fase-5): add public scorers and news pages
+- **Full suite status**: 165/165 passing (`php artisan test`); `npm run build` green; manual smoke test of all 4 public pages + admin panel against `migrate:fresh --seed` confirmed 200 OK with real data
+- **Next recommended phase**: `sdd-verify`
 
 ## Branch chain so far
 
@@ -24,7 +25,8 @@ fase-4/1-standings-service (archived Fase 4 tip)
                                 └── fase-5/6-goalscorers-service  (commit 0c40922, 1d683cd) — DONE
                                       └── fase-5/7-design-tokens       (commit 81b4847) — DONE
                                             └── fase-5/8-public-standings   (commit 11362e6) — DONE
-                                                  └── fase-5/8b-public-fixtures (commit 4d2fb2d) — DONE
+                                                  └── fase-5/8b-public-fixtures (commit 4d2fb2d, f8495c5) — DONE
+                                                        └── fase-5/9-public-scorers-news (commit 09adfd4) — DONE (final)
 ```
 
 **Deviation from the originally-communicated 9-branch plan**: unit 8
@@ -177,14 +179,58 @@ triangulation-driven fixes needed. **Split into two sub-commits** per tasks.md's
 8.10 contingency (see Branch chain note above) — both `php artisan test` (155/155)
 and `npm run build` verified green after each sub-commit.
 
-## Remaining work units (not started)
+### Unit 9 — `fase-5/9-public-scorers-news` — DONE (6/6 tasks, FINAL UNIT)
 
-- [ ] Unit 9 — `fase-5/9-public-scorers-news` (ScorersController, NewsController, scorers+news pages)
+`ScorersController` (season-wide top-10 scorers+assisters via `GoalscorersService`),
+`NewsController` (`index`: `News::published()->latest('published_at')`; `show`: plain
+`string $slug` + `firstOrFail()`, not route-model binding — visibility rule stays in
+one place), `x-site.scorer-list`/`x-site.news-card` components, `scorers.blade.php`/
+`news/index.blade.php`/`news/show.blade.php` views (body via `nl2br(e(...))` per D7),
+routes `/goleadores`, `/noticias`, `/noticias/{slug}` (declared after `/noticias`).
+Simplified the layout's nav guards (`Route::has()` checks from unit 8) to
+unconditional links now that both routes exist. All 10 RED tests
+(`ScorersPageTest` + `NewsPageTest`) failed as expected (`RouteNotFoundException`)
+then all passed GREEN on first implementation. Full suite: 165/165. `npm run build`
+green. **Manual smoke test performed** against `migrate:fresh --seed` (MySQL, via
+the `web` nginx container on `localhost:8080`): all 4 public routes (`/`,
+`/partidos`, `/goleadores`, `/noticias`) and `/admin/login` return HTTP 200;
+standings page shows seeded team "Manaos FC" under division "Primera"; goleadores
+and noticias correctly render their documented empty states (zero `game_events`/
+`news` rows on a fresh seed — both are admin-entered content per design D9).
 
-## Resume instructions
+## Remaining work units
 
-1. `git checkout fase-5/8b-public-fixtures` (already the current tip if resuming immediately)
-2. `git checkout -b fase-5/9-public-scorers-news`
-3. Start at task 9.1: RED — `ScorersPageTest` (must fail — no `site.scorers` route yet).
-4. Follow tasks.md 9.1 → 9.6 exactly. Note: the shared layout (`resources/views/components/layouts/site.blade.php`) already has `@if (Route::has('site.scorers'))` / `@if (Route::has('site.news.index'))` guards around those two nav links from unit 8 — once unit 9 registers the real routes, these guards become permanently-true no-ops and MAY be simplified to unconditional links (optional cleanup, not required).
-5. This is the final work unit. After 9.6, all 60 tasks are complete — recommend `sdd-verify` next.
+None. All 9 work units (60/60 tasks) are complete.
+
+## Final TDD Cycle Evidence (units 8-9)
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| 8.1/8.2 | `SeasonResolverTest.php` | Feature/Service | N/A (new) | ✅ Written | ✅ Passed | ✅ 3 cases | ➖ None needed |
+| 8.4/8.6/8.7/8.8 | `StandingsPageTest.php` | Feature/HTTP | N/A (new — first HTTP-assertion tests) | ✅ Written (`RouteNotFoundException`) | ✅ Passed | ✅ 6 cases (incl. D6 fallback) | ➖ None needed |
+| 8.5/8.6/8.7/8.8 | `FixturesPageTest.php` | Feature/HTTP | N/A (new) | ✅ Written | ✅ Passed | ✅ 3 cases | ➖ None needed |
+| 9.1/9.3/9.4/9.5 | `ScorersPageTest.php` | Feature/HTTP | N/A (new) | ✅ Written | ✅ Passed | ✅ 5 cases | ➖ None needed |
+| 9.2/9.3/9.4/9.5 | `NewsPageTest.php` | Feature/HTTP | N/A (new) | ✅ Written | ✅ Passed | ✅ 5 cases | ➖ None needed |
+
+### Final Test Summary (whole change)
+- **Total tests in suite after this change**: 165 (baseline before Fase 5, end of Fase 4: 91) — see per-unit sections above for exact per-file new-test breakdowns
+- **Total tests passing**: 165/165
+- **Layers used**: Feature (Schema, Model/Eloquent, Filament Livewire, Seeder, Service, **HTTP** [new layer this phase])
+- **Approval tests** (refactoring): 1 (Unit 3's `buildTable()` extraction, protected by the full pre-existing `forSeason()` suite as the safety net)
+- **Pure functions created**: 0 (all new logic is either Eloquent-integrated service methods or Eloquent model hooks, consistent with the codebase's established Service-layer pattern — not a deviation)
+- **HTTP-assertion tests**: 23 across `SeasonResolverTest`, `StandingsPageTest`, `FixturesPageTest`, `ScorersPageTest`, `NewsPageTest` — first use of this idiom in the codebase, per design's locked decision
+
+## Deviations summary (all, for quick reference)
+
+1. Unit 1, tasks 1.6-1.8: tasks.md's own numbered order put a GREEN task before its RED test; not a process violation, documented above.
+2. Unit 2: genuine SQLite-only cascade-order regression from the `teams.division_id` ALTER, fixed with a scoped `PRAGMA defer_foreign_keys` in one pre-existing test, fully root-caused and documented above.
+3. Unit 5: one test-writing correction (wrong Filament testing API on the first attempt, `callAction` → `mountTableAction`), caught before GREEN, no production code affected.
+4. **Unit 8 split into two sub-branches** (`fase-5/8-public-standings` + `fase-5/8b-public-fixtures`) per tasks.md's own explicit 400-line contingency clause (task 8.10). This changes the branch count from the originally-communicated 9 to 10, and means **unit 9 bases off `fase-5/8b-public-fixtures`**, not the never-created `fase-5/8-public-standings-fixtures`. Fully documented in state.yaml (`branch_deviation` field) and here.
+
+None of these deviations touched locked design decisions (D1-D11), spec requirements, or the `is_current`/`forSeason()`/`GameEventsRelationManager` critical constraints called out at the start of this apply run — all were honored exactly as specified.
+
+## Risks carried forward to sdd-verify / user awareness
+
+1. **Pre-existing flaky test** (Fase 3-era, unrelated to this change): `GamesRelationManagerTest::test_lists_only_the_owning_matchdays_games` can occasionally fail due to `MatchdayFactory`'s non-unique random `number` (1-18) colliding within the same season in a test. Observed once, not touched (out of scope).
+2. **SQLite cascade-order fragility** (documented in Unit 2's deviation): any *future* additive FK migration touching `teams` or `matchdays` on SQLite could reintroduce a similar order-sensitivity elsewhere in `DeleteStrategyTest`. Not a bug today — flagged for awareness.
+3. **Unit 8 branch-plan deviation**: the branch chain now has 10 links instead of the originally-communicated 9 (see Deviations #4). This is fully reflected in `state.yaml` and this file; downstream PR creation must target `fase-5/8b-public-fixtures` → `fase-5/9-public-scorers-news`, not skip a link.
