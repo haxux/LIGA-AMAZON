@@ -6,11 +6,11 @@ previous unit's tip, left unmerged for user review (matches Fase 2/3/4 pattern).
 
 ## Current position
 
-- **Last completed unit**: 6 (`fase-5/6-goalscorers-service`)
-- **Current branch**: `fase-5/6-goalscorers-service`
-- **Last commit**: `0c40922` feat(fase-5): add GoalscorersService and ScorerRow
-- **Next task to resume at**: 7.1 (Modify `vite.config.js` fonts), on a new branch `fase-5/7-design-tokens` based on `fase-5/6-goalscorers-service`
-- **Full suite status as of last checkpoint**: 144/144 passing (`php artisan test`)
+- **Last completed unit**: 8b (`fase-5/8b-public-fixtures`, completing unit 8)
+- **Current branch**: `fase-5/8b-public-fixtures`
+- **Last commit**: `4d2fb2d` feat(fase-5): add public fixtures page
+- **Next task to resume at**: 9.1 (RED: `ScorersPageTest`), on a new branch `fase-5/9-public-scorers-news` based on `fase-5/8b-public-fixtures` (**not** `fase-5/8-public-standings-fixtures` — that name was never created; unit 8 was split, see below)
+- **Full suite status as of last checkpoint**: 155/155 passing (`php artisan test`); `npm run build` green
 
 ## Branch chain so far
 
@@ -21,8 +21,22 @@ fase-4/1-standings-service (archived Fase 4 tip)
               └── fase-5/3-standings-for-division  (commit 46d9974) — DONE
                     └── fase-5/4-news                  (commit 8954d33) — DONE
                           └── fase-5/5-game-events            (commit dbb66e7) — DONE
-                                └── fase-5/6-goalscorers-service  (commit 0c40922) — DONE
+                                └── fase-5/6-goalscorers-service  (commit 0c40922, 1d683cd) — DONE
+                                      └── fase-5/7-design-tokens       (commit 81b4847) — DONE
+                                            └── fase-5/8-public-standings   (commit 11362e6) — DONE
+                                                  └── fase-5/8b-public-fixtures (commit 4d2fb2d) — DONE
 ```
+
+**Deviation from the originally-communicated 9-branch plan**: unit 8
+(`fase-5/8-public-standings-fixtures`) was split into two sub-units,
+`fase-5/8-public-standings` (renamed from the original branch) and
+`fase-5/8b-public-fixtures` (stacked on top), per tasks.md's own explicit
+contingency clause in task 8.10 ("If this unit's diff exceeds ~400 lines,
+split standings/fixtures into two PRs before merge"). The combined diff was
+423 insertions + 245 deletions = 668 changed lines, over budget. Split
+result: 8a = 299+245 (245 of which is the trivial stock-`welcome.blade.php`
+deletion), 8b = 137+13. **Unit 9 must branch from `fase-5/8b-public-fixtures`**,
+not the no-longer-existing `fase-5/8-public-standings-fixtures` name.
 
 ## Work unit status
 
@@ -140,16 +154,37 @@ a RelationManager, not a standalone Action. Full suite: 136/136.
 `?int $limit = 10` seam). All 8 RED tests failed as expected; all GREEN passed on
 first implementation — no triangulation-driven fixes needed. Full suite: 144/144.
 
+### Unit 7 — `fase-5/7-design-tokens` — DONE (4/4 tasks)
+
+`vite.config.js` fonts replaced (Barlow Condensed/Barlow/IBM Plex Mono via
+`bunny()`), `app.css` `@theme` gains `--font-display`/`--font-mono` + 8 brand/ink/
+surface/win/draw/loss color tokens, `ARQUITECTURA.md` + `openspec/config.yaml`
+"Tailwind 3.x" → "4.x" doc-drift fix. `npm run build` verified green; confirmed no
+`->viteTheme()` in `AdminPanelProvider` (admin panel unaffected). No RED/GREEN cycle
+— infra/config-only unit per tasks.md. Full suite: 144/144.
+
+### Unit 8 — `fase-5/8-public-standings` + `fase-5/8b-public-fixtures` — DONE (10/10 tasks, split into 2 sub-commits)
+
+`SeasonResolver`, abstract `SiteController` (`activeSeason()` 404 chain),
+`StandingsController` (D6 zero-division fallback to `forSeason()`),
+`FixturesController`, shared `x-layouts.site` layout, `x-site.standings-table` /
+`x-site.game-card` components, `site.standings`/`site.fixtures` routes. D11
+deletions: `welcome.blade.php`, `tests/Feature/ExampleTest.php`. First
+HTTP-assertion-style tests in the codebase (`SeasonResolverTest`,
+`StandingsPageTest`, `FixturesPageTest`), all RED-confirmed (`RouteNotFoundException`
+before routes existed) then GREEN on first implementation attempt — no
+triangulation-driven fixes needed. **Split into two sub-commits** per tasks.md's own
+8.10 contingency (see Branch chain note above) — both `php artisan test` (155/155)
+and `npm run build` verified green after each sub-commit.
+
 ## Remaining work units (not started)
 
-- [ ] Unit 7 — `fase-5/7-design-tokens` (vite.config.js fonts, app.css @theme, doc drift fix)
-- [ ] Unit 8 — `fase-5/8-public-standings-fixtures` (SeasonResolver, SiteController, standings+fixtures pages, D11 deletions)
 - [ ] Unit 9 — `fase-5/9-public-scorers-news` (ScorersController, NewsController, scorers+news pages)
 
 ## Resume instructions
 
-1. `git checkout fase-5/6-goalscorers-service` (already the current tip if resuming immediately)
-2. `git checkout -b fase-5/7-design-tokens`
-3. Start at task 7.1: modify `vite.config.js` fonts per D10 (no RED/GREEN cycle — infra/config-only unit, verified via `npm run build`, not `php artisan test`).
-4. Follow tasks.md 7.1 → 7.4 exactly.
-5. Continue through units 8-9 in order per tasks.md and design.md's Work-Unit table. Unit 8 is the most complex remaining (D11 deletions of `welcome.blade.php` + `tests/Feature/ExampleTest.php`, `SeasonResolver`, abstract `SiteController`, first HTTP-assertion-style tests, D6 zero-division fallback) — read design.md D5/D6/D11 again in full before starting.
+1. `git checkout fase-5/8b-public-fixtures` (already the current tip if resuming immediately)
+2. `git checkout -b fase-5/9-public-scorers-news`
+3. Start at task 9.1: RED — `ScorersPageTest` (must fail — no `site.scorers` route yet).
+4. Follow tasks.md 9.1 → 9.6 exactly. Note: the shared layout (`resources/views/components/layouts/site.blade.php`) already has `@if (Route::has('site.scorers'))` / `@if (Route::has('site.news.index'))` guards around those two nav links from unit 8 — once unit 9 registers the real routes, these guards become permanently-true no-ops and MAY be simplified to unconditional links (optional cleanup, not required).
+5. This is the final work unit. After 9.6, all 60 tasks are complete — recommend `sdd-verify` next.

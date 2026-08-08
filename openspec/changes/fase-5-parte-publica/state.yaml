@@ -87,8 +87,9 @@ phases:
   apply:
     status: in_progress
     artifact: openspec/changes/fase-5-parte-publica/apply-progress.md
-    checkpoint: "Units 1-6 done (39/60 tasks). Current branch fase-5/6-goalscorers-service, commit 0c40922. Next: unit 7 task 7.1 on new branch fase-5/7-design-tokens."
-    done_units: [1, 2, 3, 4, 5, 6]
+    checkpoint: "Units 1-8 done (54/60 tasks). Unit 8 split into fase-5/8-public-standings + fase-5/8b-public-fixtures per tasks.md's 400-line contingency (task 8.10). Current branch fase-5/8b-public-fixtures, commit 4d2fb2d. Next: unit 9 task 9.1 on new branch fase-5/9-public-scorers-news (base: fase-5/8b-public-fixtures, NOT the never-created fase-5/8-public-standings-fixtures)."
+    done_units: [1, 2, 3, 4, 5, 6, 7, 8]
+    branch_deviation: "unit 8 split into fase-5/8-public-standings + fase-5/8b-public-fixtures (10 sub-branches total instead of 9)"
   verify:
     status: pending
   archive:
