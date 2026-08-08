@@ -11,18 +11,18 @@ session_settings:
 phases:
   exploration:
     status: done
-    artifact: openspec/changes/fase-3-panel-admin/exploration.md
+    artifact: openspec/changes/archive/2026-08-08-fase-3-panel-admin/exploration.md
   proposal:
     status: done
-    artifact: openspec/changes/fase-3-panel-admin/proposal.md
+    artifact: openspec/changes/archive/2026-08-08-fase-3-panel-admin/proposal.md
   spec:
     status: done
     artifacts:
-      - openspec/changes/fase-3-panel-admin/specs/admin-league-crud/spec.md
-      - openspec/changes/fase-3-panel-admin/specs/admin-panel/spec.md
+      - openspec/changes/archive/2026-08-08-fase-3-panel-admin/specs/admin-league-crud/spec.md
+      - openspec/changes/archive/2026-08-08-fase-3-panel-admin/specs/admin-panel/spec.md
   design:
     status: done
-    artifact: openspec/changes/fase-3-panel-admin/design.md
+    artifact: openspec/changes/archive/2026-08-08-fase-3-panel-admin/design.md
     note: >
       Live-verified against installed filament/filament 5.7.6 vendor source
       (not docs/blog posts): separate Schemas/+Tables/ file layout confirmed,
@@ -38,7 +38,7 @@ phases:
       invariant introduced, consistent with "field-level validity only" scope).
   tasks:
     status: done
-    artifact: openspec/changes/fase-3-panel-admin/tasks.md
+    artifact: openspec/changes/archive/2026-08-08-fase-3-panel-admin/tasks.md
     task_count: 40
     work_units:
       - { id: 1, name: season-matchday, branch: fase-3/1-season-matchday, base: fase-2/5-storage-and-verify }
@@ -53,7 +53,7 @@ phases:
       decision_needed_before_apply: false
   apply:
     status: done
-    artifact: openspec/changes/fase-3-panel-admin/apply-progress.md
+    artifact: openspec/changes/archive/2026-08-08-fase-3-panel-admin/apply-progress.md
     checkpoint: "All 4 units done (40/40 tasks). HEAD branch fase-3/4-game, off fase-3/3-player. Ready for sdd-verify. All 4 branches (fase-3/1-season-matchday, fase-3/2-team-stadium, fase-3/3-player, fase-3/4-game) left unmerged and stacked, per stacked-to-main, for user review."
     done_units:
       - { id: 1, name: season-matchday, branch: fase-3/1-season-matchday, tasks: "1.1-1.10", status: done }
@@ -85,9 +85,30 @@ phases:
       data.away_team_id. The closure rule() on away_team_id (D2) is confirmed
       as the correct and necessary fix, not a defensive/optional addition.
   verify:
-    status: pending
+    status: done
+    artifact: openspec/changes/archive/2026-08-08-fase-3-panel-admin/verify-report.md
+    verdict: PASS
+    note: >
+      78/78 tests independently re-run and passing (211 assertions), 40/40 tasks
+      confirmed complete, all 12 spec scenarios compliant, D1-D5 design decisions
+      verified against actual source (not just apply-progress narrative). Both
+      flagged deviations (Get type-hint namespace correction, PlayerForm
+      $livewire fallback in PlayersRelationManager) confirmed real and correctly
+      fixed by direct code read. canAccessPanel() confirmed untouched, no
+      spatie/permission or filament-shield dependency added, no
+      .env*/docker-compose.yml/credentials touched across the fase-3 branch
+      range, no migrations or model files modified. Zero CRITICAL, zero WARNING,
+      2 low-risk SUGGESTIONs (both about static-only coverage of two
+      MUST-NOT-exist-style scenarios). Ready for sdd-archive.
   archive:
-    status: pending
+    status: done
+    artifact: openspec/changes/archive/2026-08-08-fase-3-panel-admin/archive-report.md
+    note: >
+      Archived at 2026-08-08. Delta specs merged into main specs:
+      admin-league-crud (NEW) created at openspec/specs/admin-league-crud/spec.md.
+      admin-panel (MODIFIED) updated with deferral moved beyond Fase 3.
+      Change folder moved to openspec/changes/archive/2026-08-08-fase-3-panel-admin/.
+      All 40 tasks confirmed complete. Verification: PASS, zero blockers.
 
 decisions_locked:
   - "Stadium: RelationManager-only under TeamResource, no standalone StadiumResource/nav item"
@@ -109,9 +130,7 @@ out_of_scope_this_change:
   - "Bulk import, audit trails, soft-delete, optimistic locking on concurrent score edits"
 
 next_action_if_resuming: >
-  Tasks phase is done (tasks.md written, 40 tasks across 4 stacked work units,
-  mirroring design.md's grouping). Next phase is sdd-apply, starting with work
-  unit 1 (fase-3/1-season-matchday, base fase-2/5-storage-and-verify). Delivery
-  strategy auto-chain resolves "Decision needed before apply" to No — apply may
-  proceed directly through the 4 stacked branches without stopping to ask.
-  strict_tdd is active: every implementation task has a preceding RED test task.
+  Archive phase is complete. Change is fully closed. All specs merged into main
+  openspec/specs/. Change folder archived at openspec/changes/archive/2026-08-08-fase-3-panel-admin/.
+  The 4 stacked branches (fase-3/1-season-matchday through fase-3/4-game) remain unmerged
+  into master, per chain_strategy: stacked-to-main, left for user review and merge.
