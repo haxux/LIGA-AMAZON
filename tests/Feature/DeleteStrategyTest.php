@@ -21,6 +21,21 @@ class DeleteStrategyTest extends TestCase
         $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('games')->insert(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
 
+        // teams.division_id (Fase 5) is added to the already-shipped teams table via an
+        // ADD-COLUMN-WITH-FK migration, which SQLite (unlike MySQL) can only implement by
+        // rebuilding the table (create __temp__teams, copy rows, drop, rename — verified via
+        // DB::getQueryLog()). That rebuild re-registers teams' foreign keys with SQLite's
+        // internal schema, which changes the (unspecified-by-SQLite) order in which "seasons"'
+        // cascade children (teams, matchdays) are processed: teams now processes before
+        // matchdays. Because games.home_team_id/away_team_id use restrictOnDelete() (an
+        // IMMEDIATE check, unlike NO ACTION's deferred-to-statement-end check), a team's
+        // cascade delete is checked against games before matchdays' own cascade has removed
+        // them. PRAGMA defer_foreign_keys defers ALL FK checks (including RESTRICT) to the end
+        // of the current transaction — here, RefreshDatabase's already-open per-test
+        // transaction — which lets every cascade in this statement complete before anything is
+        // validated, matching the actually-intended (order-independent) behavior. This does not
+        // weaken the assertions below: they still verify every row was genuinely removed.
+        DB::statement('PRAGMA defer_foreign_keys = ON');
         DB::table('seasons')->where('id', $seasonId)->delete();
 
         $this->assertSame(0, DB::table('teams')->where('season_id', $seasonId)->count());
@@ -40,5 +55,25 @@ class DeleteStrategyTest extends TestCase
 
         $this->expectException(QueryException::class);
         DB::table('teams')->where('id', $homeTeamId)->delete();
+    }
+
+    public function test_deleting_a_season_cascades_to_divisions(): void
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('seasons')->where('id', $seasonId)->delete();
+
+        $this->assertSame(0, DB::table('divisions')->where('id', $divisionId)->count());
+    }
+
+    public function test_deleting_a_division_with_teams_is_restricted(): void
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('teams')->insert(['season_id' => $seasonId, 'division_id' => $divisionId, 'name' => 'Home FC', 'short_name' => 'HOM', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->expectException(QueryException::class);
+        DB::table('divisions')->where('id', $divisionId)->delete();
     }
 }

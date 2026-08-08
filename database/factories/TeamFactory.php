@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class TeamFactory extends Factory
 {
     /**
-     * Curated demo division (Fase-5 mockup division A) — deliberately not
+     * Curated demo roster (Fase-5's "Primera" division) — deliberately not
      * Faker's company/person generators, which read poorly for a football
      * club identity. Shared with DatabaseSeeder for the exact demo roster.
      *
@@ -42,6 +42,7 @@ class TeamFactory extends Factory
 
         return [
             'season_id' => Season::factory(),
+            'division_id' => null,
             'name' => $name,
             'short_name' => self::CLUBS[$name]['short'],
             'crest_path' => null,

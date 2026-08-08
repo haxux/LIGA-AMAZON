@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\Teams\Pages\CreateTeam;
 use App\Filament\Resources\Teams\Pages\EditTeam;
 use App\Filament\Resources\Teams\Pages\ListTeams;
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Season;
@@ -177,5 +178,67 @@ class TeamResourceTest extends TestCase
             ->assertNotified('Team cannot be deleted');
 
         $this->assertTrue(Team::query()->whereKey($homeTeam->id)->exists());
+    }
+
+    public function test_can_assign_a_team_to_a_division(): void
+    {
+        $season = Season::factory()->create();
+        $division = Division::factory()->create(['season_id' => $season->id]);
+        $team = Team::factory()->create(['season_id' => $season->id, 'division_id' => null]);
+
+        Livewire::test(EditTeam::class, ['record' => $team->getRouteKey()])
+            ->fillForm([
+                'division_id' => $division->id,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('teams', [
+            'id' => $team->id,
+            'division_id' => $division->id,
+        ]);
+    }
+
+    public function test_team_persists_with_a_null_division(): void
+    {
+        $season = Season::factory()->create();
+
+        Livewire::test(CreateTeam::class)
+            ->fillForm([
+                'season_id' => $season->id,
+                'name' => 'Sin División FC',
+                'short_name' => 'SDF',
+                'founded_year' => 2000,
+                'division_id' => null,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('teams', [
+            'name' => 'Sin División FC',
+            'division_id' => null,
+        ]);
+    }
+
+    public function test_division_select_only_offers_divisions_from_the_selected_season(): void
+    {
+        $seasonA = Season::factory()->create();
+        $seasonB = Season::factory()->create();
+        $divisionFromOtherSeason = Division::factory()->create(['season_id' => $seasonB->id, 'name' => 'Primera']);
+
+        Livewire::test(CreateTeam::class)
+            ->fillForm([
+                'season_id' => $seasonA->id,
+                'name' => 'Foreign Division FC',
+                'short_name' => 'FDF',
+                'founded_year' => 2000,
+                'division_id' => $divisionFromOtherSeason->id,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['division_id']);
+
+        $this->assertDatabaseMissing('teams', [
+            'name' => 'Foreign Division FC',
+        ]);
     }
 }

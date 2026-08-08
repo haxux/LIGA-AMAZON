@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['season_id', 'name', 'short_name', 'crest_path', 'founded_year'])]
+#[Fillable(['season_id', 'division_id', 'name', 'short_name', 'crest_path', 'founded_year'])]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
@@ -26,6 +26,11 @@ class Team extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class);
     }
 
     public function players(): HasMany

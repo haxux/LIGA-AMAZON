@@ -59,6 +59,27 @@ class SchemaMigrationTest extends TestCase
         ]));
     }
 
+    public function test_divisions_table_has_expected_columns(): void
+    {
+        $this->assertTrue(Schema::hasColumns('divisions', [
+            'id', 'season_id', 'name', 'created_at', 'updated_at',
+        ]));
+    }
+
+    public function test_teams_table_has_division_id_column(): void
+    {
+        $this->assertTrue(Schema::hasColumn('teams', 'division_id'));
+    }
+
+    public function test_duplicate_division_name_within_same_season_is_rejected(): void
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('divisions')->insert(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->expectException(QueryException::class);
+        DB::table('divisions')->insert(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+    }
+
     public function test_duplicate_team_name_within_same_season_is_rejected(): void
     {
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);

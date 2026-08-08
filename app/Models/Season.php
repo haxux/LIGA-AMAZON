@@ -61,4 +61,9 @@ class Season extends Model
     {
         return $this->hasMany(Matchday::class);
     }
+
+    public function divisions(): HasMany
+    {
+        return $this->hasMany(Division::class);
+    }
 }

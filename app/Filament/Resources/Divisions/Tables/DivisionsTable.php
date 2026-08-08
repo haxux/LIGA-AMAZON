@@ -1,36 +1,31 @@
 <?php
 
-namespace App\Filament\Resources\Teams\Tables;
+namespace App\Filament\Resources\Divisions\Tables;
 
-use App\Filament\Resources\Teams\TeamResource;
+use App\Filament\Resources\Divisions\DivisionResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
-class TeamsTable
+class DivisionsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
             ->columns([
-                ImageColumn::make('crest_path')->disk('public')->circular(),
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('short_name')->searchable(),
                 TextColumn::make('season.name')->label('Season')->searchable()->sortable(),
-                TextColumn::make('division.name')->label('Division')->sortable(),
-                TextColumn::make('players_count')->counts('players')->label('Players'),
+                TextColumn::make('teams_count')->counts('teams')->label('Teams'),
             ])
             ->filters([
                 SelectFilter::make('season')->relationship('season', 'name'),
-                SelectFilter::make('division')->relationship('division', 'name'),
             ])
             ->recordActions([
                 EditAction::make(),
-                TeamResource::deleteAction(),
+                DivisionResource::deleteAction(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

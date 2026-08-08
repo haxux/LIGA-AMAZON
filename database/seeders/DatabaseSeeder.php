@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Player;
@@ -41,9 +42,16 @@ class DatabaseSeeder extends Seeder
         // WithoutModelEvents (design D9).
         $season = Season::factory()->create(['name' => '2025/26', 'is_current' => true]);
 
+        // Locked seed: Primera holds all 10 curated clubs; Segunda exists so the concept is
+        // structurally enabled and visible in the panel, but is deliberately left empty — the
+        // public standings page simply renders no table for it until an admin adds teams.
+        $primera = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        Division::factory()->create(['season_id' => $season->id, 'name' => 'Segunda']);
+
         $teams = collect(TeamFactory::CLUBS)
             ->map(fn (array $club, string $name) => Team::factory()->create([
                 'season_id' => $season->id,
+                'division_id' => $primera->id,
                 'name' => $name,
                 'short_name' => $club['short'],
                 'crest_path' => null,

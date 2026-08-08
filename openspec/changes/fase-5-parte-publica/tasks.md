@@ -50,16 +50,16 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 2 — `fase-5/2-divisions-schema`
 
-- [ ] 2.1 RED: `SchemaMigrationTest` += `test_divisions_table_has_expected_columns`, `test_teams_table_has_division_id_column`, `test_duplicate_division_name_within_same_season_is_rejected`; `DeleteStrategyTest` += `test_deleting_a_season_cascades_to_divisions`, `test_deleting_a_division_with_teams_is_restricted`. Must fail.
-- [ ] 2.2 GREEN: migrations `..._000002_create_divisions_table.php` (season_id cascade, unique[season_id,name]), `..._000003_add_division_id_to_teams_table.php` (nullable, restrict; `down()` uses `dropConstrainedForeignId`).
-- [ ] 2.3 GREEN: `Division.php` (create, `#[Fillable(['season_id','name'])]`, `season()`, `teams()`) + `DivisionFactory`; `Season.php` += `divisions(): HasMany`; `Team.php` += `#[Fillable]` `division_id`, `division(): BelongsTo`.
-- [ ] 2.4 RED: `DivisionResourceTest` (create — list/create/edit render, duplicate name in season → form error, delete-with-teams → danger notification). Must fail.
-- [ ] 2.5 GREEN: `DivisionResource` 6-file layout (`app/Filament/Resources/Divisions/`), name uniqueness via `modifyRuleUsing` (TeamForm idiom), `deleteAction()` copied from `TeamResource` (`QueryException` → notification).
-- [ ] 2.6 RED: `TeamResourceTest` += `test_can_assign_a_team_to_a_division`, `test_team_persists_with_a_null_division`, `test_division_select_only_offers_divisions_from_the_selected_season`. Must fail.
-- [ ] 2.7 GREEN: `TeamForm` — `season_id` Select `->live()`; add `division_id` Select scoped via `Get('season_id')`. `TeamsTable` += division column + `SelectFilter`.
-- [ ] 2.8 RED: `DatabaseSeederTest` += `test_fresh_seed_creates_primera_with_all_ten_teams_and_an_empty_segunda`, `test_fresh_seed_leaves_no_team_without_a_division`. Must fail.
-- [ ] 2.9 GREEN: `DatabaseSeeder` — create Primera (all 10 teams) + empty Segunda per D9.
-- [ ] 2.10 Verify: full suite green.
+- [x] 2.1 RED: `SchemaMigrationTest` += `test_divisions_table_has_expected_columns`, `test_teams_table_has_division_id_column`, `test_duplicate_division_name_within_same_season_is_rejected`; `DeleteStrategyTest` += `test_deleting_a_season_cascades_to_divisions`, `test_deleting_a_division_with_teams_is_restricted`. Must fail.
+- [x] 2.2 GREEN: migrations `..._000002_create_divisions_table.php` (season_id cascade, unique[season_id,name]), `..._000003_add_division_id_to_teams_table.php` (nullable, restrict; `down()` uses `dropConstrainedForeignId`).
+- [x] 2.3 GREEN: `Division.php` (create, `#[Fillable(['season_id','name'])]`, `season()`, `teams()`) + `DivisionFactory`; `Season.php` += `divisions(): HasMany`; `Team.php` += `#[Fillable]` `division_id`, `division(): BelongsTo`.
+- [x] 2.4 RED: `DivisionResourceTest` (create — list/create/edit render, duplicate name in season → form error, delete-with-teams → danger notification). Must fail.
+- [x] 2.5 GREEN: `DivisionResource` 6-file layout (`app/Filament/Resources/Divisions/`), name uniqueness via `modifyRuleUsing` (TeamForm idiom), `deleteAction()` copied from `TeamResource` (`QueryException` → notification).
+- [x] 2.6 RED: `TeamResourceTest` += `test_can_assign_a_team_to_a_division`, `test_team_persists_with_a_null_division`, `test_division_select_only_offers_divisions_from_the_selected_season`. Must fail.
+- [x] 2.7 GREEN: `TeamForm` — `season_id` Select `->live()`; add `division_id` Select scoped via `Get('season_id')`. `TeamsTable` += division column + `SelectFilter`.
+- [x] 2.8 RED: `DatabaseSeederTest` += `test_fresh_seed_creates_primera_with_all_ten_teams_and_an_empty_segunda`, `test_fresh_seed_leaves_no_team_without_a_division`. Must fail.
+- [x] 2.9 GREEN: `DatabaseSeeder` — create Primera (all 10 teams) + empty Segunda per D9.
+- [x] 2.10 Verify: full suite green.
 
 ## Unit 3 — `fase-5/3-standings-for-division`
 

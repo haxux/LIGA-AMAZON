@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Player;
@@ -82,5 +83,24 @@ class DatabaseSeederTest extends TestCase
         $this->seed();
 
         $this->assertSame(1, Season::where('is_current', true)->count());
+    }
+
+    public function test_fresh_seed_creates_primera_with_all_ten_teams_and_an_empty_segunda(): void
+    {
+        $this->seed();
+
+        $primera = Division::where('name', 'Primera')->firstOrFail();
+        $segunda = Division::where('name', 'Segunda')->firstOrFail();
+
+        $this->assertSame(10, Team::where('division_id', $primera->id)->count());
+        $this->assertSame(0, Team::where('division_id', $segunda->id)->count());
+    }
+
+    public function test_fresh_seed_leaves_no_team_without_a_division(): void
+    {
+        $this->seed();
+
+        $this->assertSame(10, Team::count());
+        $this->assertSame(0, Team::whereNull('division_id')->count());
     }
 }
