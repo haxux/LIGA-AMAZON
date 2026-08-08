@@ -6,18 +6,22 @@ previous unit's tip, left unmerged for user review (matches Fase 2/3/4 pattern).
 
 ## Current position
 
-- **Last completed unit**: 2 (`fase-5/2-divisions-schema`)
-- **Current branch**: `fase-5/2-divisions-schema`
-- **Last commit**: `ce53471` feat(fase-5): add divisions schema, DivisionResource, and team scoping
-- **Next task to resume at**: 3.1 (RED: `StandingsServiceTest` `forDivision()` methods), on a new branch `fase-5/3-standings-for-division` based on `fase-5/2-divisions-schema`
-- **Full suite status as of last checkpoint**: 114/114 passing (`php artisan test`)
+- **Last completed unit**: 6 (`fase-5/6-goalscorers-service`)
+- **Current branch**: `fase-5/6-goalscorers-service`
+- **Last commit**: `0c40922` feat(fase-5): add GoalscorersService and ScorerRow
+- **Next task to resume at**: 7.1 (Modify `vite.config.js` fonts), on a new branch `fase-5/7-design-tokens` based on `fase-5/6-goalscorers-service`
+- **Full suite status as of last checkpoint**: 144/144 passing (`php artisan test`)
 
 ## Branch chain so far
 
 ```
 fase-4/1-standings-service (archived Fase 4 tip)
-  └── fase-5/1-season-is-current       (commit 584db5c) — DONE
-        └── fase-5/2-divisions-schema  (commit ce53471) — DONE
+  └── fase-5/1-season-is-current              (commit 584db5c) — DONE
+        └── fase-5/2-divisions-schema         (commit ce53471, 5e9360f) — DONE
+              └── fase-5/3-standings-for-division  (commit 46d9974) — DONE
+                    └── fase-5/4-news                  (commit 8954d33) — DONE
+                          └── fase-5/5-game-events            (commit dbb66e7) — DONE
+                                └── fase-5/6-goalscorers-service  (commit 0c40922) — DONE
 ```
 
 ## Work unit status
@@ -67,6 +71,13 @@ fase-4/1-standings-service (archived Fase 4 tip)
 | 2.4/2.5 | `DivisionResourceTest.php` | Feature/Filament | N/A (new) | ✅ Written | ✅ Passed | ✅ 6 cases | ➖ None needed |
 | 2.6/2.7 | `TeamResourceTest.php` | Feature/Filament | ✅ 10/10 | ✅ Written | ✅ Passed | ✅ 3 cases | ➖ None needed |
 | 2.8/2.9 | `DatabaseSeederTest.php` | Feature/Seeder | ✅ 6/6 | ✅ Written | ✅ Passed | ✅ 2 cases | ➖ None needed |
+| 3.1/3.2 | `StandingsServiceTest.php` | Feature/Service | ✅ 12/12 (Fase-4 pin) | ✅ Written | ✅ Passed | ✅ 5 cases | — |
+| 3.3 | `StandingsServiceTest.php` (approval) | Feature/Service | ✅ 17/17 | N/A (refactor) | N/A | N/A | ✅ `buildTable()` extracted, all 17 still green |
+| 4.1/4.2/4.3 | `SchemaMigrationTest.php`, `DeleteStrategyTest.php` | Feature/Schema | ✅ 26/26 | ✅ Written | ✅ Passed | ✅ 4 cases | ➖ None needed |
+| 4.4/4.5 | `NewsResourceTest.php` | Feature/Filament | N/A (new) | ✅ Written | ✅ Passed | ✅ 6 cases | ➖ None needed |
+| 5.1/5.2/5.3 | `SchemaMigrationTest.php`, `DeleteStrategyTest.php` | Feature/Schema | ✅ 23/23 | ✅ Written | ✅ Passed | ✅ 3 cases | ➖ None needed |
+| 5.4/5.5 | `GameEventsRelationManagerTest.php` | Feature/Filament | N/A (new) | ✅ Written | ⚠️ First attempt used wrong Filament testing API (`callAction` vs `mountTableAction`), corrected before GREEN | ✅ 3 cases | ➖ None needed |
+| 6.1/6.2 | `GoalscorersServiceTest.php` | Feature/Service | N/A (new) | ✅ Written | ✅ Passed | ✅ 8 cases | ➖ None needed |
 
 ### Test Summary (units 1-2)
 - **Total tests written/added**: 4 (SeasonCurrentGuardTest) + 2 (SeasonResourceTest) + 1 (DatabaseSeederTest) + 5 (Unit 2 schema/delete) + 6 (DivisionResourceTest) + 3 (TeamResourceTest) + 2 (DatabaseSeederTest) = 23 new test methods
@@ -89,20 +100,56 @@ fase-4/1-standings-service (archived Fase 4 tip)
 
 - **Pre-existing flaky test** (confirmed unrelated to this change, present since Fase 3): `GamesRelationManagerTest::test_lists_only_the_owning_matchdays_games` occasionally fails with a `UniqueConstraintViolationException` on `matchdays.season_id, matchdays.number` because `MatchdayFactory::definition()` uses `fake()->numberBetween(1, 18)` for `number` without uniqueness, so two `Matchday::factory()->create(['season_id' => $season->id])` calls in the same test have a non-trivial collision chance. Observed once during Unit 1's full-suite run, re-ran green immediately after. Not touched — out of scope for this change, and touching it isn't authorized by tasks.md.
 
+### Unit 3 — `fase-5/3-standings-for-division` — DONE (4/4 tasks)
+
+`StandingsService::forDivision(Division): Collection<StandingRow>` added as a genuine
+sibling; shared `buildTable()` extracted as the REFACTOR step. `forSeason()`'s
+signature/behavior unchanged — all 12 Fase-4 `StandingsServiceTest` methods stayed
+green throughout, byte-identical. 5 new `forDivision()` test methods added (division
+scoping, cross-division credit, zero-game row, tie-break order, empty division).
+Full suite: 119/119.
+
+### Unit 4 — `fase-5/4-news` — DONE (6/6 tasks)
+
+`news` table (title, unique slug, body, nullable cover_path, nullable published_at
+indexed, nullable team_id nullOnDelete), `News` model with `#[Scope] published()`,
+`NewsFactory` (+`draft()`/`scheduled()`), `NewsResource` 6-file layout (title→slug
+live slugify, `crest_path`-pattern `FileUpload` under `news/`). All RED tests failed
+as expected; all GREEN passed on first implementation. Full suite: 130/130.
+
+### Unit 5 — `fase-5/5-game-events` — DONE (6/6 tasks)
+
+`game_events` table (game_id/player_id cascadeOnDelete, `type` string constant,
+nullable `minute`), `GameEvent` model (`TYPE_GOAL`/`TYPE_ASSIST`/`TYPES`),
+`GameEventFactory` (+`goal()`/`assist()`), `Game::events()`/`Player::gameEvents()`,
+`GameEventsRelationManager` registered on `GameResource` — player `Select` scoped via
+`$this->getOwnerRecord()->home_team_id`/`away_team_id` (owner-record mechanism, per
+design's Spec Reconciliation #2 — NOT `GameForm`'s `Get`, confirmed correct since a
+RelationManager's own schema has no such fields). **Test-writing note**: initial RED
+draft used `->callAction('create', ...)` (single-record action syntax); corrected to
+the established `->mountTableAction('create')` → `->setTableActionData([...])` →
+`->callMountedTableAction()` → `->assertHasNoTableActionErrors()` idiom (matching
+`PlayersRelationManagerTest`'s precedent) since `create` is a *table header* action on
+a RelationManager, not a standalone Action. Full suite: 136/136.
+
+### Unit 6 — `fase-5/6-goalscorers-service` — DONE (3/3 tasks)
+
+`ScorerRow` readonly VO (`player`, `count`) + `GoalscorersService`
+(`topScorers`/`topAssisters`, SQL `groupBy('player_id')`+`COUNT(*)`,
+`whereHas('game.matchday', season_id)` scope, `orderBy('id')` stable-sort seed,
+`?int $limit = 10` seam). All 8 RED tests failed as expected; all GREEN passed on
+first implementation — no triangulation-driven fixes needed. Full suite: 144/144.
+
 ## Remaining work units (not started)
 
-- [ ] Unit 3 — `fase-5/3-standings-for-division` (`StandingsService::forDivision()` + `buildTable()` extraction)
-- [ ] Unit 4 — `fase-5/4-news` (News model/migration/NewsResource)
-- [ ] Unit 5 — `fase-5/5-game-events` (GameEvent model/migration/GameEventsRelationManager)
-- [ ] Unit 6 — `fase-5/6-goalscorers-service` (GoalscorersService/ScorerRow)
 - [ ] Unit 7 — `fase-5/7-design-tokens` (vite.config.js fonts, app.css @theme, doc drift fix)
 - [ ] Unit 8 — `fase-5/8-public-standings-fixtures` (SeasonResolver, SiteController, standings+fixtures pages, D11 deletions)
 - [ ] Unit 9 — `fase-5/9-public-scorers-news` (ScorersController, NewsController, scorers+news pages)
 
 ## Resume instructions
 
-1. `git checkout fase-5/2-divisions-schema` (already the current tip if resuming immediately)
-2. `git checkout -b fase-5/3-standings-for-division`
-3. Start at task 3.1: RED — add `forDivision()` test methods to `tests/Feature/StandingsServiceTest.php` (must fail — `forDivision()` doesn't exist on `StandingsService` yet). Existing 12+ Fase-4 `StandingsServiceTest` methods must NOT be modified (regression pin).
-4. Follow tasks.md 3.1 → 3.4 exactly (RED → GREEN → REFACTOR-with-safety-net → full-suite verify).
-5. Continue through units 4-9 in order per tasks.md and design.md's Work-Unit table.
+1. `git checkout fase-5/6-goalscorers-service` (already the current tip if resuming immediately)
+2. `git checkout -b fase-5/7-design-tokens`
+3. Start at task 7.1: modify `vite.config.js` fonts per D10 (no RED/GREEN cycle — infra/config-only unit, verified via `npm run build`, not `php artisan test`).
+4. Follow tasks.md 7.1 → 7.4 exactly.
+5. Continue through units 8-9 in order per tasks.md and design.md's Work-Unit table. Unit 8 is the most complex remaining (D11 deletions of `welcome.blade.php` + `tests/Feature/ExampleTest.php`, `SeasonResolver`, abstract `SiteController`, first HTTP-assertion-style tests, D6 zero-division fallback) — read design.md D5/D6/D11 again in full before starting.

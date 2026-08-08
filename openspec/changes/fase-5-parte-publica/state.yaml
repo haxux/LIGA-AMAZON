@@ -87,8 +87,8 @@ phases:
   apply:
     status: in_progress
     artifact: openspec/changes/fase-5-parte-publica/apply-progress.md
-    checkpoint: "Units 1-2 done (20/60 tasks). Current branch fase-5/2-divisions-schema, commit ce53471. Next: unit 3 task 3.1 on new branch fase-5/3-standings-for-division."
-    done_units: [1, 2]
+    checkpoint: "Units 1-6 done (39/60 tasks). Current branch fase-5/6-goalscorers-service, commit 0c40922. Next: unit 7 task 7.1 on new branch fase-5/7-design-tokens."
+    done_units: [1, 2, 3, 4, 5, 6]
   verify:
     status: pending
   archive:
