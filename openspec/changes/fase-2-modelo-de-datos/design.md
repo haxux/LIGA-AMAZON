@@ -173,7 +173,7 @@ No data migration — the schema is new and empty. Apply order: migrations → m
 
 ## Open Questions
 
-- [ ] Apply MUST record the resolved storage mechanism (symlink vs nginx-alias) in `tasks.md`/verify — it is an input to any future deploy doc.
+- [x] **Resolved during apply**: storage mechanism is the **symlink** (`php artisan storage:link`). `is_link('/var/www/html/public/storage')` returned `true` inside the `app` container, the same symlink was visible from the `web` (nginx) container (shared bind mount, no separate volume), and a probe file written via `Storage::disk('public')->put('crests/_probe.txt', 'ok')` was retrievable at `http://localhost:8080/storage/crests/_probe.txt` with `200 OK`. The NTFS bind-mount symlink-failure risk that motivated D4 did **not** materialize in this environment — the committed nginx `location /storage/` alias fallback was **not** added to `docker/nginx/default.conf` (file left unmodified) and `web` was not restarted. See `tasks.md` Phase 5 (5.1-5.4) for the full verification trail. **Divergence note still applies**: if a future environment (different Docker Desktop version, different host filesystem, non-Docker deploy) hits the NTFS/bind-mount symlink failure that D4 anticipated, the nginx alias block documented above must be added at that time — it was designed but not activated here.
 - [ ] Friendly UI error for `restrictOnDelete()` on Team is deferred to Fase 3 (`TeamResource`) — non-blocking here.
 
 ## Future-Proofing Check

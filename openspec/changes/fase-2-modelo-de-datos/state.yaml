@@ -35,9 +35,28 @@ phases:
       - { id: 4, name: seeder, branch: fase-2/4-seeder }
       - { id: 5, name: storage-and-verify, branch: fase-2/5-storage-and-verify }
   apply:
-    status: in_progress
+    status: done
     artifact: openspec/changes/fase-2-modelo-de-datos/apply-progress.md
-    note: "Running as a single sdd-apply agent invocation processing all 5 stacked work-unit branches sequentially. Branches are stacked (unit N branches off unit N-1's tip), none merged to master yet — left for user review. No GitHub remote configured, so 'PR boundaries' are local branch boundaries only."
+    note: "All 28/28 tasks complete across 5 stacked branches. Working tree clean on fase-2/5-storage-and-verify, all completed work committed."
+    checkpoint:
+      head_branch: fase-2/5-storage-and-verify
+      done_units:
+        - { id: 1, name: migrations, branch: fase-2/1-migrations, commit: 08993d9, tests: "12/12 pass" }
+        - { id: 2, name: models, branch: fase-2/2-models, commit: c2e1791, tests: "5/5 pass" }
+        - { id: 3, name: factories, branch: fase-2/3-factories, commit: 199b44a, tests: "7/7 pass" }
+        - { id: 4, name: seeder, branch: fase-2/4-seeder, commit: dd5af2b, tests: "5/5 pass" }
+        - { id: 5, name: storage-and-verify, branch: fase-2/5-storage-and-verify, tests: "31/31 pass (full suite, single invocation)" }
+      not_started_units: []
+      known_issue_fixed_this_run:
+        summary: "php artisan test was silently running against the real dev MySQL DB instead of SQLite :memory: — docker-compose's container-level env vars outrank phpunit.xml overrides in Laravel's env resolution."
+        fixed_in: "tests/TestCase.php (branch fase-2/1-migrations) — no .env*/docker-compose.yml touched"
+        flagged_for: "user should skim this fix, affects all future test runs in this repo, not just Fase 2"
+      known_issue_fixed_unit_5:
+        summary: "storage/app/public/.gitignore's `*` pattern silently blocked git from ever tracking a new crests/ subdirectory (nested .gitignore alone was invisible to git without a parent negation)."
+        fixed_in: "storage/app/public/.gitignore — added `!crests/` (branch fase-2/5-storage-and-verify)"
+      storage_mechanism_resolved: "symlink (php artisan storage:link) — probe file served 200 OK over HTTP on first attempt. nginx alias fallback (docker/nginx/default.conf) was NOT needed and file remains untouched."
+      full_suite_run_status: "Run as one single `php artisan test` invocation across all 7 test files together — 31/31 passed, 52 assertions. Task 6.1 complete."
+      resume_instructions: "Apply phase complete. Next: sdd-verify. All 5 branches (fase-2/1-migrations through fase-2/5-storage-and-verify) remain unmerged for user review per chain_strategy: stacked-to-main — do not merge into master without explicit user instruction."
   verify:
     status: pending
   archive:
@@ -63,9 +82,8 @@ out_of_scope_this_change:
   - "Public Blade views — Fase 5"
 
 next_action_if_resuming: >
-  Check apply-progress.md and `git branch --list 'fase-2/*'` for how far the
-  sdd-apply run got. If apply is still "in_progress" per this file but the
-  agent that was running it is gone (session ended), re-launch sdd-apply
-  with apply-progress continuity (read openspec/changes/fase-2-modelo-de-datos/apply-progress.md
-  first, merge new progress into it, don't overwrite). Do not re-ask the
-  user execution_mode/delivery_strategy/chain_strategy — they're cached above.
+  Apply phase is done (28/28 tasks, 5/5 branches). Next step is sdd-verify
+  against the fase-2/5-storage-and-verify branch (tip of the stack). Do not
+  re-ask the user execution_mode/delivery_strategy/chain_strategy — they're
+  cached above. Do not merge any of the 5 branches into master without
+  explicit user instruction — they are deliberately left unmerged for review.

@@ -63,18 +63,18 @@ Chain strategy: pending
 
 ## Phase 5: Storage / nginx
 
-- [ ] 5.1 Create `storage/app/public/crests/.gitignore` (tracked dir, writable by `www-data`).
-- [ ] 5.2 Run `storage:link`; probe-write via `Storage::disk('public')->put('crests/_probe.txt','ok')`; `curl http://localhost:8080/storage/crests/_probe.txt`.
-- [ ] 5.3 If probe fails (404/403): add `location /storage/ { alias /var/www/html/storage/app/public/; access_log off; }` to `docker/nginx/default.conf`; `docker compose restart web`; re-curl.
-- [ ] 5.4 Delete probe file; record resolved mechanism (symlink | nginx-alias | both) — resolves design's Open Question.
+- [x] 5.1 Create `storage/app/public/crests/.gitignore` (tracked dir, writable by `www-data`). **Found during apply (not in original design)**: the existing `storage/app/public/.gitignore` (`*` + `!.gitignore`) blocks git from traversing into any new subdirectory by name, including `crests/` — a nested `.gitignore` alone is invisible to git unless the parent negates the directory first. Fixed by adding `!crests/` to `storage/app/public/.gitignore` (now `*` / `!.gitignore` / `!crests/`). Verified via `git check-ignore -v storage/app/public/crests/.gitignore` returning non-ignored after the fix.
+- [x] 5.2 Run `storage:link`; probe-write via `Storage::disk('public')->put('crests/_probe.txt','ok')`; `curl http://localhost:8080/storage/crests/_probe.txt`. **Result: symlink worked first try.** `is_link('/var/www/html/public/storage')` → true inside `app`; same symlink visible from the `web` container (shared bind mount, no separate volume). `curl -sf http://localhost:8080/storage/crests/_probe.txt` → `200 OK`, body `ok`.
+- [x] 5.3 (Not triggered — the probe succeeded via the symlink, so the nginx alias fallback was NOT added to `docker/nginx/default.conf` and `web` was NOT restarted. `docker/nginx/default.conf` is unmodified.)
+- [x] 5.4 Deleted probe file (`Storage::disk('public')->delete('crests/_probe.txt')`, confirmed `exists()` → false, re-curled → no longer served). **Resolved mechanism: symlink (`storage:link`) — the nginx alias fallback was not needed in this environment.**
 
 ## Phase 6: Full-suite verification
 
-- [ ] 6.1 `php artisan test` — confirm Phases 1-4 tests + full suite pass.
-- [ ] 6.2 `php artisan migrate:fresh --seed` end-to-end; confirm `proposal.md` Success Criteria.
-- [ ] 6.3 `php artisan migrate:rollback` — clean drop, no FK errors, reverse order.
+- [x] 6.1 `php artisan test` — confirm Phases 1-4 tests + full suite pass. **Result: 31/31 passed (52 assertions), single invocation across all 7 test files** (`ExampleTest` Unit+Feature, `DatabaseSeederTest` 5, `DeleteStrategyTest` 2, `GameGuardTest` 5, `PlayerFactoryTest` 1, `RelationshipTest` 6, `SchemaMigrationTest` 10). No regressions.
+- [x] 6.2 `php artisan migrate:fresh --seed` end-to-end against the real dev MySQL DB; confirmed `proposal.md` Success Criteria manually: row counts exactly 1/10/10/180/18/90; 50 played (non-null `home_score`) / 40 unplayed (null); 0 equal-team games; 0 non-null `crest_path`. Relationships confirmed both directions via tinker (`team->season/players/stadium/homeGames/awayGames`, `season->teams/matchdays`). `Game::create()` with equal `home_team_id`/`away_team_id` confirmed rejected with `ValidationException` ("A team cannot play against itself.") against the real MySQL connection (not just SQLite tests).
+- [x] 6.3 `php artisan migrate:rollback --step=6` — all 6 domain tables dropped cleanly in reverse FK order (games → matchdays → players → stadiums → teams → seasons), no FK errors. Re-ran `php artisan migrate --force` afterward to leave the dev DB migrated (schema present, domain tables empty — same "sane state" convention established in Phase 1; not reseeded).
 
 ## Phase 7: Docs
 
-- [ ] 7.1 Record the 5.4 storage mechanism back into this file.
-- [ ] 7.2 Mark `design.md` Open Question (storage mechanism) resolved.
+- [x] 7.1 Record the 5.4 storage mechanism back into this file. (Done directly in 5.2/5.4 above: **symlink**.)
+- [x] 7.2 Mark `design.md` Open Question (storage mechanism) resolved. (See `design.md` Open Questions — first item marked `[x]` with full resolution detail.)
