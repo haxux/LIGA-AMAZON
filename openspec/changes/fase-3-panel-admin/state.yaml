@@ -54,10 +54,11 @@ phases:
   apply:
     status: in_progress
     artifact: openspec/changes/fase-3-panel-admin/apply-progress.md
-    checkpoint: "Unit 1/4 done (10/40 tasks). HEAD branch fase-3/1-season-matchday, off fase-2/5-storage-and-verify. Next: unit 2 (fase-3/2-team-stadium, off fase-3/1-season-matchday tip), starting at task 2.1."
+    checkpoint: "Units 1-2/4 done (21/40 tasks). HEAD branch fase-3/2-team-stadium, off fase-3/1-season-matchday. Next: unit 3 (fase-3/3-player, off fase-3/2-team-stadium tip), starting at task 3.1."
     done_units:
       - { id: 1, name: season-matchday, branch: fase-3/1-season-matchday, tasks: "1.1-1.10", status: done }
-    test_suite: "44/44 passing (31 baseline + 13 new), 90 assertions"
+      - { id: 2, name: team-stadium, branch: fase-3/2-team-stadium, tasks: "2.1-2.11", status: done }
+    test_suite: "56/56 passing (44 prior + 12 new), 135 assertions"
     design_correction_found: >
       D3/D2's Get type hint resolves to Filament\Schemas\Components\Utilities\Get
       in the installed 5.7.6 tree, not Filament\Forms\Get as the design.md snippet

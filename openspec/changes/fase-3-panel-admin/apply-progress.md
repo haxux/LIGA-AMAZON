@@ -1,13 +1,13 @@
 # Apply Progress: Fase 3 — Panel admin: Filament Resources
 
-> In progress. Work unit 1/4 complete (10/40 tasks). Continuing to unit 2.
+> In progress. Work units 1-2/4 complete (21/40 tasks). Continuing to unit 3.
 
 ## Current position
 
-- **HEAD branch**: `fase-3/1-season-matchday` (created off `fase-2/5-storage-and-verify` tip `7bd759f`)
+- **HEAD branch**: `fase-3/2-team-stadium` (created off `fase-3/1-season-matchday` tip `5211e03`)
 - **Chain** (stacked-to-main, each branching from the previous tip):
-  1. `fase-3/1-season-matchday` (off `fase-2/5-storage-and-verify`) — **done, this batch**
-  2. `fase-3/2-team-stadium` (off unit 1 tip) — pending
+  1. `fase-3/1-season-matchday` (off `fase-2/5-storage-and-verify`) — done, commit `5211e03`
+  2. `fase-3/2-team-stadium` (off unit 1 tip) — **done, this batch**
   3. `fase-3/3-player` (off unit 2 tip) — pending
   4. `fase-3/4-game` (off unit 3 tip) — pending
 
@@ -26,11 +26,19 @@ None of the branches will be merged into `master`/each other — all left unmerg
 
 **Design correction found during this phase (flagging per apply-phase rules — do not silently deviate)**: design.md's D3 snippet implies `Get $get` resolves from `Filament\Forms\Get`. Live-verified in the installed 5.7.6 tree: the closure-injectable `Get` utility actually lives at **`Filament\Schemas\Components\Utilities\Get`** (`Filament\Forms\Get` does not exist / is not what gets injected — using it throws `TypeError: Argument #2 ($get) must be of type Filament\Forms\Get, Filament\Schemas\Components\Utilities\Get given`). Confirmed by reproducing the RED failure and reading the actual injected type from the exception message. **This also applies to D2's `away_team_id` closure `rule()` in Phase 4** — will use `Filament\Schemas\Components\Utilities\Get` there too, not the `Filament\Forms\Get` implied by the design snippet.
 
-### Phase 2: Team + Stadium — PENDING (2.1–2.11)
+### Phase 2: Team + Stadium — ALL DONE (2.1–2.11), branch `fase-3/2-team-stadium`
+
+- **2.1-2.2**: `TeamResourceTest.php` RED (list/create/edit render + round-trip) → `ComponentNotFoundException` confirmed. GREEN: generated via `php artisan make:filament-resource Team`, filled `TeamForm` (`season_id` Select relationship, `name`/`short_name` TextInput, `founded_year` numeric) and `TeamsTable` (name/short_name/season.name + `players_count`, `SelectFilter season`). `navigationGroup` → `'League'`.
+- **2.3-2.4**: RED — duplicate `(season_id, name)` reproduced the raw `UniqueConstraintViolationException` (same D3 failure mode as Phase 1). GREEN — season-scoped `unique()` using the corrected `Filament\Schemas\Components\Utilities\Get` type (see Phase 1's design-correction note; reused directly here without re-discovering the TypeError). Triangulated: cross-season duplicate name allowed.
+- **2.5-2.6**: RED — `Storage::fake('public')` + `UploadedFile::fake()->image()` submitted through `fillForm(['crest_path' => $file])`; `crest_path` stayed `null` (field didn't exist yet) → `TypeError` on the assertion confirmed the gap. GREEN — `FileUpload::make('crest_path')->image()->disk('public')->directory('crests')->visibility('public')` + `ImageColumn` on the table. Assertion switched from `assertStringStartsWith`/`Storage::disk('public')->assertExists()` once the field existed → passed.
+- **2.7-2.8**: New `tests/Feature/StadiumRelationManagerTest.php`. RED — referenced `Teams\RelationManagers\StadiumRelationManager`, which didn't exist → `ComponentNotFoundException`. GREEN — generated via `php artisan make:filament-relation-manager Team stadium name` (confirms design V9: `$relationship = 'stadium'`, singular class name because the relationship method is singular `stadium()`); filled `name`/`city`/`capacity` fields; `CreateAction::make()->visible(fn (RelationManager $livewire) => $livewire->getOwnerRecord()->stadium()->doesntExist())` mirrors the unique `stadiums.team_id` constraint from the UI side. Triangulated: a second test asserts the create action is hidden once a stadium already exists (`assertTableActionHidden('create')`).
+- **2.9-2.10**: RED — deleting a Team referenced by a `Game` (via both the Edit-page header `DeleteAction` and the table row `DeleteAction`) reproduced the raw `QueryException` (restrictOnDelete FK) escaping to the test — exactly the V10 failure mode. GREEN — added `TeamResource::deleteAction()`, a shared static factory wrapping `$record->delete()` in `try/catch (QueryException)` → `Notification::make()->danger()->send(); $action->halt();`, reused by both `TeamsTable`'s row action and `EditTeam`'s header action (avoids duplicating the closure across the two sites, per design D4's stated risk of duplication if done inline). Strengthened with `assertNotified('Team cannot be deleted')` on both the header-action and row-action paths (2 separate test methods) rather than only checking the team still exists.
+- **2.11**: Full suite run — **56/56 passed** (44 from Phase 1 + 12 new: 10 `TeamResourceTest` + 2 `StadiumRelationManagerTest`), zero regressions.
+
 ### Phase 3: Player — PENDING (3.1–3.9)
 ### Phase 4: Game — PENDING (4.1–4.10)
 
-## Test suite status (end of Phase 1, single full-suite invocation — task 1.10)
+## Test suite status (end of Phase 2, single full-suite invocation — task 2.11)
 
 | Test file | Status | Count |
 |---|---|---|
@@ -44,8 +52,10 @@ None of the branches will be merged into `master`/each other — all left unmerg
 | `Tests\Feature\RelationshipTest` | PASS | 6/6 |
 | `Tests\Feature\SchemaMigrationTest` | PASS | 10/10 |
 | `Tests\Feature\SeasonResourceTest` | PASS | 6/6 |
+| `Tests\Feature\StadiumRelationManagerTest` | PASS | 2/2 |
+| `Tests\Feature\TeamResourceTest` | PASS | 10/10 |
 
-**Total: 44/44 tests, 90 assertions.**
+**Total: 56/56 tests, 135 assertions.**
 
 ## TDD Cycle Evidence (Phase 1)
 
@@ -64,3 +74,21 @@ None of the branches will be merged into `master`/each other — all left unmerg
 - **Layers used**: Feature/Livewire (13 new, this phase), Unit + Feature (31, carried from Fase 2)
 - **Approval tests**: None — no refactoring tasks in this phase
 - **Pure functions created**: 0 (Filament Resource/Schema/Table classes are declarative configuration, not pure functions)
+
+## TDD Cycle Evidence (Phase 2)
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| 2.1-2.2 | `tests/Feature/TeamResourceTest.php` | Feature (Livewire) | ✅ 44/44 (cumulative baseline) | ✅ `ComponentNotFoundException` confirmed | ✅ 5/5 passed | ✅ create+edit round-trip, 2 scenarios | ➖ None needed |
+| 2.3-2.4 | `tests/Feature/TeamResourceTest.php` | Feature (Livewire) | ✅ 5/5 (prior tests in file) | ✅ raw `UniqueConstraintViolationException` confirmed | ✅ `assertHasFormErrors(['name'])` passed | ✅ 2 cases: same-season rejected, cross-season allowed | ➖ None needed |
+| 2.5-2.6 | `tests/Feature/TeamResourceTest.php` | Feature (Livewire) | ✅ 7/7 (prior tests in file) | ✅ `TypeError` on `crest_path` null confirmed field absent | ✅ `crests/` prefix + `Storage::disk('public')->assertExists()` passed | ➖ Single scenario (one upload field) | ➖ None needed |
+| 2.7-2.8 | `tests/Feature/StadiumRelationManagerTest.php` | Feature (Livewire, RelationManager table action) | N/A (new file) | ✅ `ComponentNotFoundException` confirmed | ✅ 1/1 create-and-link passed | ✅ 2nd case: `assertTableActionHidden('create')` once a stadium exists | ➖ None needed (generator-shaped code) |
+| 2.9-2.10 | `tests/Feature/TeamResourceTest.php` | Feature (Livewire, Action) | ✅ 8/8 (prior tests in file) | ✅ raw `QueryException` (restrictOnDelete) confirmed on both header and row action paths | ✅ `assertNotified()` + team-still-exists passed on both paths | ✅ 2 cases: Edit-page header action, table row action | ✅ extracted shared `TeamResource::deleteAction()` to avoid duplicating the try/catch closure across the 2 call sites |
+| 2.11 | All 12 new + 44 carried files, full suite | Full-suite re-run | ✅ 44/44 baseline | N/A (pre-existing + already-green new tests) | ✅ 56/56 passed | N/A | N/A |
+
+### Test Summary (Phase 2)
+- **Total tests written this phase**: 12 (10 `TeamResourceTest` + 2 `StadiumRelationManagerTest`)
+- **Total tests passing (cumulative)**: 56/56
+- **Layers used**: Feature/Livewire (12 new, this phase), Feature/Livewire + Unit (44, carried)
+- **Approval tests**: None — no refactoring tasks in this phase
+- **Pure functions created**: 0 (declarative Filament configuration); one shared static factory (`TeamResource::deleteAction()`) extracted to eliminate duplication (task 2.10's REFACTOR step)

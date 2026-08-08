@@ -42,17 +42,17 @@ Test runner: `docker compose exec app php artisan test`. Each RED/GREEN pair map
 
 ## Phase 2: Team + Stadium (`fase-3/2-team-stadium`) — spec: "Stadium via RelationManager", "crest upload"
 
-- [ ] 2.1 RED `tests/Feature/TeamResourceTest.php`: List/Create/Edit render 200 + round-trip
-- [ ] 2.2 GREEN `Teams/TeamResource.php` + `Schemas/TeamForm.php` + `Tables/TeamsTable.php` + `Pages/*` — season_id Select, name, short_name, founded_year
-- [ ] 2.3 RED: duplicate `teams(season_id, name)` -> form error (D3)
-- [ ] 2.4 GREEN: season-scoped `unique()` on `TeamForm` name field
-- [ ] 2.5 RED: `Storage::fake('public')` + `UploadedFile::fake()->image()` -> `crest_path` starts with `crests/`, file exists on fake disk
-- [ ] 2.6 GREEN: `FileUpload crest_path` (`->disk('public')->directory('crests')`) on `TeamForm` + `ImageColumn` on `TeamsTable`
-- [ ] 2.7 RED: `StadiumRelationManager` create persists and links stadium to team (HasOne)
-- [ ] 2.8 GREEN `Teams/RelationManagers/StadiumRelationManager.php` (hide `CreateAction` once `stadium()->exists()`) + wire `TeamResource::getRelations()`
-- [ ] 2.9 RED: deleting a Team with games -> danger notification, team still exists, no unhandled exception (D4)
-- [ ] 2.10 GREEN: wrap `TeamResource` `DeleteAction` (table row + Edit header) in `try/catch(QueryException)` -> `Notification::danger()->send(); $action->halt();`
-- [ ] 2.11 Run full suite, confirm green
+- [x] 2.1 RED `tests/Feature/TeamResourceTest.php`: List/Create/Edit render 200 + round-trip
+- [x] 2.2 GREEN `Teams/TeamResource.php` + `Schemas/TeamForm.php` + `Tables/TeamsTable.php` + `Pages/*` — season_id Select, name, short_name, founded_year
+- [x] 2.3 RED: duplicate `teams(season_id, name)` -> form error (D3)
+- [x] 2.4 GREEN: season-scoped `unique()` on `TeamForm` name field
+- [x] 2.5 RED: `Storage::fake('public')` + `UploadedFile::fake()->image()` -> `crest_path` starts with `crests/`, file exists on fake disk
+- [x] 2.6 GREEN: `FileUpload crest_path` (`->disk('public')->directory('crests')`) on `TeamForm` + `ImageColumn` on `TeamsTable`
+- [x] 2.7 RED: `StadiumRelationManager` create persists and links stadium to team (HasOne)
+- [x] 2.8 GREEN `Teams/RelationManagers/StadiumRelationManager.php` (hide `CreateAction` once `stadium()->exists()`) + wire `TeamResource::getRelations()`
+- [x] 2.9 RED: deleting a Team with games -> danger notification, team still exists, no unhandled exception (D4)
+- [x] 2.10 GREEN: wrap `TeamResource` `DeleteAction` (table row + Edit header) in `try/catch(QueryException)` -> `Notification::danger()->send(); $action->halt();`
+- [x] 2.11 Run full suite, confirm green
 
 ## Phase 3: Player (`fase-3/3-player`) — spec: "Player via PlayerResource and RelationManager"
 
