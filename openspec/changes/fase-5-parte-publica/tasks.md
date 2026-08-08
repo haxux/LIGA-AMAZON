@@ -101,16 +101,16 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 8 — `fase-5/8-public-standings-fixtures`
 
-- [ ] 8.1 RED: `SeasonResolverTest` (create — flagged-current resolves, falls back to latest when none flagged, returns null when zero seasons). Must fail.
-- [ ] 8.2 GREEN: `SeasonResolver::active(): ?Season`.
-- [ ] 8.3 Delete `tests/Feature/ExampleTest.php` now (D11 — asserts `GET /` → 200 against stock `welcome.blade.php`; would go red for an unrelated reason once `/` becomes the standings page). `tests/Unit/ExampleTest.php` untouched.
-- [ ] 8.4 RED: `StandingsPageTest` (create — table per populated division, empty division renders none, follows `is_current` change, 404 on zero seasons, falls back to latest season, D6 zero-division fallback renders single unnamed `forSeason()` table). Must fail.
-- [ ] 8.5 RED: `FixturesPageTest` (create — scored matchday → result cards, unplayed → fixture cards, grouped by matchday). Must fail.
-- [ ] 8.6 GREEN: abstract `SiteController` (`activeSeason()` = resolver→404 chain); `StandingsController::__invoke` (`divisions()->has('teams')->orderBy('id')->get()`, D6 empty-fallback branch to `forSeason()`); `FixturesController::__invoke` (`matchdays()->with('games.homeTeam','games.awayTeam')->orderBy('number')`).
-- [ ] 8.7 GREEN: `resources/views/components/layouts/site.blade.php` (`@fonts`, `@vite`, nav, slot, footer); `x-site.standings-table`, `x-site.game-card` components; `resources/views/site/standings.blade.php`, `fixtures.blade.php`.
-- [ ] 8.8 GREEN: `routes/web.php` — `GET /` → `site.standings`, `GET /partidos` → `site.fixtures` (namespace `App\Http\Controllers\Site`).
-- [ ] 8.9 Delete `resources/views/welcome.blade.php` (D11).
-- [ ] 8.10 Verify: full suite green (Fase 2/3/4 regression); `npm run build` green. If this unit's diff exceeds ~400 lines, split standings/fixtures into two PRs before merge.
+- [x] 8.1 RED: `SeasonResolverTest` (create — flagged-current resolves, falls back to latest when none flagged, returns null when zero seasons). Must fail.
+- [x] 8.2 GREEN: `SeasonResolver::active(): ?Season`.
+- [x] 8.3 Delete `tests/Feature/ExampleTest.php` now (D11 — asserts `GET /` → 200 against stock `welcome.blade.php`; would go red for an unrelated reason once `/` becomes the standings page). `tests/Unit/ExampleTest.php` untouched.
+- [x] 8.4 RED: `StandingsPageTest` (create — table per populated division, empty division renders none, follows `is_current` change, 404 on zero seasons, falls back to latest season, D6 zero-division fallback renders single unnamed `forSeason()` table). Must fail.
+- [x] 8.5 RED: `FixturesPageTest` (create — scored matchday → result cards, unplayed → fixture cards, grouped by matchday). Must fail.
+- [x] 8.6 GREEN: abstract `SiteController` (`activeSeason()` = resolver→404 chain); `StandingsController::__invoke` (`divisions()->has('teams')->orderBy('id')->get()`, D6 empty-fallback branch to `forSeason()`); `FixturesController::__invoke` (`matchdays()->with('games.homeTeam','games.awayTeam')->orderBy('number')`).
+- [x] 8.7 GREEN: `resources/views/components/layouts/site.blade.php` (`@fonts`, `@vite`, nav, slot, footer); `x-site.standings-table`, `x-site.game-card` components; `resources/views/site/standings.blade.php`, `fixtures.blade.php`.
+- [x] 8.8 GREEN: `routes/web.php` — `GET /` → `site.standings`, `GET /partidos` → `site.fixtures` (namespace `App\Http\Controllers\Site`).
+- [x] 8.9 Delete `resources/views/welcome.blade.php` (D11).
+- [x] 8.10 Verify: full suite green (Fase 2/3/4 regression); `npm run build` green. If this unit's diff exceeds ~400 lines, split standings/fixtures into two PRs before merge. **Contingency triggered**: combined diff was 423+245=668 lines; split into `fase-5/8-public-standings` (299+245) and `fase-5/8b-public-fixtures` (this commit) per the contingency clause.
 
 ## Unit 9 — `fase-5/9-public-scorers-news`
 
