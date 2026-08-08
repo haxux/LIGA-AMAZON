@@ -88,9 +88,9 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 6 — `fase-5/6-goalscorers-service`
 
-- [ ] 6.1 RED: `GoalscorersServiceTest` (create, 8 methods: goal-only count, assist-only count, other-season excluded, zero-event players absent, desc order, default-10 limit, `null` limit returns all, tied counts stable order). Must fail.
-- [ ] 6.2 GREEN: `ScorerRow` VO (readonly `player`, `count`) + `GoalscorersService` (`topScorers`/`topAssisters`, SQL `groupBy`+`COUNT(*)`, `whereHas('game.matchday', season_id)` scope, `orderBy('id')` stable seed).
-- [ ] 6.3 Verify: full suite green.
+- [x] 6.1 RED: `GoalscorersServiceTest` (create, 8 methods: goal-only count, assist-only count, other-season excluded, zero-event players absent, desc order, default-10 limit, `null` limit returns all, tied counts stable order). Must fail.
+- [x] 6.2 GREEN: `ScorerRow` VO (readonly `player`, `count`) + `GoalscorersService` (`topScorers`/`topAssisters`, SQL `groupBy`+`COUNT(*)`, `whereHas('game.matchday', season_id)` scope, `orderBy('id')` stable seed).
+- [x] 6.3 Verify: full suite green.
 
 ## Unit 7 — `fase-5/7-design-tokens`
 
