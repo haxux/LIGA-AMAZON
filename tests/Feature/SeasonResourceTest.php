@@ -87,4 +87,32 @@ class SeasonResourceTest extends TestCase
             'name' => '2025/26 - Renamed',
         ]);
     }
+
+    public function test_toggling_is_current_unsets_the_previous_current_season_without_a_form_error(): void
+    {
+        $current = Season::factory()->create(['is_current' => true]);
+        $other = Season::factory()->create(['is_current' => false]);
+
+        Livewire::test(EditSeason::class, ['record' => $other->getRouteKey()])
+            ->fillForm([
+                'is_current' => true,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertFalse($current->fresh()->is_current);
+        $this->assertTrue($other->fresh()->is_current);
+    }
+
+    public function test_is_current_column_renders_in_the_list(): void
+    {
+        Season::factory()->create(['is_current' => true]);
+        Season::factory()->create(['is_current' => false]);
+
+        Livewire::test(ListSeasons::class)
+            ->assertOk()
+            ->assertTableColumnExists('is_current')
+            ->sortTable('is_current')
+            ->assertOk();
+    }
 }

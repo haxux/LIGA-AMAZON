@@ -19,6 +19,11 @@ class SchemaMigrationTest extends TestCase
         ]));
     }
 
+    public function test_seasons_table_has_is_current_column(): void
+    {
+        $this->assertTrue(Schema::hasColumn('seasons', 'is_current'));
+    }
+
     public function test_teams_table_has_expected_columns(): void
     {
         $this->assertTrue(Schema::hasColumns('teams', [

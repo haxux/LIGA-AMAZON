@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Seasons\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -18,6 +19,7 @@ class SeasonsTable
                 TextColumn::make('start_date')->date()->sortable(),
                 TextColumn::make('end_date')->date()->sortable(),
                 TextColumn::make('teams_count')->counts('teams')->label('Teams'),
+                IconColumn::make('is_current')->label('Current')->boolean()->sortable(),
             ])
             ->filters([
                 //

@@ -32,7 +32,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $season = Season::factory()->create(['name' => '2025/26']);
+        // Season::booted()'s single-current guard (design D2) is muted by
+        // WithoutModelEvents above, exactly like Game::booted()'s guard (D3).
+        // is_current is therefore set directly as an attribute here. This is
+        // safe only because exactly one Season row is created by this
+        // seeder — a future seeder that creates a second season must set
+        // is_current on exactly one of them by hand, or drop
+        // WithoutModelEvents (design D9).
+        $season = Season::factory()->create(['name' => '2025/26', 'is_current' => true]);
 
         $teams = collect(TeamFactory::CLUBS)
             ->map(fn (array $club, string $name) => Team::factory()->create([

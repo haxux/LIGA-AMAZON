@@ -1,0 +1,155 @@
+change: fase-5-parte-publica
+title: "Fase 5 — Parte pública: vistas Blade + extensiones de dominio (is_current, News, Goleadores/Asistencias, Divisiones)"
+artifact_store: openspec
+last_updated: 2026-08-08
+
+session_settings:
+  execution_mode: interactive
+  delivery_strategy: auto-chain
+  chain_strategy: stacked-to-main
+
+phases:
+  exploration:
+    status: done
+    artifact: openspec/changes/fase-5-parte-publica/exploration.md
+  proposal:
+    status: done
+    artifact: openspec/changes/fase-5-parte-publica/proposal.md
+    note: >
+      Scope expanded significantly beyond ARQUITECTURA.md's original Fase 5
+      line ("Vistas Blade: clasificación, calendario y resultados") after the
+      user reviewed the saved design mockup (openspec/design-reference/amazon-superleague/NOTES.md)
+      and chose to close 3 domain gaps + reverse 1 prior decision, all in this
+      single change (not split), delivered as internally stacked work-unit
+      branches like Fase 2/3.
+  spec:
+    status: done
+    artifacts:
+      - openspec/changes/fase-5-parte-publica/specs/public-views/spec.md
+      - openspec/changes/fase-5-parte-publica/specs/league-data-model/spec.md
+      - openspec/changes/fase-5-parte-publica/specs/league-standings/spec.md
+      - openspec/changes/fase-5-parte-publica/specs/admin-league-crud/spec.md
+    note: >
+      public-views written as ONE new capability spec covering all 4 public
+      routes (standings, partidos, goleadores, noticias) per explicit task
+      instruction, including GoalscorersService-backed goleadores requirements
+      inline. This diverges slightly from proposal.md's Capabilities section,
+      which listed two new capabilities ("public-league-site" and
+      "player-scoring-stats") — design phase should confirm/reconcile this
+      naming choice. league-data-model delta explicitly supersedes the
+      Fase 2 "seasons MUST NOT have is_current" sentence per Fase 3's
+      admin-panel precedent wording. league-standings delta adds
+      forDivision() as a pure addition; forSeason() untouched.
+      admin-league-crud delta adds Season toggle, NewsResource,
+      DivisionResource, GameEventsRelationManager.
+  design:
+    status: done
+    artifact: openspec/changes/fase-5-parte-publica/design.md
+    note: >
+      Written 2026-08-08. sdd-spec finished in parallel mid-design, so the
+      design was reconciled against all four delta specs before completion:
+      it carries a "Spec Reconciliation" section (3 points) and a full
+      spec-scenario -> test mapping table (32 scenarios across the 4 specs).
+      11 architecture decisions (D1-D11), complete file-change inventory
+      (~45 files), and a 9-unit stacked-branch recommendation for sdd-tasks.
+      ONE open question deliberately left for the user/sdd-spec: the
+      zero-division standings fallback (see decisions_locked
+      "PUBLIC STANDINGS ZERO-DIVISION FALLBACK"). It blocks nothing before
+      work unit 8.
+  tasks:
+    status: done
+    artifact: openspec/changes/fase-5-parte-publica/tasks.md
+    task_count: 60
+    note: >
+      9-unit stacked-branch split adopted directly from design.md's
+      recommendation (guard lines already computed there, reconfirmed here:
+      Decision needed before apply: No / Chained PRs recommended: Yes /
+      Chain strategy: stacked-to-main / 400-line budget risk: High). Base for
+      unit 1 verified against .git/HEAD: fase-4/1-standings-service (current
+      tip, nothing merged to master). D6 zero-division standings fallback
+      baked into unit 8 as approved/implemented, not flagged as an open
+      question. D11 (ExampleTest.php deletion) and D9 (Fillable additions)
+      both explicit tasks (1.4/1.5, 8.3). admin-league-crud's
+      GameEventsRelationManager wording already reconciled (owner-record
+      mechanism) — no spec amendment task needed. Unit 2 and unit 8 flagged
+      as near/at the 400-line ceiling; unit 8 has an explicit re-split
+      contingency task (8.10).
+    work_units:
+      - { id: 1, name: season-is-current, branch: fase-5/1-season-is-current, base: fase-4/1-standings-service }
+      - { id: 2, name: divisions-schema, branch: fase-5/2-divisions-schema, base: fase-5/1-season-is-current }
+      - { id: 3, name: standings-for-division, branch: fase-5/3-standings-for-division, base: fase-5/2-divisions-schema }
+      - { id: 4, name: news, branch: fase-5/4-news, base: fase-5/3-standings-for-division }
+      - { id: 5, name: game-events, branch: fase-5/5-game-events, base: fase-5/4-news }
+      - { id: 6, name: goalscorers-service, branch: fase-5/6-goalscorers-service, base: fase-5/5-game-events }
+      - { id: 7, name: design-tokens, branch: fase-5/7-design-tokens, base: fase-5/6-goalscorers-service }
+      - { id: 8, name: public-standings-fixtures, branch: fase-5/8-public-standings-fixtures, base: fase-5/7-design-tokens }
+      - { id: 9, name: public-scorers-news, branch: fase-5/9-public-scorers-news, base: fase-5/8-public-standings-fixtures }
+  apply:
+    status: pending
+  verify:
+    status: pending
+  archive:
+    status: pending
+
+decisions_locked:
+  - "SCOPE: this change covers 4 public routes (standings, partidos, goleadores, noticias) AND 4 domain extensions (is_current, News, game_events/goleadores, divisions) — schema + admin + service + public views, as ONE SDD change with internally stacked branches"
+  - "is_current: new additive boolean column on seasons (default false), enforced via Season::booted() saving-guard mirroring Game::booted()'s established pattern (unsets is_current on all other seasons when one is saved with is_current=true). Filament: Toggle in SeasonForm, IconColumn in SeasonsTable. Public read: Season::where('is_current',true)->first(), fallback to Season::latest('id')->first() if none marked, abort(404) only if zero seasons exist. REVERSES Fase 2's league-data-model spec line 22 ('seasons MUST NOT have an is_current flag') — spec delta must explicitly supersede it, not silently overwrite"
+  - "KNOWN GAP (documented, not fixed in this change): DatabaseSeeder runs under WithoutModelEvents (Fase 2/D3), which mutes Season::booted()'s new guard during seeding — harmless today (one seeded season) but must be stated explicitly in design/apply, not silently ignored"
+  - "News: standalone 'news' table — title, slug (unique), body (text), published_at (nullable datetime), cover_path (nullable, reuses crest_path's FileUpload/public-disk/directory pattern, directory 'news/'), team_id (nullable FK->teams, nullOnDelete — tagged not owned). NO author_id/byline (out of scope, additive-later if ever needed). published_at semantics: SCHEDULED — a news item with published_at <= now() is publicly visible; future/null published_at is hidden. NewsResource follows standard Filament file layout. Public: listing (published only, published_at desc) + slug-based detail view"
+  - "Goleadores/Asistencias: new 'game_events' table — game_id (FK->games, cascadeOnDelete), player_id (FK->players, cascadeOnDelete — deliberate divergence from Game's restrictOnDelete team-FK precedent, confirmed: an event has no existence independent of its game+player pair, no opponent-history concern applies here), type (string, not DB enum — PHP-level constants 'goal'/'assist' for additive-later event types), minute (nullable int). New app/Services/GoalscorersService.php + app/Services/ScorerRow.php (readonly VO: player, count) mirroring StandingsService/StandingRow exactly. topScorers(Season)/topAssisters(Season), season-wide (NOT division-scoped). Admin: GameEventsRelationManager on GameResource, player Select scoped to the game's two teams (reuse GameForm's Get-based filtering pattern). Public: top 10 only (not full list) — leave a code/design note that a future 'ver todos' page is a natural additive extension, not built now"
+  - "Divisions: new 'divisions' table — name, season_id (FK->seasons, cascadeOnDelete), unique(season_id, name). teams.division_id: new additive migration, nullable FK->divisions, restrictOnDelete (fresh decision for this FK, not just inherited by analogy from D1). Stays nullable indefinitely, no backfill/NOT NULL. StandingsService gets a NEW sibling forDivision(Division $division): Collection<StandingRow> — forSeason()'s existing signature/behavior stays COMPLETELY UNCHANGED, no breaking change, Fase 4 tests must stay green. This exact evolution was pre-forecast in Fase 4's own design.md Future-Proofing Check"
+  - "Seed: create ONE 'Primera' division row, assign all 10 existing seeded teams to it (no reshuffle). ALSO create a 'Segunda' division row (schema/admin-visible, structurally enabled) but seed ZERO teams into it — admin creates Segunda's teams later through the panel. User-confirmed explicitly: 'no siembres equipos en segunda pero que quede habilitado para crearlos después'"
+  - "Public standings page: division-aware. For the active (is_current) season, render a table per division that has >=1 team. Segunda (0 teams) renders NOTHING — no 'coming soon' placeholder tab — appears automatically once an admin adds teams to it. This is the integration point tying is_current + Divisions + StandingsService::forDivision() together"
+  - "Public routes (4 total, exact URL naming left to design): standings (division-aware tables), partidos (schedule+results combined by Matchday, each Game rendered as fixture-card or result-card by null-check on its own scores — no fake calendar/results split, Game has no status field), goleadores (top 10 scorers + top 10 assisters, season-wide), noticias (listing + slug detail)"
+  - "Design tokens from openspec/design-reference/amazon-superleague/NOTES.md (Barlow Condensed/Barlow/IBM Plex Mono fonts, dark theme #1B1B1B, accent #FFB800, form-result colors) wired into Tailwind v4's CSS-first @theme block in resources/css/app.css NOW as groundwork — literal pixel-matching to the mockup stays Fase 6 ('Pulido') scope, not this phase"
+  - "ARQUITECTURA.md §2 and openspec/config.yaml's context block both say 'Tailwind 3.x' — pre-existing doc drift (actual: v4), worth a 1-line fix while touching CSS in this phase, not a blocking decision"
+  - "Testing: Strict TDD active. Public routes use HTTP-response-assertion style ($this->get(...)->assertSee(...) / assertStatus) — first use of this test pattern in the codebase, tests/Feature/, RefreshDatabase convention carried forward"
+
+  # --- Added by sdd-design (2026-08-08). See design.md for full rationale (D1-D11). ---
+  - "DESIGN/D1 — Migration set: 5 additive files in strict dependency order, all dated 2026_08_08: 000001_add_is_current_to_seasons_table, 000002_create_divisions_table, 000003_add_division_id_to_teams_table (must follow 000002 — FK target), 000004_create_news_table, 000005_create_game_events_table. Column types: seasons.is_current boolean default false after 'name'; divisions(season_id constrained cascadeOnDelete, name string, unique[season_id,name]); teams.division_id foreignId nullable after 'season_id' constrained restrictOnDelete (down() uses dropConstrainedForeignId); news(team_id nullable constrained nullOnDelete, title, slug unique, body text, cover_path nullable, published_at dateTime nullable, index published_at); game_events(game_id constrained cascadeOnDelete, player_id constrained cascadeOnDelete, type string, minute unsignedTinyInteger nullable, index[type,player_id]). All 5 FK actions re-verified line-by-line against the locked decisions above. The two non-unique indexes are the only departure from Fase 2's unique-only convention, each justified by a query this change ships"
+  - "DESIGN/D2 — Season::booted() guard RESOLVES rather than REJECTS: static::saving closure early-returns unless is_current, then runs a QUERY-BUILDER mass update (fires no model events -> no recursion) with ->when($season->exists, whereKeyNot(getKey())) so creates are handled correctly. Structurally mirrors Game::booted(). No transaction (locked single-operator scope). casts() gains 'is_current' => 'boolean' so a Filament Toggle's '1'/'0' string arrives as a real bool"
+  - "DESIGN/D3 — StandingsService::forDivision(Division): public sibling on the SAME class. The fold/sort body is extracted ONCE into a private buildTable(Collection $roster, int $seasonId) shared by both methods, performed as the REFACTOR step after forDivision()'s tests go green, pinned by Fase 4's 12 existing tests. forSeason()'s signature, return type, ordering and every observable behavior are unchanged; only its body becomes a 4-line delegation. Rejected alternative (documented fallback if a reviewer wants forSeason() character-identical): duplicate the 25-line fold. accumulate() untouched — its existing isset() roster guard already yields the correct cross-division behavior with no new filtering, matching league-standings' spec scenario"
+  - "DESIGN/D4 — GoalscorersService mirrors StandingsService (final, no constructor, instance methods for container auto-wiring + decoratability, two queries, readonly VO, explicit nested-array sortBy, orderBy('id') stable-sort seed) but aggregates in SQL (groupBy player_id + COUNT(*)) because — unlike standings — players with zero events MUST be absent, so events alone are a complete row universe. Season scope is whereHas('game.matchday', season_id). Signature: topScorers(Season, ?int $limit = 10) / topAssisters(Season, ?int $limit = 10); $limit = null returns everything and IS the documented seam for the deferred 'ver todos' page. GameEvent::TYPE_GOAL/TYPE_ASSIST/TYPES live on the MODEL (not on a Filament form class like PlayerForm::POSITIONS) so app/Services/ never depends on app/Filament/"
+  - "DESIGN/D5 — Public HTTP layer: namespace is App\\Http\\Controllers\\Site, NOT ...\\Public — 'public' is a PHP reserved word and is a fatal parse error as a namespace segment. Four single-purpose controllers (StandingsController, FixturesController, ScorersController via __invoke; NewsController with index/show) extending an abstract SiteController that constructor-injects a new app/Services/SeasonResolver and exposes protected activeSeason(): Season = resolver->active() ?? abort(404). Domain rule (which season) in the Services layer per config.yaml rules.design; HTTP concern (404) in the controller base. One controller with 5 actions rejected (stacked-branch conflicts); a trait rejected (cannot hold the injected dependency). Exact routes: GET / -> site.standings, GET /partidos -> site.fixtures, GET /goleadores -> site.scorers, GET /noticias -> site.news.index, GET /noticias/{slug} -> site.news.show (declared after /noticias). Spanish URLs, English class/view/route names. show() takes a plain string slug and does News::published()->where('slug',...)->firstOrFail() rather than route-model binding, so the visibility rule lives in exactly one place"
+  - "DESIGN/D6 — PUBLIC STANDINGS ZERO-DIVISION FALLBACK (OPEN — the only unresolved point in the design): divisions are selected via $season->divisions()->has('teams')->orderBy('id')->get() — has('teams') IS the locked '>=1 team' filter, executed by the DB, so Segunda renders nothing with no placeholder; orderBy('id') (creation order) deliberately over orderBy('name'), which only coincidentally orders Primera/Segunda and breaks on 'Cuarta'. NEW, beyond both state.yaml and the public-views spec: when the active season has ZERO qualifying divisions, render a single unnamed table from forSeason() instead of a blank page — reachable because teams.division_id is locked permanently nullable, so every admin-created season starts in that state. Needs a spec scenario or an explicit user veto; blocks nothing before work unit 8; default if nobody rules is to implement it and backfill the scenario"
+  - "DESIGN/D7 — News body uses a Textarea (plain text), rendered publicly as {!! nl2br(e($news->body)) !!} (escape first, then break). RichEditor rejected: it stores raw HTML that a public page must render unescaped — a real XSS surface for zero demo benefit. Upgrading is a clean Fase 6 decision (the column is already text, no migration)"
+  - "DESIGN/D8 — Filament: SeasonForm gains Toggle::make('is_current') with helperText 'Marking this season current automatically unmarks every other season.'; SeasonsTable gains IconColumn->boolean()->sortable(). The single-current rule surfaces as NOTHING in the UI — no form error, no notification, no confirm modal — because D2 resolves it inside the same save; the helperText is the only affordance and the IconColumn the after-the-fact proof. DivisionResource (navigationGroup 'League') reuses TeamForm's unique-scoped-by-season modifyRuleUsing idiom and needs a DivisionResource::deleteAction() copied from TeamResource::deleteAction() to translate restrictOnDelete's QueryException into a danger notification. TeamForm's season_id Select becomes ->live() so the new division_id Select can scope via relationship(..., fn (Builder, Get) => where season_id). NewsResource (navigationGroup 'Content') reuses crest_path's FileUpload block verbatim with directory('news')"
+  - "DESIGN/D8b — SPEC AMENDMENT RECOMMENDED: admin-league-crud's GameEventsRelationManager requirement says to scope the player Select by 'reusing GameForm's Get-based filtering pattern'. That mechanism is NOT implementable in a RelationManager — there is no home_team_id field in the RM's schema for Get to read, so it returns null. The game is the OWNER RECORD; the correct handle is $this->getOwnerRecord(). Same intent, correct mechanism, and the requirement's own scenario ('only players belonging to Team A or Team B are selectable') passes verbatim. Soften that one clause to the mechanism-free wording before archive"
+  - "DESIGN/D9 — Seeder under WithoutModelEvents: Season::booted()'s guard is muted exactly like Game's, so the seeder sets is_current DIRECTLY as an attribute on the single Season::factory()->create(['name' => '2025/26', 'is_current' => true]) call and must not rely on the guard to unset anything. Because exactly one season row is created, the invariant holds trivially — after seeding, Season::where('is_current', true)->count() === 1, pinned by a new test. A seeder comment states that any future second season must set the flag by hand or drop WithoutModelEvents. Divisions: Primera created first and passed as division_id to all 10 curated teams (one added line in the existing map()), Segunda created empty. Factories go through fill(), so 'is_current' MUST be added to Season's #[Fillable] and 'division_id' to Team's or the seeder attributes are silently dropped. NO news or game_events are seeded (admin-entered content; fake goals would make the leaderboard meaningless) — documented consequence: goleadores and noticias render empty states on a fresh seed and their HTTP tests must build their own fixtures. Fase 2's existing DatabaseSeederTest assertions are all unaffected; 3 assertions are ADDED"
+  - "DESIGN/D10 — Fonts load through the mechanism Laravel 13 already ships and welcome.blade.php already uses: laravel-vite-plugin/fonts' bunny() helper in vite.config.js + the @fonts Blade directive. NO <link rel=preconnect>, NO CSS @import. The single bunny('Instrument Sans') entry is REPLACED by bunny('Barlow Condensed', [500,600,700,800]), bunny('Barlow', [400,500,600,700]), bunny('IBM Plex Mono', [400,500]) — weights straight from NOTES.md. app.css's @theme: --font-sans replaced with Barlow, plus --font-display (Barlow Condensed), --font-mono (IBM Plex Mono), --color-brand #FFB800, --color-ink #1B1B1B, --color-surface #2B2B2B, --color-surface-alt #262626, --color-surface-muted #383838, --color-win #1F7A4D, --color-win-soft #6FE0A8, --color-draw #5C5C5C, --color-loss #8A3B3B. Verified safe for the admin panel: Filament v5 loads its own compiled stylesheet and no ->viteTheme() is registered, so it never consumes app.css. NOTES.md's diagonal repeating-linear-gradient is NOT added — that is composition, i.e. Fase 6"
+  - "DESIGN/D11 — MUST NOT BE FORGOTTEN: tests/Feature/ExampleTest.php asserts $this->get('/')->assertStatus(200) with no RefreshDatabase and no seeding. The moment / becomes the standings page it hits a zero-season database and gets 404 — a guaranteed red test unrelated to the feature. Both stock artifacts are deleted in the public-site work unit: resources/views/welcome.blade.php and tests/Feature/ExampleTest.php (tests/Unit/ExampleTest.php is untouched — no HTTP). StandingsPageTest replaces the coverage"
+  - "DESIGN/CAPABILITY NAMING — CONFIRMED: keep sdd-spec's single new 'public-views' capability (with the goleadores requirements inline) over proposal.md's two-capability sketch ('public-league-site' + 'player-scoring-stats'). A separate player-scoring-stats capability would cover two methods on one service consumed by one page. sdd-archive merges one new spec folder, not two"
+  - "DESIGN/WORK UNITS — recommended 9-unit stacked split for sdd-tasks (400-line budget risk High for the change as a whole; every unit individually under it): 1 fase-5/1-season-is-current (~230); 2 fase-5/2-divisions-schema (~400, dep 1); 3 fase-5/3-standings-for-division (~140, dep 2); 4 fase-5/4-news (~330); 5 fase-5/5-game-events (~330); 6 fase-5/6-goalscorers-service (~200, dep 5); 7 fase-5/7-design-tokens (~50, CSS/config only); 8 fase-5/8-public-standings-fixtures (~400, dep 3+7, includes SeasonResolver + layout + the D11 deletions); 9 fase-5/9-public-scorers-news (~330, dep 4+6+8). Rationale: schema-first/public-last; each of 1-6 closes one domain extension end-to-end (migration -> model -> admin -> tests); 3 is split from 2 and 6 from 5 so the service-logic diffs get their own review lens instead of being buried in a large schema+admin diff; 7 is standalone so unit 8's diff stays purely PHP/Blade. Guard lines: 'Decision needed before apply: No' / 'Chained PRs recommended: Yes' / '400-line budget risk: High'. sdd-tasks makes the final call"
+
+out_of_scope_this_change:
+  - "Fantasy Superleague section (NOTES.md itself recommends out-of-scope unless decided otherwise; never mentioned in ARQUITECTURA.md)"
+  - "Literal pixel-matching / full visual polish to the mockup — Fase 6 ('Pulido')"
+  - "News author_id/byline attribution"
+  - "Card/substitution or any game_event type beyond goal/assist (type column stays a flexible string specifically to keep this door open later)"
+  - "Multi-language/i18n"
+  - "News comments or any public interaction features (read-only)"
+  - "Goleadores/asistencias division-scoping (stays season-wide)"
+  - "'Ver todos' full-leaderboard page beyond the top-10 view (left as a documented future extension point, not built now)"
+  - "'Coming soon' UI treatment for empty divisions (Segunda simply doesn't render until populated)"
+  - "Backfilling teams.division_id to NOT NULL"
+
+next_action_if_resuming: >
+  Exploration, proposal, spec, design and tasks are all DONE (2026-08-08).
+  tasks.md adopted design.md's 9-unit stacked-branch split verbatim (60
+  RED/GREEN/verify tasks across units 1-9, branch names/bases in
+  work_units above). Base for unit 1 verified against .git/HEAD:
+  fase-4/1-standings-service. The D6 zero-division standings fallback is
+  treated as approved (not an open question) and is baked into unit 8's
+  tasks. admin-league-crud's GameEventsRelationManager wording is already
+  reconciled to the owner-record mechanism — no amendment task was needed.
+
+  Next phase is sdd-apply. Two hard don't-forgets carried into explicit
+  tasks (1.4/1.5 and 8.3 below) — do not let them regress during apply:
+  admin-league-crud's GameEventsRelationManager requirement (decisions_locked
+  "DESIGN/D8b") before archive.
+
+  Two hard don't-forgets for apply, both already in decisions_locked:
+  tests/Feature/ExampleTest.php WILL go red the moment / stops serving
+  welcome.blade.php and must be deleted with it (DESIGN/D11); and
+  'is_current'/'division_id' MUST be added to Season's/Team's #[Fillable] or
+  the seeder's attributes are silently dropped (DESIGN/D9).

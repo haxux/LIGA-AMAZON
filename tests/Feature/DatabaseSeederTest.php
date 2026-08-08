@@ -76,4 +76,11 @@ class DatabaseSeederTest extends TestCase
 
         $this->assertSame(0, Team::whereNotNull('crest_path')->count());
     }
+
+    public function test_fresh_seed_marks_exactly_one_season_as_current(): void
+    {
+        $this->seed();
+
+        $this->assertSame(1, Season::where('is_current', true)->count());
+    }
 }
