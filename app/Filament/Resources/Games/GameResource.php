@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Games;
 use App\Filament\Resources\Games\Pages\CreateGame;
 use App\Filament\Resources\Games\Pages\EditGame;
 use App\Filament\Resources\Games\Pages\ListGames;
+use App\Filament\Resources\Games\RelationManagers\GameEventsRelationManager;
 use App\Filament\Resources\Games\Schemas\GameForm;
 use App\Filament\Resources\Games\Tables\GamesTable;
 use App\Models\Game;
@@ -36,7 +37,7 @@ class GameResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            GameEventsRelationManager::class,
         ];
     }
 

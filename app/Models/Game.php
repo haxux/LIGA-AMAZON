@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable(['matchday_id', 'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score'])]
@@ -58,5 +59,10 @@ class Game extends Model
     public function awayTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'away_team_id');
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(GameEvent::class);
     }
 }

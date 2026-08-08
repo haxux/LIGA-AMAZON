@@ -107,6 +107,13 @@ class SchemaMigrationTest extends TestCase
         $this->assertNotNull(DB::table('news')->where('id', $id)->first());
     }
 
+    public function test_game_events_table_has_expected_columns(): void
+    {
+        $this->assertTrue(Schema::hasColumns('game_events', [
+            'id', 'game_id', 'player_id', 'type', 'minute', 'created_at', 'updated_at',
+        ]));
+    }
+
     public function test_duplicate_team_name_within_same_season_is_rejected(): void
     {
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);

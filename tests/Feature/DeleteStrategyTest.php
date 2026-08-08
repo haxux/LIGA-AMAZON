@@ -89,4 +89,39 @@ class DeleteStrategyTest extends TestCase
         $this->assertNotNull($news);
         $this->assertNull($news->team_id);
     }
+
+    /**
+     * @return array{0: int, 1: int} [gameId, playerId]
+     */
+    private function makeGameAndPlayer(): array
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        $homeTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Home FC', 'short_name' => 'HOM', 'created_at' => now(), 'updated_at' => now()]);
+        $awayTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Away FC', 'short_name' => 'AWY', 'created_at' => now(), 'updated_at' => now()]);
+        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $gameId = DB::table('games')->insertGetId(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
+        $playerId = DB::table('players')->insertGetId(['team_id' => $homeTeamId, 'name' => 'Player A', 'position' => 'GK', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+
+        return [$gameId, $playerId];
+    }
+
+    public function test_deleting_a_game_cascades_to_its_events(): void
+    {
+        [$gameId, $playerId] = $this->makeGameAndPlayer();
+        $eventId = DB::table('game_events')->insertGetId(['game_id' => $gameId, 'player_id' => $playerId, 'type' => 'goal', 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('games')->where('id', $gameId)->delete();
+
+        $this->assertSame(0, DB::table('game_events')->where('id', $eventId)->count());
+    }
+
+    public function test_deleting_a_player_cascades_to_their_events(): void
+    {
+        [$gameId, $playerId] = $this->makeGameAndPlayer();
+        $eventId = DB::table('game_events')->insertGetId(['game_id' => $gameId, 'player_id' => $playerId, 'type' => 'goal', 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('players')->where('id', $playerId)->delete();
+
+        $this->assertSame(0, DB::table('game_events')->where('id', $eventId)->count());
+    }
 }

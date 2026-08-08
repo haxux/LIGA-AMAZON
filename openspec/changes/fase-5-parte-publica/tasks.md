@@ -79,12 +79,12 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 5 — `fase-5/5-game-events`
 
-- [ ] 5.1 RED: `SchemaMigrationTest` += `test_game_events_table_has_expected_columns`; `DeleteStrategyTest` += `test_deleting_a_game_cascades_to_its_events`, `test_deleting_a_player_cascades_to_their_events`. Must fail.
-- [ ] 5.2 GREEN: migration `..._000005_create_game_events_table.php` (game_id/player_id cascade, type string, minute unsignedTinyInteger, index[type,player_id]).
-- [ ] 5.3 GREEN: `GameEvent.php` (create — `TYPE_GOAL`/`TYPE_ASSIST`/`TYPES` consts, `casts(): ['minute'=>'integer']`, `game()`, `player()`) + `GameEventFactory` (+`goal()`/`assist()` states); `Game.php` += `events(): HasMany`; `Player.php` += `gameEvents(): HasMany`.
-- [ ] 5.4 RED: `GameEventsRelationManagerTest` (create — RM renders, operator records a goal, `test_player_select_only_offers_players_from_the_two_teams_in_the_game`). Must fail.
-- [ ] 5.5 GREEN: `GameEventsRelationManager` — player Select scoped via `$this->getOwnerRecord()->home_team_id`/`away_team_id` (owner-record mechanism, per spec's already-reconciled wording — not `GameForm`'s `Get`), type Select, minute TextInput; register in `GameResource::getRelations()`.
-- [ ] 5.6 Verify: full suite green.
+- [x] 5.1 RED: `SchemaMigrationTest` += `test_game_events_table_has_expected_columns`; `DeleteStrategyTest` += `test_deleting_a_game_cascades_to_its_events`, `test_deleting_a_player_cascades_to_their_events`. Must fail.
+- [x] 5.2 GREEN: migration `..._000005_create_game_events_table.php` (game_id/player_id cascade, type string, minute unsignedTinyInteger, index[type,player_id]).
+- [x] 5.3 GREEN: `GameEvent.php` (create — `TYPE_GOAL`/`TYPE_ASSIST`/`TYPES` consts, `casts(): ['minute'=>'integer']`, `game()`, `player()`) + `GameEventFactory` (+`goal()`/`assist()` states); `Game.php` += `events(): HasMany`; `Player.php` += `gameEvents(): HasMany`.
+- [x] 5.4 RED: `GameEventsRelationManagerTest` (create — RM renders, operator records a goal, `test_player_select_only_offers_players_from_the_two_teams_in_the_game`). Must fail.
+- [x] 5.5 GREEN: `GameEventsRelationManager` — player Select scoped via `$this->getOwnerRecord()->home_team_id`/`away_team_id` (owner-record mechanism, per spec's already-reconciled wording — not `GameForm`'s `Get`), type Select, minute TextInput; register in `GameResource::getRelations()`.
+- [x] 5.6 Verify: full suite green.
 
 ## Unit 6 — `fase-5/6-goalscorers-service`
 
