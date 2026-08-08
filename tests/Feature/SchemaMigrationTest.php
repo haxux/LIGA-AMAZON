@@ -80,6 +80,33 @@ class SchemaMigrationTest extends TestCase
         DB::table('divisions')->insert(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
     }
 
+    public function test_news_table_has_expected_columns(): void
+    {
+        $this->assertTrue(Schema::hasColumns('news', [
+            'id', 'team_id', 'title', 'slug', 'body', 'cover_path', 'published_at', 'created_at', 'updated_at',
+        ]));
+    }
+
+    public function test_news_model_maps_to_the_news_table(): void
+    {
+        $this->assertSame('news', (new \App\Models\News)->getTable());
+    }
+
+    public function test_duplicate_news_slug_is_rejected(): void
+    {
+        DB::table('news')->insert(['title' => 'A', 'slug' => 'gran-victoria', 'body' => 'Body', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->expectException(QueryException::class);
+        DB::table('news')->insert(['title' => 'B', 'slug' => 'gran-victoria', 'body' => 'Body 2', 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    public function test_news_item_persists_with_a_null_team_id(): void
+    {
+        $id = DB::table('news')->insertGetId(['title' => 'Untagged', 'slug' => 'untagged-news', 'body' => 'Body', 'team_id' => null, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->assertNotNull(DB::table('news')->where('id', $id)->first());
+    }
+
     public function test_duplicate_team_name_within_same_season_is_rejected(): void
     {
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);

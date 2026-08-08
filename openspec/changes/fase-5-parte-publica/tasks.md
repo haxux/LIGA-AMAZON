@@ -70,12 +70,12 @@ Strict TDD: every unit is RED (failing test) → GREEN (implement) → verify fu
 
 ## Unit 4 — `fase-5/4-news`
 
-- [ ] 4.1 RED: `SchemaMigrationTest` += `test_news_table_has_expected_columns`, `test_news_model_maps_to_the_news_table`, `test_duplicate_news_slug_is_rejected`; `DeleteStrategyTest` += `test_deleting_a_team_nulls_its_news_team_id`. Must fail.
-- [ ] 4.2 GREEN: migration `..._000004_create_news_table.php` (team_id nullOnDelete, slug unique, published_at indexed).
-- [ ] 4.3 GREEN: `News.php` (create, `#[Fillable]`, `casts(): ['published_at'=>'datetime']`, `team()`, `#[Scope] published()`) + `NewsFactory` (+`draft()`/`scheduled()` states).
-- [ ] 4.4 RED: `NewsResourceTest` (create — list/create/edit render, create-with-image, duplicate slug → form error, empty `published_at` persists draft). Must fail.
-- [ ] 4.5 GREEN: `NewsResource` 6-file layout; `NewsForm` (title→slug live slugify, slug unique, `Textarea` body, `FileUpload` cover_path dir `news/` [crest_path pattern], `DateTimePicker` published_at, team_id Select nullable); `NewsTable`.
-- [ ] 4.6 Verify: full suite green.
+- [x] 4.1 RED: `SchemaMigrationTest` += `test_news_table_has_expected_columns`, `test_news_model_maps_to_the_news_table`, `test_duplicate_news_slug_is_rejected`; `DeleteStrategyTest` += `test_deleting_a_team_nulls_its_news_team_id`. Must fail.
+- [x] 4.2 GREEN: migration `..._000004_create_news_table.php` (team_id nullOnDelete, slug unique, published_at indexed).
+- [x] 4.3 GREEN: `News.php` (create, `#[Fillable]`, `casts(): ['published_at'=>'datetime']`, `team()`, `#[Scope] published()`) + `NewsFactory` (+`draft()`/`scheduled()` states).
+- [x] 4.4 RED: `NewsResourceTest` (create — list/create/edit render, create-with-image, duplicate slug → form error, empty `published_at` persists draft). Must fail.
+- [x] 4.5 GREEN: `NewsResource` 6-file layout; `NewsForm` (title→slug live slugify, slug unique, `Textarea` body, `FileUpload` cover_path dir `news/` [crest_path pattern], `DateTimePicker` published_at, team_id Select nullable); `NewsTable`.
+- [x] 4.6 Verify: full suite green.
 
 ## Unit 5 — `fase-5/5-game-events`
 

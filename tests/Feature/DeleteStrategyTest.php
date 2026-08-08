@@ -76,4 +76,17 @@ class DeleteStrategyTest extends TestCase
         $this->expectException(QueryException::class);
         DB::table('divisions')->where('id', $divisionId)->delete();
     }
+
+    public function test_deleting_a_team_nulls_its_news_team_id(): void
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        $teamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Home FC', 'short_name' => 'HOM', 'created_at' => now(), 'updated_at' => now()]);
+        $newsId = DB::table('news')->insertGetId(['team_id' => $teamId, 'title' => 'Tagged', 'slug' => 'tagged-news', 'body' => 'Body', 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('teams')->where('id', $teamId)->delete();
+
+        $news = DB::table('news')->where('id', $newsId)->first();
+        $this->assertNotNull($news);
+        $this->assertNull($news->team_id);
+    }
 }
