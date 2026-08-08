@@ -50,10 +50,10 @@ Chain strategy: pending
 
 ## Phase 3: Factories
 
-- [ ] 3.1 RED `tests/Feature/PlayerFactoryTest.php`: 18x factory for one team yields 18 distinct shirt numbers (Row 8). Must fail.
-- [ ] 3.2 GREEN `database/factories/{Season,Team,Stadium,Matchday,Game}Factory.php` — curated names/cities, no raw Faker for domain fields.
-- [ ] 3.3 GREEN `PlayerFactory.php` with `Sequence` state for `shirt_number`. Confirm 3.1 green.
-- [ ] 3.4 RED+GREEN `tests/Feature/RelationshipTest.php`: all 6 relationships resolve both directions via factories (Row 5).
+- [x] 3.1 RED `tests/Feature/PlayerFactoryTest.php`: 18x factory for one team yields 18 distinct shirt numbers (Row 8). Must fail.
+- [x] 3.2 GREEN `database/factories/{Season,Team,Stadium,Matchday,Game}Factory.php` — curated names/cities, no raw Faker for domain fields.
+- [x] 3.3 GREEN `PlayerFactory.php` with `Sequence` state for `shirt_number`. Confirm 3.1 green.
+- [x] 3.4 RED+GREEN `tests/Feature/RelationshipTest.php`: all 6 relationships resolve both directions via factories (Row 5). (Purely a verification test of already-built models/factories — passed on first run, no new production code needed; noted as such rather than forced into an artificial RED.)
 
 ## Phase 4: Seeder
 
