@@ -1,7 +1,7 @@
 change: fase-2-modelo-de-datos
 title: "Fase 2 — Modelo de datos: migraciones, modelos y relaciones"
 artifact_store: openspec
-last_updated: 2026-08-07
+last_updated: 2026-08-08
 
 session_settings:
   execution_mode: interactive
@@ -11,22 +11,22 @@ session_settings:
 phases:
   exploration:
     status: done
-    artifact: openspec/changes/fase-2-modelo-de-datos/exploration.md
+    artifact: openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/exploration.md
   proposal:
     status: done
-    artifact: openspec/changes/fase-2-modelo-de-datos/proposal.md
+    artifact: openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/proposal.md
   spec:
     status: done
     artifacts:
-      - openspec/changes/fase-2-modelo-de-datos/specs/league-data-model/spec.md
-      - openspec/changes/fase-2-modelo-de-datos/specs/public-file-storage/spec.md
+      - openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/specs/league-data-model/spec.md
+      - openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/specs/public-file-storage/spec.md
   design:
     status: done
-    artifact: openspec/changes/fase-2-modelo-de-datos/design.md
+    artifact: openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/design.md
     note: "Future-Proofing Check section added after user feedback on 2026-08-07 (see memory: feedback-schema-extensibility)"
   tasks:
     status: done
-    artifact: openspec/changes/fase-2-modelo-de-datos/tasks.md
+    artifact: openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/tasks.md
     task_count: 28
     work_units:
       - { id: 1, name: migrations, branch: fase-2/1-migrations }
@@ -36,7 +36,7 @@ phases:
       - { id: 5, name: storage-and-verify, branch: fase-2/5-storage-and-verify }
   apply:
     status: done
-    artifact: openspec/changes/fase-2-modelo-de-datos/apply-progress.md
+    artifact: openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/apply-progress.md
     note: "All 28/28 tasks complete across 5 stacked branches. Working tree clean on fase-2/5-storage-and-verify, all completed work committed."
     checkpoint:
       head_branch: fase-2/5-storage-and-verify
@@ -58,9 +58,22 @@ phases:
       full_suite_run_status: "Run as one single `php artisan test` invocation across all 7 test files together — 31/31 passed, 52 assertions. Task 6.1 complete."
       resume_instructions: "Apply phase complete. Next: sdd-verify. All 5 branches (fase-2/1-migrations through fase-2/5-storage-and-verify) remain unmerged for user review per chain_strategy: stacked-to-main — do not merge into master without explicit user instruction."
   verify:
-    status: pending
+    status: done
+    artifact: openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/verify-report.md
+    verdict: PASS WITH WARNINGS
+    note: >
+      31/31 tests re-run independently (not trusted from apply report); seed row
+      counts and Game guard re-verified against real dev MySQL via migrate:fresh
+      --seed then restored to migrated-empty state; migrations/models/factories/
+      seeder/storage all confirmed against design.md. 0 CRITICAL, 3 WARNING
+      (apply-progress missing standardized TDD Cycle Evidence table for tasks
+      1.1-4.3; nginx-alias fallback path never exercised since symlink worked;
+      cross-season team-name-allowed scenario has no explicit test), 1 SUGGESTION.
   archive:
-    status: pending
+    status: done
+    artifact: openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/archive-report.md
+    date_archived: 2026-08-08
+    note: "Change archived per skill workflow. Specs merged into main openspec/specs/. All artifacts moved to archive with date prefix."
 
 decisions_locked:
   - "Game.home_score/away_score nullable = not played, no status enum"
@@ -81,9 +94,8 @@ out_of_scope_this_change:
   - "StandingsService (computing the table) — Fase 4"
   - "Public Blade views — Fase 5"
 
-next_action_if_resuming: >
-  Apply phase is done (28/28 tasks, 5/5 branches). Next step is sdd-verify
-  against the fase-2/5-storage-and-verify branch (tip of the stack). Do not
-  re-ask the user execution_mode/delivery_strategy/chain_strategy — they're
-  cached above. Do not merge any of the 5 branches into master without
-  explicit user instruction — they are deliberately left unmerged for review.
+archive_summary: >
+  Change fase-2-modelo-de-datos archived 2026-08-08. All 28 tasks complete.
+  Verification: PASS WITH WARNINGS (0 CRITICAL, 3 WARNING, 1 SUGGESTION).
+  Delta specs merged into main openspec/specs/. All artifacts moved to
+  openspec/changes/archive/2026-08-08-fase-2-modelo-de-datos/. SDD cycle complete.
