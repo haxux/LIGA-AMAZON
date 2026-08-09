@@ -19,3 +19,15 @@
     --color-draw: #5C5C5C;
     --color-loss: #8A3B3B;
 }
+
+@utility bg-brand-weave {
+    background-color: var(--color-brand);
+    background-image:
+        repeating-linear-gradient(115deg, rgba(0,0,0,0.045) 0px, rgba(0,0,0,0.045) 1px, transparent 1px, transparent 46px),
+        repeating-linear-gradient(25deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 78px);
+}
+
+@utility bg-hatch {
+    background-image:
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px);
+}
