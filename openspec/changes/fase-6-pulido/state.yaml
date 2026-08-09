@@ -1,0 +1,160 @@
+change: fase-6-pulido
+title: "Fase 6 — Pulido: integrar el frontend de Amazon Superleague (restyle visual) + ajustes"
+artifact_store: openspec
+last_updated: 2026-08-08
+tasks_phase_completed: true
+
+session_settings:
+  execution_mode: interactive
+  delivery_strategy: auto-chain
+  chain_strategy: stacked-to-main
+
+phases:
+  exploration:
+    status: done
+    artifact: openspec/changes/fase-6-pulido/exploration.md
+  proposal:
+    status: done
+    artifact: openspec/changes/fase-6-pulido/proposal.md
+  spec:
+    status: done
+    artifact: openspec/changes/fase-6-pulido/specs/public-views/spec.md
+    note: >
+      One ADDED requirement written for public-views: team crest images (crest_path)
+      being publicly rendered in standings-table rows and game-cards, with a generic
+      fallback when null, is new observable business-facing behavior not previously
+      covered by public-views/spec.md (which only specified routing/data-scoping, not
+      whether crest images appear). Everything else in this phase (fonts, gradient
+      background, card/table CSS, avatar placeholders, footer layout, promotion/
+      relegation static legend, MatchdayFactory uniqueness fix) is pure
+      presentation/test-infrastructure with no observable business-rule change and
+      intentionally has NO spec delta, per state.yaml's locked decisions.
+  design:
+    status: done
+    artifact: openspec/changes/fase-6-pulido/design.md
+    note: >
+      7 architecture decisions (D1-D7). Exact CSS values sourced from the mockup
+      source file (Amazon Superleague.dc.html), not NOTES.md, which only describes
+      the gradient in prose. Two new leaf components (team-crest, player-avatar).
+      Two concrete test-collision hazards found and constrained (see design
+      Testing Strategy). MatchdayFactory fix needs BOTH a DB-max lookup and a
+      Sequence offset — either alone leaves a real hole.
+  tasks:
+    status: done
+    artifact: openspec/changes/fase-6-pulido/tasks.md
+    note: >
+      Single work unit (branch fase-6/1-pulido), per design's Work-Unit
+      Recommendation — surfaces share D1's colour inversion, splitting by
+      page yields unreviewable half-restyled states. 8 phases: (1) TDD
+      RED/GREEN MatchdayFactory fix, landed first as independent/lower-risk;
+      (2) CSS @utility gradients; (3) new team-crest/player-avatar leaf
+      components; (4) layout shell (header/nav/footer) with both
+      test-collision constraints called out as explicit task constraints —
+      footer must not contain division names, header must stay digit-free;
+      (5) the 4 component restyles; (6) the 5 page headings +
+      dedicated text-ink audit verification task (design's highest-
+      probability defect); (7) Storage::disk('public')->url() fix for news
+      views (approved in-scope); (8) full-suite checkpoint targeting 169/169.
+      Forecast: 400-line risk Medium (380-460 lines), Chained PRs
+      recommended: No, Decision needed before apply: No (auto-chain
+      resolves it). Could not run `git branch --list`/`git log` to verify
+      current branch tip (no Bash tool available to this executor) — branch
+      name and base (fase-5/9-public-scorers-news) taken from orchestrator
+      instruction, unverified.
+    work_units:
+      - id: 1
+        goal: "MatchdayFactory fix + full visual restyle"
+        branch: fase-6/1-pulido
+        base: fase-5/9-public-scorers-news
+        pr: "PR 1 (single PR)"
+  apply:
+    status: done
+    artifact: openspec/changes/fase-6-pulido/apply-progress.md
+    note: >
+      All 20 tasks done in one apply session on branch fase-6/1-pulido
+      (created off fase-5/9-public-scorers-news, commit 5991aeb). Phase 1's
+      MatchdayFactory fix got a genuine RED/GREEN/TRIANGULATE TDD cycle (4
+      new tests in tests/Feature/MatchdayFactoryTest.php); found and fixed a
+      real off-by-one bug in design D6's own Sequence-closure code sample
+      during GREEN (Sequence::__invoke() increments $sequence->index before
+      the lazily-evaluated inner closure runs, so reading it there saw the
+      post-increment value — fixed by capturing the offset in the outer
+      closure instead). GamesRelationManagerTest re-run 3x, no flake. Phases
+      2-8 (CSS utilities, 2 new leaf components, layout shell, 4 component
+      restyles, 5 page headings, Storage::disk('public') fix, full-suite
+      checkpoint) implemented directly with regression checks after each
+      surface per design's Testing Strategy. Full suite: 169/169 (165 + 4
+      new), matching the corrected target exactly. Found and fixed a second,
+      wider defect during the Phase 6.6 text-ink audit: several card-internal
+      text nodes (team names, stat columns, player names, news titles) had no
+      explicit text color and were relying on inheriting text-white from the
+      old body — once body flipped to text-ink (D1), those would have
+      rendered as invisible dark-on-dark text inside the still-dark
+      bg-surface/bg-surface-alt cards. Fixed in standings-table, game-card,
+      scorer-list, news-card. Manual visual review (8.2) done by curling the
+      4 live rendered pages against seeded Fase-2 demo data and reading
+      actual HTML output/class attributes, not asserted without basis.
+      npm run build (via the node docker service) confirmed the new
+      @utility CSS compiles. Actual diff: 256 insertions + 67 deletions = 323
+      changed lines across 15 source files, under the 400-line budget
+      (forecast was Medium 380-460) — no split needed, single PR as planned.
+      Left unmerged on fase-6/1-pulido for user review, matching the Fase
+      2-5 pattern. Next: sdd-verify.
+  verify:
+    status: pending
+  archive:
+    status: pending
+
+decisions_locked:
+  - "SCOPE: pure visual restyle of the 4 existing public pages (resources/views/site/**, components/{layouts/site,site}/**) + resources/css/app.css, applying openspec/design-reference/amazon-superleague/NOTES.md's visual language (already-wired tokens) as markup/classes only. Plus one deferred bug fix: database/factories/MatchdayFactory.php's non-unique 'number' field, which intermittently collides in GamesRelationManagerTest (Fase-3-era flaky test, deferred 3 phases)"
+  - "NOT included (user-declined, real feature work not pure polish): 'forma reciente' (recentForm() service method, W/D/L chips) and 'partido destacado de la semana' (highlighted/next-game widget). Both remain documented future-extension options, not built in Fase 6"
+  - "Structural scope: does NOT re-open the merged public-views spec's 4-route structure (standings/, partidos/, goleadores/, noticias/). Applies the mockup's single-page-dashboard visual LANGUAGE to each existing route in place, not a page-structure rewrite. No featured-news hero card (would need a new News schema flag — schema work, out of scope). No Fantasy Superleague section. No live-badge/status concept (Game has no status field, correctly not reopened)"
+  - "Admin panel: OUT OF SCOPE entirely. Filament uses its own compiled stylesheet, never consumes app.css (confirmed Fase 5 design.md D10, no ->viteTheme() registered)"
+  - "Standings columns: KEEP the current fuller column set (#, Equipo, PJ, G, E, P, GF, GC, DG, PTS) — do NOT reduce to the mockup's condensed POS/EQUIPO/PJ/DG/PTS set. Apply mockup's row/color/spacing styling on top of the existing informative column set (locked without a separate question — obvious right call, don't remove information users already have, don't break existing content assertions)"
+  - "Promotion/relegation legend: STATIC visual legend/color-key only (e.g. a small dot+label row explaining what colors would mean) — NO row coloring, no top-N/bottom-N threshold logic invented. User explicit: 'dejalo así por el momento, luego yo haré indicaciones, pero en un futuro tendrán color' — zone-coloring rules are a future decision the user will specify later, not decided now. No spec change needed for this (purely presentational, no promotion/relegation business rule exists or is being added)"
+  - "Team crests: use the REAL uploaded crest_path image (via the public disk, already wired since Fase 2) with a generic-shape fallback when null — NOT always-generic. User confirmed teams will have real crest images"
+  - "Player avatars: STAY GENERIC PLACEHOLDER for now — user explicitly said players will eventually get avatar images too, but sourced from an EXTERNAL API (not a file-upload field like crest_path), and that work is NOT happening in this phase ('lo de los jugadores aún no lo haremos'). IMPORTANT for design: build the avatar-placeholder markup/component in a way that doesn't foreclose later swapping in an external-API-sourced avatar URL (e.g. a simple conditional img-src slot in the scorer-list/avatar component, not hardcoded-forever static SVG with no swap point) — this is a Future-Proofing note, not a task to build the API integration now"
+  - "Testing: existing HTTP tests (StandingsPageTest, FixturesPageTest, ScorersPageTest, NewsPageTest) assert content/status only, not markup/CSS — they serve as regression guards through this restyle, not blockers. No pixel-diff/snapshot tooling introduced (no precedent in this stack, disproportionate for demo scope). Manual visual review against the mockup is the actual fidelity-verification method. Full suite (165 + new MatchdayFactory regression test) must stay green throughout. The MatchdayFactory fix DOES get a genuine TDD RED/GREEN cycle (it's a real bug fix, not styling)"
+  - "Fase 5's two undocumented review-workload-budget overruns (units 2 and 4) are NOT actionable code changes in this phase — those branches are already merged/archived, nothing to retroactively re-split. Treated as a process lesson for this phase's own sdd-tasks to forecast more conservatively, not a code task"
+  - "DESIGN D1 — Gradient as Tailwind v4 @utility in app.css (bg-brand-weave for the body's yellow diagonal weave, bg-hatch for empty image slots), NOT inline style and NOT @layer base. @theme block stays untouched. Exact values lifted from openspec/design-reference/amazon-superleague/Amazon Superleague.dc.html line 28 / line 57 (NOTES.md only describes them in prose). CONSEQUENCE that must not be missed: body goes from bg-ink/text-white to bg-brand-weave/text-ink, so the 5 page h1/h2 headings currently inheriting white MUST become text-ink; text inside dark cards stays white"
+  - "DESIGN D2 — Wordmark is pure typography, no logo image (none exists in the repo, none created). Two spans: AMAZON font-extrabold text-brand + SUPERLEAGUE font-semibold text-white tracking-[0.14em], font-display text-[27px]. Verified safe: grep of tests/ found NO assertion on 'Liga Amazon' or any nav label. uploads/pasted-1785857503738-0.png is a low-fidelity wireframe render — reference material only, NOT a usable asset; no image asset ships in this change"
+  - "DESIGN D3 — Active nav indicator via request()->routeIs() in a @php $nav array loop inside the layout; news matches 'site.news.*' so /noticias/{slug} also highlights. Rejected passing an $active prop from each of the 5 views (5 call sites to keep in sync, zero benefit). Active = border-b-[3px] border-brand text-white; inactive = border-transparent text-white/72"
+  - "DESIGN D4 — NEW component resources/views/components/site/team-crest.blade.php (props: team, size), used 3x (standings row, game-card home, game-card away). Reads via Storage::disk('public')->url($team->crest_path) EXPLICITLY — mirroring TeamForm's ->disk('public')->directory('crests'). Deliberately NOT the bare Storage::url() the news views use: config/filesystems.php:16 defaults to the 'local' disk and only resolves to the same URL by coincidence of the public/storage symlink. Fallback is a neutral rounded-[3px] bg-surface-muted span with NO text (no initials) — adds zero new strings to rendered HTML, so zero new assertSee/assertDontSee surface. alt=\"\" (decorative; team name always adjacent). No new query / no N+1: crest_path rides on Team models already eager-loaded"
+  - "DESIGN D5 — Player-avatar swap seam: NEW component resources/views/components/site/player-avatar.blade.php accepting a :player prop it does not yet use, rendering only the circular bg-surface-muted placeholder, with a comment naming the exact future edit. REJECTED $player->avatar_url ?? null — on an Eloquent model a missing attribute silently returns null, making it permanent dead code that LIES about the schema (a reviewer cannot tell whether the column exists). One unused prop is the honest, minimal seam"
+  - "DESIGN D6 — MatchdayFactory fix needs BOTH halves, either alone leaves a real hole: (a) a 'number' closure calling a private static nextNumberForSeason() that does Matchday::where('season_id', ...)->max('number') + 1 — fixes separate ->create() calls (the actual GamesRelationManagerTest bug), which a Sequence alone does NOT because each new factory instance restarts at index 0; (b) a configure() Sequence adding $sequence->index as an offset — fixes ->count(N)->create(), which the DB max alone does NOT because Factory::make() builds all N instances before store() persists any. REJECTED fake()->unique()->numberBetween(1,18): Laravel's fake() is a process-wide singleton whose unique-store is NOT reset by RefreshDatabase (OverflowException after 18 matchdays suite-wide) and it enforces GLOBAL uniqueness where the constraint is per-season. Safe for all callers: season_id is key 0 in definition() and expandAttributes() writes each resolved value back before evaluating the next key, so the closure sees a resolved id for bare factory(), ->for($season) and create(['season_id'=>...]) alike; the 8 call sites passing 'number' explicitly override the state so the closure never runs (DatabaseSeeder adds ZERO extra queries)"
+  - "DESIGN D7 — Standings keeps stacked <section> per division; the mockup's Primera/Segunda tab switcher is client state with no server equivalent and is NOT built — resources/js/app.js stays untouched. Legend is two static dot+label spans (bg-brand 'CLASIFICACIÓN', bg-loss 'DESCENSO') under the table. No row coloring, no thresholds"
+  - "DESIGN — TWO CONCRETE TEST-COLLISION HAZARDS found by reading the existing tests, both HARD constraints for apply: (1) StandingsPageTest::test_empty_division_renders_no_table does assertDontSee('Segunda'), and the mockup footer links 'Primera División'/'Segunda División' — the expanded footer MUST NOT contain division names; use neutral columns pointing at real routes only (no dead # links, no login/language block). (2) FixturesPageTest::test_page_groups_games_by_matchday does assertSeeInOrder(['1','2']), which passes only because initial-scale=1 in <head> precedes any '2' — do NOT add a season label like '2026/27' to the header. Everything else verified clean: all four page tests assert status codes and content strings only, zero CSS/DOM/snapshot assertions, so NO existing test file is modified"
+  - "DESIGN — MatchdayFactory gets 4 deterministic RED/GREEN tests in a new tests/Feature/MatchdayFactoryTest.php, not 1: (a) 20 sequential create() calls for one season assert distinct number count = 20 — RED is GUARANTEED by pigeonhole (20 draws from numberBetween(1,18) must repeat), not probabilistic, so no faker seeding needed; (b) ->count(20)->create() batch, same pigeonhole, guards the D6 batch half; (c) numbers restart per season (guards against a global-counter regression); (d) an explicitly passed number is respected (guards the 8 existing callers). Proposal's success criterion '165 + 1' should read 165 + 4 = 169"
+  - "DESIGN — Work-unit recommendation for sdd-tasks: ONE unit / one branch (fase-6/1-pulido). 15 files, ~12 of them <=40 changed lines, and all surfaces share D1's colour inversion so splitting by page creates half-restyled unreviewable intermediate states. Forecast 400-line budget risk: MEDIUM (est. 380-460 changed lines, dominated by standings-table and site.blade.php). If the forecast lands >400, the ONLY clean split is unit 1 = MatchdayFactory fix + tests (~70 lines, independently valuable and revertible), unit 2 = restyle — split on that seam, never between pages"
+  - "DESIGN — Future-proofing confirmed for all 5 deferred items: recentForm() chips append as one <th>/<td> pair (win/draw/loss tokens already exist unused), partido-destacado is a new prop or sibling of the self-contained game-card, player avatars are D5's one-file edit, zone coloring only needs a threshold source since the legend markup already names both zones, and the news hero stays additive once a News flag exists. Nothing in this phase forecloses any of them"
+
+out_of_scope_this_change:
+  - "recentForm() / forma reciente chips (W/D/L per team) — future extension, not built"
+  - "Partido destacado de la semana / live-game highlight widget — future extension, not built (no status/live concept in domain)"
+  - "Featured-news hero card requiring a new News schema flag"
+  - "Fantasy Superleague section"
+  - "Admin panel (Filament) visual restyle"
+  - "i18n / language switch / login UI from the mockup (no auth/i18n in scope)"
+  - "Promotion/relegation zone-coloring logic (static legend only, actual rule deferred to a future user decision)"
+  - "Player avatar images sourced from an external API (placeholder stays generic, but component built to allow this later)"
+  - "Pixel-diff/visual-regression tooling"
+  - "Retroactive re-splitting of Fase 5's fase-5/2 and fase-5/4 branches (already merged/archived)"
+
+next_action_if_resuming: >
+  Exploration, proposal, spec, design and tasks are all DONE. tasks.md has 8
+  phases / 20 tasks in one work unit (branch fase-6/1-pulido, base
+  fase-5/9-public-scorers-news — base unverified, no Bash tool available to
+  the tasks executor to confirm current branch tip). Next phase is sdd-apply,
+  strict TDD mode active. It MUST carry forward: Phase 1's genuine RED/GREEN
+  MatchdayFactory cycle (write tests/Feature/MatchdayFactoryTest.php first,
+  confirm pigeonhole-guaranteed failure, then apply D6's fix); the two hard
+  test-collision constraints as literal task constraints in Phase 4 (footer
+  must not say "Segunda"; header must not gain a "2026/27"-style label); the
+  two NEW leaf components (team-crest, player-avatar); the text-ink audit as
+  its own explicit Phase 6 verification task (design's highest-probability
+  defect); the approved Storage::disk('public')->url() fix for the two news
+  views in Phase 7 (now in-scope, not optional); and the Phase 8 checkpoint
+  targeting 169/169 (165 existing + 4 new), not the proposal's rough "+1".
+  Review workload: Medium 400-line risk, Chained PRs recommended: No,
+  Decision needed before apply: No (auto-chain/stacked-to-main already
+  resolves it) — sdd-apply may proceed without asking.
