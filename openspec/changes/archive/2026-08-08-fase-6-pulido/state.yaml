@@ -101,9 +101,32 @@ phases:
       Left unmerged on fase-6/1-pulido for user review, matching the Fase
       2-5 pattern. Next: sdd-verify.
   verify:
-    status: pending
+    status: done
+    artifact: openspec/changes/fase-6-pulido/verify-report.md
+    note: >
+      Verdict PASS WITH WARNINGS. 25/25 tasks confirmed complete and checked
+      against actual source, not just the apply report. Full suite re-run
+      directly by this verify session: 169/169 passed (458 assertions).
+      StandingsPageTest, FixturesPageTest and MatchdayFactoryTest also
+      re-run in isolation, all green. MatchdayFactory D6 fix independently
+      re-derived against the real Sequence::__invoke() source in
+      vendor/laravel/framework and confirmed correct (the design own sample
+      code had a genuine off-by-one, correctly fixed in the applied code).
+      Both test-collision hazards (Segunda in footer, digit ordering in
+      fixtures) independently confirmed clean. text-white/text-ink and
+      Storage disk fixes spot-checked directly against source across all
+      restyled components. Scope containment confirmed via git diff: zero
+      changes under app/, database/migrations/, .env, docker-compose.yml
+      or the Filament panel; 323 changed lines across 15 source files,
+      under the 400-line budget. 4 WARNINGs raised, all informational or
+      already resolved in session (no automated test for the two spec-delta
+      crest scenarios beyond manual review, per this change locked
+      no-pixel-diff decision; stale plus-1 vs plus-4 test count note in
+      proposal.md; two design/task-scope deviations already found and fixed
+      during apply). No CRITICAL issues. Ready for sdd-archive.
   archive:
-    status: pending
+    status: done
+    archived_at: 2026-08-08
 
 decisions_locked:
   - "SCOPE: pure visual restyle of the 4 existing public pages (resources/views/site/**, components/{layouts/site,site}/**) + resources/css/app.css, applying openspec/design-reference/amazon-superleague/NOTES.md's visual language (already-wired tokens) as markup/classes only. Plus one deferred bug fix: database/factories/MatchdayFactory.php's non-unique 'number' field, which intermittently collides in GamesRelationManagerTest (Fase-3-era flaky test, deferred 3 phases)"
@@ -122,7 +145,7 @@ decisions_locked:
   - "DESIGN D4 — NEW component resources/views/components/site/team-crest.blade.php (props: team, size), used 3x (standings row, game-card home, game-card away). Reads via Storage::disk('public')->url($team->crest_path) EXPLICITLY — mirroring TeamForm's ->disk('public')->directory('crests'). Deliberately NOT the bare Storage::url() the news views use: config/filesystems.php:16 defaults to the 'local' disk and only resolves to the same URL by coincidence of the public/storage symlink. Fallback is a neutral rounded-[3px] bg-surface-muted span with NO text (no initials) — adds zero new strings to rendered HTML, so zero new assertSee/assertDontSee surface. alt=\"\" (decorative; team name always adjacent). No new query / no N+1: crest_path rides on Team models already eager-loaded"
   - "DESIGN D5 — Player-avatar swap seam: NEW component resources/views/components/site/player-avatar.blade.php accepting a :player prop it does not yet use, rendering only the circular bg-surface-muted placeholder, with a comment naming the exact future edit. REJECTED $player->avatar_url ?? null — on an Eloquent model a missing attribute silently returns null, making it permanent dead code that LIES about the schema (a reviewer cannot tell whether the column exists). One unused prop is the honest, minimal seam"
   - "DESIGN D6 — MatchdayFactory fix needs BOTH halves, either alone leaves a real hole: (a) a 'number' closure calling a private static nextNumberForSeason() that does Matchday::where('season_id', ...)->max('number') + 1 — fixes separate ->create() calls (the actual GamesRelationManagerTest bug), which a Sequence alone does NOT because each new factory instance restarts at index 0; (b) a configure() Sequence adding $sequence->index as an offset — fixes ->count(N)->create(), which the DB max alone does NOT because Factory::make() builds all N instances before store() persists any. REJECTED fake()->unique()->numberBetween(1,18): Laravel's fake() is a process-wide singleton whose unique-store is NOT reset by RefreshDatabase (OverflowException after 18 matchdays suite-wide) and it enforces GLOBAL uniqueness where the constraint is per-season. Safe for all callers: season_id is key 0 in definition() and expandAttributes() writes each resolved value back before evaluating the next key, so the closure sees a resolved id for bare factory(), ->for($season) and create(['season_id'=>...]) alike; the 8 call sites passing 'number' explicitly override the state so the closure never runs (DatabaseSeeder adds ZERO extra queries)"
-  - "DESIGN D7 — Standings keeps stacked <section> per division; the mockup's Primera/Segunda tab switcher is client state with no server equivalent and is NOT built — resources/js/app.js stays untouched. Legend is two static dot+label spans (bg-brand 'CLASIFICACIÓN', bg-loss 'DESCENSO') under the table. No row coloring, no thresholds"
+  - "DESIGN D7 — Standings keeps stacked <section> per division; the mockup's Primera/Segunda tab switcher is client state with no server equivalent and is NOT built — resources/js/app.js stays untouched. Legend is two static dot+label spans (bg-brand 'CLASSIFICACIÓN', bg-loss 'DESCENSO') under the table. No row coloring, no thresholds"
   - "DESIGN — TWO CONCRETE TEST-COLLISION HAZARDS found by reading the existing tests, both HARD constraints for apply: (1) StandingsPageTest::test_empty_division_renders_no_table does assertDontSee('Segunda'), and the mockup footer links 'Primera División'/'Segunda División' — the expanded footer MUST NOT contain division names; use neutral columns pointing at real routes only (no dead # links, no login/language block). (2) FixturesPageTest::test_page_groups_games_by_matchday does assertSeeInOrder(['1','2']), which passes only because initial-scale=1 in <head> precedes any '2' — do NOT add a season label like '2026/27' to the header. Everything else verified clean: all four page tests assert status codes and content strings only, zero CSS/DOM/snapshot assertions, so NO existing test file is modified"
   - "DESIGN — MatchdayFactory gets 4 deterministic RED/GREEN tests in a new tests/Feature/MatchdayFactoryTest.php, not 1: (a) 20 sequential create() calls for one season assert distinct number count = 20 — RED is GUARANTEED by pigeonhole (20 draws from numberBetween(1,18) must repeat), not probabilistic, so no faker seeding needed; (b) ->count(20)->create() batch, same pigeonhole, guards the D6 batch half; (c) numbers restart per season (guards against a global-counter regression); (d) an explicitly passed number is respected (guards the 8 existing callers). Proposal's success criterion '165 + 1' should read 165 + 4 = 169"
   - "DESIGN — Work-unit recommendation for sdd-tasks: ONE unit / one branch (fase-6/1-pulido). 15 files, ~12 of them <=40 changed lines, and all surfaces share D1's colour inversion so splitting by page creates half-restyled unreviewable intermediate states. Forecast 400-line budget risk: MEDIUM (est. 380-460 changed lines, dominated by standings-table and site.blade.php). If the forecast lands >400, the ONLY clean split is unit 1 = MatchdayFactory fix + tests (~70 lines, independently valuable and revertible), unit 2 = restyle — split on that seam, never between pages"
@@ -141,20 +164,11 @@ out_of_scope_this_change:
   - "Retroactive re-splitting of Fase 5's fase-5/2 and fase-5/4 branches (already merged/archived)"
 
 next_action_if_resuming: >
-  Exploration, proposal, spec, design and tasks are all DONE. tasks.md has 8
-  phases / 20 tasks in one work unit (branch fase-6/1-pulido, base
-  fase-5/9-public-scorers-news — base unverified, no Bash tool available to
-  the tasks executor to confirm current branch tip). Next phase is sdd-apply,
-  strict TDD mode active. It MUST carry forward: Phase 1's genuine RED/GREEN
-  MatchdayFactory cycle (write tests/Feature/MatchdayFactoryTest.php first,
-  confirm pigeonhole-guaranteed failure, then apply D6's fix); the two hard
-  test-collision constraints as literal task constraints in Phase 4 (footer
-  must not say "Segunda"; header must not gain a "2026/27"-style label); the
-  two NEW leaf components (team-crest, player-avatar); the text-ink audit as
-  its own explicit Phase 6 verification task (design's highest-probability
-  defect); the approved Storage::disk('public')->url() fix for the two news
-  views in Phase 7 (now in-scope, not optional); and the Phase 8 checkpoint
-  targeting 169/169 (165 existing + 4 new), not the proposal's rough "+1".
-  Review workload: Medium 400-line risk, Chained PRs recommended: No,
-  Decision needed before apply: No (auto-chain/stacked-to-main already
-  resolves it) — sdd-apply may proceed without asking.
+  All phases complete and archived. This is the final phase of the Liga Amazon
+  roadmap (ARQUITECTURA.md §8, Fase 0–6 with Fase 6 being the last). All SDD
+  phases (exploration, proposal, spec, design, tasks, apply, verify, archive)
+  are done. The change has been fully archived to
+  openspec/changes/archive/2026-08-08-fase-6-pulido/. The delta spec has been
+  merged into openspec/specs/public-views/spec.md. No further action needed
+  for this change; the git branches remain unmerged on the stacked-to-main
+  strategy per the user's deliberate choice for review and merge.
