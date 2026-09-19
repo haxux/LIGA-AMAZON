@@ -318,7 +318,15 @@ Prefijos: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`.
 4. **Fase 3 — Panel admin.** Recursos de Filament para equipos, jugadores, jornadas y partidos.
 5. **Fase 4 — Lógica de liga.** `StandingsService`: cálculo de la tabla de posiciones.
 6. **Fase 5 — Parte pública.** Vistas Blade: clasificación, calendario y resultados.
-7. **Fase 6 — Pulido.** Diseño (integrar el frontend de Amazon Superleague), tests y ajustes.
+7. **Fase 6 — Pulido.** Diseño (integrar el frontend de Amazon Superleague), tests y ajustes. ✅
+8. **Fase 7 — Producción.** Endurecimiento previo a la publicación: acceso al panel con
+   `canAccessPanel()`, restricción de subidas (SVG rechazado), cabeceras de seguridad,
+   interruptor de HTTPS, límite de peticiones en las rutas públicas, plantilla de entorno
+   de producción y `DESPLIEGUE.md`. ✅
+
+> **Despliegue:** los pasos y todo lo que queda pendiente de elegir hosting están en
+> [`DESPLIEGUE.md`](DESPLIEGUE.md). El pendiente de mayor prioridad son las *policies* por
+> registro, cuyo disparador es la llegada del rol **técnico** (§4.1).
 
 ---
 
