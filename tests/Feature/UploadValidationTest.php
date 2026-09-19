@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -92,7 +93,7 @@ class UploadValidationTest extends TestCase
         )->assertHasNoFormErrors();
     }
 
-    private function createTeamWithCrest(UploadedFile $file): \Livewire\Features\SupportTesting\Testable
+    private function createTeamWithCrest(UploadedFile $file): Testable
     {
         $season = Season::factory()->create();
 
@@ -106,7 +107,7 @@ class UploadValidationTest extends TestCase
             ->call('create');
     }
 
-    private function createNewsWithCover(UploadedFile $file): \Livewire\Features\SupportTesting\Testable
+    private function createNewsWithCover(UploadedFile $file): Testable
     {
         return Livewire::test(CreateNews::class)
             ->fillForm([
