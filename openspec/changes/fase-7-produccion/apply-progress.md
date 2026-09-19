@@ -114,13 +114,19 @@ present items as missing. Re-run correctly: **all 19 deferred and rejected items
 
 - **`npm audit` (task 5.3)** — npm's audit service returns 503. External, reproduced in a
   clean project. Recorded in `DESPLIEGUE.md` §3.9 as a pre-deploy step to retry.
-- **Manual browser upload check (task 6.4)** — the automated equivalent
-  (`UploadValidationTest`, 7 tests) covers SVG rejection, oversize rejection and PNG/GIF
-  acceptance on both forms, and the live header check was done by curl against the running
-  container. Driving the Filament UI by hand was not performed; the owner should do the
-  SVG-upload check once in the browser before deploying.
+~~Manual browser upload check (task 6.4)~~ — **done**. Performed by the owner after the
+  apply session: uploading a `.svg` as a team crest raises the validation error in the
+  panel. The automated equivalent (`UploadValidationTest`, 7 tests) already covered SVG
+  rejection, oversize rejection and PNG/GIF acceptance on both forms; this confirms the
+  behaviour through the real Filament UI as the task required.
+
+## Task ledger
+
+32 of 33 tasks complete. The remaining one, 5.3, is **partial**: its lockfile half is done,
+its `npm audit` half is blocked on npm's service and marked `[~]` rather than `[x]` so the
+gap stays visible in the checklist itself, not only in prose.
 
 ## Next
 
-`sdd-verify`. Nothing is merged — the branch is left for review, matching the Fase 2–6
-pattern.
+`sdd-verify`, then `sdd-archive`. Nothing is merged — the branch is left for review,
+matching the Fase 2–6 pattern.

@@ -154,11 +154,14 @@ phases:
     status: pending
     note: >
       Open items for verify: (a) npm audit still unrun, blocked on npm's
-      service; (b) task 6.4's manual browser upload check not performed — the
-      automated equivalent (UploadValidationTest, 7 tests) and a live curl
-      header check against the running container were done instead;
-      (c) 4 pre-existing pint issues remain in files this branch does not
-      touch (confirmed present on main), left alone deliberately.
+      service (task 5.3 marked [~] partial, not [x]); (b) 4 pre-existing pint
+      issues remain in files this branch does not touch (confirmed present on
+      main), left alone deliberately; (c) the npm lockfile regeneration moved
+      10 dev/transitive versions within their semver ranges — verify should
+      confirm the owner accepts that, since it was a side effect of closing an
+      integrity gap rather than something requested.
+      Task 6.4 (manual browser SVG upload) was CONFIRMED DONE by the owner
+      after the apply session: the validation error fires in the panel.
   archive:
     status: pending
 
