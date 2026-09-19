@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines installation, admin user provisioning, and access behavior for the Filament v5 admin panel at `/admin`. New capability — Fase 1 (Andamiaje). Role-based panel access restriction is explicitly deferred beyond Fase 3.
+Defines installation, admin user provisioning, and access behavior for the Filament v5 admin panel at `/admin`. New capability — Fase 1 (Andamiaje). Panel access became an application decision in Fase 7 (Producción); role- and record-level authorization remains deferred, with the arrival of the `técnico` role as its trigger.
 
 ## Requirements
 
@@ -28,23 +28,57 @@ The Filament admin user MUST be created interactively per developer via `php art
 - THEN a user record is created with those credentials
 - AND no database seeder or migration file contains hardcoded admin credentials
 
-### Requirement: Panel Access Policy (Demo Scope)
+### Requirement: Panel Access Policy
 
-For this change, any authenticated row in the `users` table MUST be able to access `/admin`, using Filament v5's default non-production behavior. The system MUST NOT implement `canAccessPanel()` role restrictions in this change.
+`App\Models\User` MUST implement `Filament\Models\Contracts\FilamentUser` and define
+`canAccessPanel()`, so that panel access is decided by the application rather than by
+Filament's environment-dependent fallback. Every row in the `users` table MUST be granted
+access, in any `APP_ENV`.
 
-#### Scenario: Any authenticated user reaches the panel
+While `canAccessPanel()` grants access unconditionally, the system MUST NOT expose any path
+that creates a user without administrator action: the admin panel MUST NOT enable Filament
+registration, and no route named `register` MUST exist. This precondition MUST be asserted
+by an automated test, so that enabling either one fails the suite and forces the access
+policy to be revisited first.
 
-- GIVEN a user exists in the `users` table (created via `make:filament-user`)
-- WHEN that user logs in at `/admin`
-- THEN they are granted access to the Filament panel
-- AND no role or permission check blocks access
+This requirement governs **whether a user may open the panel at all**. It deliberately does
+not govern what they may see or do once inside. A `técnico` (coach) role with a reduced,
+mostly additive set of functions is planned for a following phase; such a user must be able
+to open the panel, so restricting them at this layer would be incorrect. Their limits belong
+to per-resource visibility and record policies, which remain outside this capability until
+that phase specifies them.
 
-#### Scenario: Role restriction explicitly deferred beyond Fase 3
+(History — Fase 3 specified the inverse: "any authenticated row in the `users` table MUST be
+able to access `/admin`, using Filament v5's **default non-production behavior**. The system
+MUST NOT implement `canAccessPanel()` role restrictions in this change", with role-based
+access "deferred beyond Fase 3, not scheduled to any specific phase". Fase 7 was that phase.
+The observable grant is unchanged; what changed is that it no longer depends on `APP_ENV`
+being `local`. Filament denies access to a non-`FilamentUser` in every environment except
+`local` — `vendor/filament/filament/src/Http/Middleware/Authenticate.php:34-40` — so without
+this the first production deploy returns 403 to the owner on their own panel.)
 
-- GIVEN this change (Fase 3) is complete
-- WHEN the codebase is reviewed for `canAccessPanel()` logic
-- THEN no such restriction exists yet
-- AND role-based access control is documented as deferred beyond Fase 3, not scheduled to any specific phase
+#### Scenario: Authenticated user reaches the panel in production
+
+- GIVEN a user exists in the `users` table
+- AND `APP_ENV` is `production`
+- WHEN that user requests `/admin` while authenticated
+- THEN the response is successful and the panel renders
+- AND no 403 is returned
+
+#### Scenario: Authenticated user still reaches the panel locally
+
+- GIVEN a user exists in the `users` table
+- AND `APP_ENV` is `local`
+- WHEN that user requests `/admin` while authenticated
+- THEN the response is successful
+
+#### Scenario: No user-creation path exists outside administrator action
+
+- GIVEN the application is fully booted
+- WHEN the admin panel's registration setting and the application's named routes are inspected
+- THEN panel registration is disabled
+- AND no route named `register` is registered
+- AND an automated test asserts both, failing if either becomes true
 
 ### Requirement: Admin Panel Availability
 

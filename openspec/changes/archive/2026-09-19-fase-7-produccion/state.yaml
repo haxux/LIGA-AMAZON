@@ -4,6 +4,8 @@ artifact_store: openspec
 last_updated: 2026-09-19
 tasks_phase_completed: true
 apply_phase_completed: true
+verify_phase_completed: true
+archive_phase_completed: true
 
 session_settings:
   execution_mode: interactive
@@ -151,7 +153,8 @@ phases:
       correctly as a script (19/19 items traceable). Left unmerged for user
       review, matching the Fase 2-6 pattern. Next: sdd-verify.
   verify:
-    status: pending
+    status: done
+    artifact: openspec/changes/fase-7-produccion/verify-report.md
     note: >
       Open items for verify: (a) npm audit still unrun, blocked on npm's
       service (task 5.3 marked [~] partial, not [x]); (b) 4 pre-existing pint
@@ -163,7 +166,16 @@ phases:
       Task 6.4 (manual browser SVG upload) was CONFIRMED DONE by the owner
       after the apply session: the validation error fires in the panel.
   archive:
-    status: pending
+    status: done
+    archived_at: 2026-09-19
+    artifact: openspec/changes/fase-7-produccion/archive-report.md
+    note: >
+      Three canonical specs merged. admin-panel's "Panel Access Policy (Demo
+      Scope)" REPLACED — before this merge the spec actively contradicted the
+      shipped code, since Fase 3 had written that canAccessPanel() MUST NOT be
+      implemented. public-file-storage gained the upload restriction.
+      production-hardening created as a new capability with 7 requirements.
+      Branch fast-forwarded into main, preserving linear history.
 
 decisions_locked:
   - "TRIGGER: the user intends to publish the site online and asked what security measures exist and what remains. This phase is the answer to that question, turned into work."
