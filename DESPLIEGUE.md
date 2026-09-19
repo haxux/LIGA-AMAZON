@@ -73,12 +73,26 @@ sería fijar la equivocada.
 **3.1 Terminación TLS y certificado.** Quién termina HTTPS: ¿Caddy, nginx con
 Certbot, un balanceador gestionado, Cloudflare? Determina 3.2 y 3.3.
 
-**3.2 `->trustProxies()` en `bootstrap/app.php`.** Es la pareja de
-`APP_FORCE_HTTPS`. Sin él, detrás de un proxy que termina TLS, Laravel no ve
-`X-Forwarded-Proto`, genera URLs `http://` y puede entrar en bucle de
-redirección. Su valor correcto (la IP del proxy, o `'*'` en una red privada)
-sólo se sabe con el host elegido. **Aplicar uno sin el otro es un arreglo a
-medias.**
+**3.2 `->trustProxies()` en `bootstrap/app.php`. ⚠ Más crítico de lo que
+parece — tiene DOS consecuencias, no una.**
+
+*(a) URLs.* Es la pareja de `APP_FORCE_HTTPS`. Sin él, detrás de un proxy que
+termina TLS, Laravel no ve `X-Forwarded-Proto`, genera URLs `http://` y puede
+entrar en bucle de redirección. Aplicar uno sin el otro es un arreglo a medias.
+
+*(b) Límite de peticiones — riesgo de autobloqueo.* Para un visitante anónimo,
+`ThrottleRequests` deriva su clave de `$request->ip()`
+(`vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php:229`).
+Sin proxies de confianza, `$request->ip()` devuelve la IP del proxy, **no la del
+visitante**. Es decir: detrás de un proxy o CDN, los 60 req/min dejarían de ser
+*por visitante* y pasarían a ser **un tope global para todo el sitio**. Con
+tráfico modesto el sitio empezaría a devolver 429 a todo el mundo. No es un
+riesgo teórico: es el comportamiento por defecto en cuanto haya un proxy
+delante.
+
+Su valor correcto (la IP del proxy, o `'*'` en una red privada) sólo se sabe
+con el host elegido. **Si se despliega detrás de proxy, esto se configura
+ANTES de abrir al público, o se sube el límite de `routes/web.php`.**
 
 **3.3 Configuración nginx de producción.** El `docker/nginx/default.conf`
 actual es de desarrollo. Faltan dos reglas:
