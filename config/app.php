@@ -56,6 +56,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS URL Generation
+    |--------------------------------------------------------------------------
+    |
+    | Forces every generated URL to the https scheme. Deliberately its own
+    | switch rather than being inferred from APP_ENV: coupling the two makes it
+    | impossible to run a production-like environment locally, and behind a
+    | TLS-terminating proxy whose forwarded headers are not trusted it produces
+    | a redirect loop that only a code change can break. Default off, so local
+    | development and the test suite are untouched.
+    |
+    */
+
+    'force_https' => (bool) env('APP_FORCE_HTTPS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
