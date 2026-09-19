@@ -1,0 +1,180 @@
+change: fase-7-produccion
+title: "Fase 7 — Endurecimiento para producción + seed reducido"
+artifact_store: openspec
+last_updated: 2026-09-19
+tasks_phase_completed: true
+apply_phase_completed: true
+
+session_settings:
+  execution_mode: interactive
+  delivery_strategy: auto-chain
+  chain_strategy: stacked-to-main
+
+phases:
+  exploration:
+    status: done
+    artifact: openspec/changes/fase-7-produccion/exploration.md
+    note: >
+      Read-only security audit of the repo at 7df6efc. Catalogued 13 controls that
+      already work (§1) before listing 8 findings (§2), so the change is scoped to
+      real gaps rather than re-implementing what Laravel and Filament already
+      provide. Two findings are blockers, both verified against vendor source
+      rather than assumed: F1 — User does not implement FilamentUser, so
+      Authenticate.php:34-40's fallback branch 403s EVERY user the moment
+      APP_ENV stops being 'local' (the panel breaks on the first production
+      deploy); F2 — Filament's ->image() sets acceptedFileTypes(['image/*'])
+      (FileUpload.php:130-137) which becomes the rule mimetypes:image/* 
+      (BaseFileUpload.php:265) and therefore accepts image/svg+xml, stored on the
+      public disk and served same-origin = stored XSS against the admin session.
+      §3 is the seed-reduction impact analysis: every hardcoded count grepped to a
+      file and line (only DatabaseSeederTest and StandingsServiceTest:311 call
+      $this->seed()), and the finding that the spec layer is already count-agnostic
+      so no league-data-model or public-views delta is needed. §4 records the
+      environment blocker.
+  proposal:
+    status: done
+    artifact: openspec/changes/fase-7-produccion/proposal.md
+    note: >
+      Scope split three ways, which is the load-bearing decision of this phase:
+      in-scope (hosting-agnostic), deferred-pending-hosting, and
+      deliberately-out-of-scope. The user has not chosen a hosting target
+      ("todavía no lo termino de decidir"), so anything whose correct value
+      depends on that choice is recorded in DESPLIEGUE.md instead of being
+      guessed at in a config file. 3 open questions raised, all of which block
+      specific apply tasks.
+  spec:
+    status: done
+    artifacts:
+      - openspec/changes/fase-7-produccion/specs/admin-panel/spec.md
+      - openspec/changes/fase-7-produccion/specs/public-file-storage/spec.md
+      - openspec/changes/fase-7-produccion/specs/production-hardening/spec.md
+    note: >
+      One MODIFIED, one ADDED-to-existing, one new capability. admin-panel's
+      "Panel Access Policy (Demo Scope)" is REPLACED, not extended — Fase 3
+      wrote "MUST NOT implement canAccessPanel()" and deferred RBAC "beyond
+      Fase 3, not scheduled to any specific phase"; Fase 7 is that phase. This
+      is the only place the change overturns a locked earlier decision, and the
+      delta says so explicitly. public-file-storage gains the upload type/size
+      restriction. production-hardening is new and deliberately EXCLUDES
+      host-specific concerns from its own scope, so a future hosting decision
+      does not have to amend it. No delta for league-data-model or public-views:
+      their seeder requirements are written count-agnostically ("one division's
+      worth of teams", "all previously-seeded teams"), so the row-count
+      reduction does not touch them (exploration.md §3) — and with the reduction now
+      withdrawn entirely, they are doubly untouched. admin-panel's delta carries an
+      explicit note that the requirement governs WHETHER a user opens the panel, not what
+      they may do inside, so the coming técnico role is not accidentally specified here.
+  design:
+    status: done
+    artifact: openspec/changes/fase-7-produccion/design.md
+    note: >
+      8 decisions (D1-D8). Three are load-bearing and easy to get wrong:
+      D2 — ->acceptedFileTypes() must come AFTER ->image(), because ->image()
+      SETS the wildcard rather than adding to it; reversing the two lines
+      silently re-admits SVG. D3 — the headers middleware registers on the
+      GLOBAL stack, not web(append:), because Filament's panel routes carry
+      their own middleware list (AdminPanelProvider.php:54-63) and a web-scoped
+      registration would leave /admin bare. HSTS is gated on $request->secure()
+      so it is physically impossible to emit before TLS exists — emitting it
+      early pins browsers to a broken HTTPS for a year and cannot be withdrawn.
+      D7 — the panel-access test must go through the HTTP kernel, not
+      Livewire::test(), which bypasses middleware entirely and is precisely why
+      this hole survived 169 green tests. D6 (seed reduction) is marked WITHDRAWN
+      and retained only as a record — numbering is referenced from tasks.md and
+      state.yaml, and its Faker/CLUBS analysis is what a future seed change will
+      need. D9 was added after the owner disclosed that a `técnico` role is
+      coming soon: it argues that canAccessPanel() is a door, not a permission
+      check, so the coach — who NEEDS panel access — must be restricted at the
+      resource/policy layer instead. An is_admin column would have to be granted
+      to the coach anyway, at which point the column name would be a lie.
+  tasks:
+    status: done
+    artifact: openspec/changes/fase-7-produccion/tasks.md
+    note: >
+      6 phases, 5 work units, single branch fase-7/1-produccion. Phase 0 is a
+      hard precondition, not a task: the suite cannot run from this environment
+      (docker not on PATH in this WSL distro; local PHP 8.2.29 vs composer's
+      ^8.3), so apply cannot begin until Docker Desktop's WSL integration is on
+      and a 169/169 baseline is confirmed. Every security change is TDD RED
+      first, because each targets a hole 169 passing tests did not notice.
+      The three constraints from design D2/D3/D6 are written as explicit
+      CONSTRAINT lines on their tasks rather than left in the design. Task 4.4
+      is a verification task cross-reading the proposal's deferred lists against
+      DESPLIEGUE.md — a silently dropped deferred item is the exact failure mode
+      that phase exists to prevent. Phase 5 is now the dependency-advisory
+      cleanup (composer.lock + package-lock.json), replacing the withdrawn seed
+      reduction. Decision needed before apply: NO — all six open questions
+      resolved with the owner.
+    work_units:
+      - id: 1
+        goal: "canAccessPanel() + PanelAccessTest"
+        branch: fase-7/1-produccion
+        base: main
+      - id: 2
+        goal: "Upload MIME allow-list (jpeg/png/webp/gif, no SVG) + maxSize + UploadValidationTest"
+        branch: fase-7/1-produccion
+      - id: 3
+        goal: "SecurityHeaders middleware, force_https switch, throttle, robots.txt"
+        branch: fase-7/1-produccion
+      - id: 4
+        goal: ".env.production.example, DESPLIEGUE.md, ARQUITECTURA.md roadmap"
+        branch: fase-7/1-produccion
+      - id: 5
+        goal: "league/commonmark >= 2.10.0, package-lock.json rebuild, audits recorded"
+        branch: fase-7/1-produccion
+  apply:
+    status: done
+    artifact: openspec/changes/fase-7-produccion/apply-progress.md
+    note: >
+      All 5 work units applied on branch fase-7/1-produccion off main (7df6efc),
+      6 commits. Baseline confirmed at 169/169 before any edit; final suite
+      194 passed (607 assertions) with ZERO existing tests modified, so the
+      whole legacy suite acted as a clean regression signal. All three security
+      changes got a genuine RED/GREEN cycle and BOTH blockers were confirmed
+      real in a running application rather than inferred: F1 reproduced as an
+      actual 403 under APP_ENV=production, and F2 as an SVG upload that
+      SUCCEEDED before the fix. Phase 5 was deliberately run before Phase 4 so
+      DESPLIEGUE.md could record real audit output. composer audit went from 4
+      high advisories to zero via a 12-line, single-package lock change. npm
+      audit could NOT be run: investigated to root cause (npm's bulk endpoint
+      returns 503 maintenance; reproduced identically in a clean scratch
+      project, so not a project defect) and recorded as a pre-deploy retry in
+      DESPLIEGUE.md §3.9 rather than quietly skipped. Along the way the npm
+      lockfile was found to have 60/106 entries with no resolved/integrity —
+      a real supply-chain gap, since npm ci could verify nothing — and was
+      regenerated; that moved 10 dev/transitive versions within their semver
+      ranges, kept only after npm run build and the full suite were re-run
+      green. Two self-caught defects worth noting: ProductionEnvTemplateTest
+      failed on its first run because the template's own comment contained the
+      literal APP_DEBUG=true, and task 4.4's traceability check initially
+      reported five false negatives due to broken shell escaping, re-run
+      correctly as a script (19/19 items traceable). Left unmerged for user
+      review, matching the Fase 2-6 pattern. Next: sdd-verify.
+  verify:
+    status: pending
+    note: >
+      Open items for verify: (a) npm audit still unrun, blocked on npm's
+      service; (b) task 6.4's manual browser upload check not performed — the
+      automated equivalent (UploadValidationTest, 7 tests) and a live curl
+      header check against the running container were done instead;
+      (c) 4 pre-existing pint issues remain in files this branch does not
+      touch (confirmed present on main), left alone deliberately.
+  archive:
+    status: pending
+
+decisions_locked:
+  - "TRIGGER: the user intends to publish the site online and asked what security measures exist and what remains. This phase is the answer to that question, turned into work."
+  - "HOSTING TARGET UNDECIDED — user: 'todavia no lo termino de decidir cuando lo haga te informare'. Therefore: anything whose correct value depends on the host (TLS termination, trustProxies, nginx directives, php.ini production flags, docker-compose.prod.yml, backups) is DEFERRED and RECORDED in DESPLIEGUE.md, never guessed at. Anything hosting-agnostic (model code, form validation, middleware, config switches, docs) IS in scope now."
+  - "THE DATABASE AND THE SEED ARE NOT TOUCHED AT ALL. Three-step history, recorded because the first two steps left artifacts: (1) user asked to empty teams/players so they could upload real data; (2) user superseded that with 'reduce los datos en un 75%'; (3) user withdrew BOTH — 'entonces descartemos eso, dejemos la bd como está y los datos default también'. Final state: DatabaseSeeder, all factories, DatabaseSeederTest, StandingsServiceTest and the working database are untouched, no migrate:fresh is run, and design D6 is marked WITHDRAWN. Emptying would additionally have 404'd /, /partidos and /goleadores (SiteController.php:33 aborts with no season) — moot now, but the reason no empty-state work exists here."
+  - "UPLOAD ALLOW-LIST: image/jpeg, image/png, image/webp, image/gif. GIF included at the user's explicit request ('si incluye gif') and it is safe — raster formats carry no script, and nosniff closes the polyglot angle. SVG is the exclusion that carries the security weight and MUST stay out."
+  - "TDD is mandatory for all three security changes (config.yaml strict_tdd: true, and rules.apply.tdd: true). RED must be demonstrated against current code before GREEN — each of these is a hole that 169 passing tests did not catch, so 'the test passes' means nothing unless it was seen to fail first."
+  - "Filament's built-in protections are NOT re-implemented: login throttling at 5 attempts (Login.php:185), CSRF via PreventRequestForgery, EncryptCookies and AuthenticateSession are already in the panel middleware stack and stay untouched."
+  - "NO Content-Security-Policy in this phase. Filament and Livewire emit inline scripts and styles; a correct CSP needs nonce propagation through Filament's asset pipeline, and a wrong one silently breaks the panel. Deferred with rationale to DESPLIEGUE.md, not forgotten."
+  - "NO roles/permissions in this phase, BUT this is now the highest-priority follow-up, not a vague someday. User: 'muy pronto se implementarán el rol de técnico… tendrá poderes, pero serían funciones mucho más limitadas que las del admin, muy contadas, mayormente… nuevas funciones más interactivas'. Consequence (design D9): the coach NEEDS panel access, so canAccessPanel() returning true is the forward-compatible choice — an is_admin column would have to be granted to the coach anyway, making its name a lie within one phase. The real restriction belongs to per-resource visibility and record policies, which the NEXT phase owns. DESPLIEGUE.md must record this with its trigger condition (task 4.3b)."
+  - "NO 2FA, NO standings caching in this phase. Additive features, not gaps in the launch threat model. Recorded as follow-ups."
+  - "REJECTED ON PURPOSE, with user agreement — recorded so they are not re-raised: (a) column encryption for players.birth_date — player data is public by nature, the column is unused, and encrypting it would make it unorderable/unfilterable for no threat this project faces; (b) login captcha / bot protection — the public site has ZERO forms and the only form in the project is the panel login, already throttled at 5 attempts for one legitimate user; (c) purging git history of secrets — nothing to purge, verified across the full history, and a rewrite would change every commit hash for nothing."
+  - "N/A TO THIS STACK, verified rather than assumed: 'public DB key' and 'row-level security' are Supabase/Firebase concepts — the browser never touches MySQL here, every query goes through PHP with server-side credentials, and MySQL 8 has no RLS. 'Hide API keys' — the project consumes no third-party API at all. 'Trim API responses' — there is no API; the analogue was checked and the views do not over-expose (birth_date appears in no view or service; StandingsService returns DTOs, not raw models)."
+  - "INPUT VALIDATION is stronger than assumed and its gaps are DEFERRED by the user ('lo dejamos para después'). Verified present: shirt_number minValue(1)/maxValue(99), scores minValue(0), position as a closed Select, season/team-scoped uniqueness. Verified missing, all data-integrity rather than security: founded_year unbounded, stadium capacity allows negatives, matchdays.number has no minimum, no maxLength against varchar(255). Separate fix(validation) change."
+  - "DEPENDENCY ADVISORIES are in scope, added after the user cross-checked the plan against their own 20-point checklist. composer audit: 4 high advisories in league/commonmark 2.9.0 (needs >= 2.10.0). Reachability CHECKED, not assumed — the app calls no markdown anywhere, so it is a transitive dep of laravel/framework with effectively nil exploitable risk, but the fix is one package. npm audit cannot currently run (package-lock.json out of sync with node_modules)."
+  - "NO migrations, NO schema change, NO data change. Nothing under database/ is modified, which is what makes the whole change trivially reversible: revert the commits and the app is exactly as it was."
+  - "VERIFICATION HONESTY: the suite has NOT been run and cannot be run from this environment (docker absent from this WSL distro, local PHP 8.2.29 vs ^8.3 required). No artifact in this change claims a green suite. Establishing the 169/169 baseline is task 0.2, before any code is touched."
