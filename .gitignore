@@ -1,7 +1,14 @@
 *.log
 .DS_Store
+# Todo fichero de entorno queda ignorado por defecto, y las plantillas se
+# vuelven a incluir una a una. Al reves — ignorar nombres concretos — cada
+# fichero nuevo nace rastreado, y basta un despiste para commitear credenciales.
 .env
-.env.backup
+.env.*
+!.env.example
+!.env.tidb.example
+!.env.production.example
+!.env.r2.example
 .env.production
 .phpactor.json
 .phpunit.result.cache
@@ -25,3 +32,4 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+.vercel
