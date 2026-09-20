@@ -35,7 +35,17 @@ class DeleteStrategyTest extends TestCase
         // transaction — which lets every cascade in this statement complete before anything is
         // validated, matching the actually-intended (order-independent) behavior. This does not
         // weaken the assertions below: they still verify every row was genuinely removed.
-        DB::statement('PRAGMA defer_foreign_keys = ON');
+        //
+        // SQLite only. PRAGMA is not valid syntax on the MySQL family, and the
+        // quirk it compensates for is SQLite's: the rebuild described above
+        // never happens there, because MySQL adds a column with a foreign key
+        // in place. Running the deletion unguarded on the real engine is the
+        // point — it is what tells us whether the managed database honours
+        // this cascade on its own.
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            DB::statement('PRAGMA defer_foreign_keys = ON');
+        }
+
         DB::table('seasons')->where('id', $seasonId)->delete();
 
         $this->assertSame(0, DB::table('teams')->where('season_id', $seasonId)->count());
