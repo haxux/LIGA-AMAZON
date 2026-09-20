@@ -175,10 +175,11 @@ boot, because it freezes every `env()` call and the build has neither `APP_KEY` 
 credentials.
 
 The deployment document MUST record what was measured, including the part that is not the
-application's: container start to first response is ~4 s locally with the image present, of
-which Laravel's own work is ~1 s, against the 60–90 s observed on a sleeping production
-instance. Closing that gap needs a host-level decision (a warm instance), and the document
-MUST say so rather than imply the application can fix it.
+application's, and MUST record which suspicions were ruled out and how. Measured: the
+application contributes ~8 s to a cold start (4.2 s of container plus 4.6 s of entrypoint
+against the production database), while the first request after eight minutes of silence went
+unanswered for 180 s. Closing that gap needs a host-level decision — a warm instance — and the
+document MUST say so rather than imply the application can fix it.
 
 #### Scenario: The boot sequence holds only environment-dependent work
 

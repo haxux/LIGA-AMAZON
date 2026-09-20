@@ -288,32 +288,45 @@ docker compose exec -T app sh -c 'set -a; . ./.env.tidb; set +a; \
 desechable de tests, de ahí que se sobrescriba.)
 
 **5.2 Arranque en frío.** El host escala a cero tras 5 minutos sin tráfico, así
-que la primera petición después de un rato paga el arranque entero. Medido:
+que la primera petición después de un rato de calma paga el arranque entero.
+Medido el 2026-09-20:
 
 | Tramo | Medida |
 |---|---|
-| Primera petición en producción a una instancia dormida | 60–90 s (llegó a agotar un `--max-time 90`) |
-| Petición siguiente, misma ruta | ~0,6 s |
-| Contenedor local, imagen ya presente: `docker run` → primer 200 | **4,2 s** |
-| Lo mismo, pero migrando una base vacía desde cero | ~45 s (una sola vez en la vida de la base) |
-| `config:cache` / `route:cache` / `view:cache` / `migrate`, dentro de la imagen | 0,41 / 0,34 / 0,58 / 0,65 s |
+| Primera petición tras 8 minutos de silencio | **sin respuesta en 180 s** (se agotó el `--max-time`; las peticiones inmediatamente posteriores fueron 200 en ~1 s) |
+| Primeras peticiones durante una ventana de despliegue | 60–95 s |
+| Estado asentado, huecos de 1 minuto entre peticiones | 0,3–0,7 s |
+| Contenedor local, imagen ya presente: `docker run` → primer 200 | 4,2 s |
+| Entrypoint completo contra el TiDB de producción | 4,6 s (`config:cache` 0,75 · `migrate:status` 1,62 · `migrate --isolated` 2,26) |
+| Lo mismo, migrando una base vacía desde cero | ~45 s (una sola vez en la vida de la base) |
 
-La lectura: el arranque del contenedor son ~4 s, de los cuales el trabajo de
-Laravel es poco más de 1 s. El minuto largo que se ve en producción **no está
-en la aplicación** — es aprovisionamiento del host y descarga de la imagen
-(~340 MB en amd64: 203 MB la aplicación con su `vendor`, 60 MB las extensiones
-de PHP, 58 MB el binario de FrankenPHP).
+La lectura: **la aplicación aporta unos 8 s** del arranque (4,2 de contenedor más
+4,6 de entrypoint). El resto —más de dos minutos y medio— es aprovisionamiento
+del host y descarga de la imagen (~340 MB en amd64: 203 MB la aplicación con su
+`vendor`, 60 MB las extensiones de PHP, 58 MB el binario de FrankenPHP). Se
+descartó una a una cada sospecha propia:
 
-Aplicado por nuestra parte: `route:cache` y `view:cache` se hornean en la
-imagen (ninguno lee entorno: las rutas no usan `env()` y el panel cuelga de un
-path fijo), así que dejan de pagarse en cada arranque. Es ~0,9 s menos de
-trabajo por arranque; no mueve la aguja del minuto, y decir lo contrario sería
-mentir sobre la medición.
+- No es la ruta: se colgaban `/`, `/partidos`, `/goleadores` o `/noticias`
+  indistintamente, según cuál cayera en una instancia nueva.
+- No es PHP arrancando: en una instancia ya levantada, `/up` (PHP sin base) y
+  `/partidos` (PHP con base) responden igual de rápido, 0,32 s y 0,56 s.
+- No son las migraciones del entrypoint: 4,6 s contra el TiDB real, medidos con
+  las credenciales de producción.
+- No son los permisos del usuario de la aplicación: su rol incluye `CREATE`,
+  `ALTER`, `DROP` e `INDEX`, así que puede migrar.
 
-Lo que sí la movería está fuera de la aplicación y necesita una decisión:
+Aplicado por nuestra parte: `route:cache` y `view:cache` se hornean en la imagen
+(ninguno lee entorno: las rutas no usan `env()` y el panel cuelga de un path
+fijo), así que dejan de pagarse en cada arranque. Es ~0,9 s menos por arranque;
+no mueve la aguja de los tres minutos, y decir lo contrario sería mentir sobre
+la medición.
 
-- Mantener una instancia caliente (configuración de escalado del proyecto en
-  Vercel, o un cron externo golpeando el sitio cada pocos minutos). Es la única
+Lo que sí la movería está fuera de la aplicación y necesita una decisión. Con
+tres minutos de espera, un visitante que llegue tras un rato de calma se va
+antes de ver nada, así que esto **no es cosmético**:
+
+- Mantener una instancia caliente: configuración de escalado del proyecto en
+  Vercel, o un cron externo golpeando el sitio cada pocos minutos. Es la única
   solución real al escalado a cero, y se paga en cómputo permanente.
 - Seguir adelgazando la imagen. El grueso es `vendor` con Filament dentro;
   recortar ahí es trabajo de horas para ganar decenas de MB.
