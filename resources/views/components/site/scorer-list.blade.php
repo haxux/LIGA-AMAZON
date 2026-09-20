@@ -10,7 +10,7 @@
                 <x-site.player-avatar :player="$row->player" />
                 <span class="min-w-0 flex-1">
                     <span class="block truncate font-display text-base font-semibold text-white">{{ $row->player->name }}</span>
-                    <span class="block font-mono text-[10px] tracking-[0.06em] text-white/40">{{ $row->player->team->short_name }}</span>
+                    <span class="block font-mono text-[10px] tracking-[0.06em] text-white/40">{{ $row->clubShortName }}</span>
                 </span>
                 <span class="font-display text-[22px] font-bold text-brand">{{ $row->count }}</span>
             </li>

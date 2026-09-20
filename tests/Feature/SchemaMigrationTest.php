@@ -69,15 +69,79 @@ class SchemaMigrationTest extends TestCase
     public function test_stadiums_table_has_expected_columns(): void
     {
         $this->assertTrue(Schema::hasColumns('stadiums', [
-            'id', 'team_id', 'name', 'city', 'capacity', 'created_at', 'updated_at',
+            'id', 'club_id', 'name', 'city', 'capacity', 'created_at', 'updated_at',
         ]));
     }
 
+    /**
+     * El jugador guarda identidad (Fase 9); dónde juega cada temporada, y con
+     * qué dorsal, vive en `squad_memberships`.
+     */
     public function test_players_table_has_expected_columns(): void
     {
         $this->assertTrue(Schema::hasColumns('players', [
-            'id', 'team_id', 'name', 'position', 'birth_date', 'shirt_number', 'created_at', 'updated_at',
+            'id', 'club_id', 'name', 'position', 'birth_date', 'created_at', 'updated_at',
         ]));
+
+        foreach (['team_id', 'shirt_number'] as $moved) {
+            $this->assertFalse(Schema::hasColumn('players', $moved), "players.{$moved} debería vivir en squad_memberships");
+        }
+    }
+
+    public function test_squad_memberships_table_has_expected_columns(): void
+    {
+        $this->assertTrue(Schema::hasColumns('squad_memberships', [
+            'id', 'team_id', 'player_id', 'shirt_number', 'type', 'created_at', 'updated_at',
+        ]));
+    }
+
+    public function test_duplicate_shirt_number_within_one_squad_is_rejected(): void
+    {
+        [$teamId, $clubId] = $this->makeTeam();
+        $first = DB::table('players')->insertGetId(['club_id' => $clubId, 'name' => 'Player A', 'position' => 'Goalkeeper', 'created_at' => now(), 'updated_at' => now()]);
+        $second = DB::table('players')->insertGetId(['club_id' => $clubId, 'name' => 'Player B', 'position' => 'Defender', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('squad_memberships')->insert(['team_id' => $teamId, 'player_id' => $first, 'shirt_number' => 1, 'type' => 'owned', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->expectException(QueryException::class);
+        DB::table('squad_memberships')->insert(['team_id' => $teamId, 'player_id' => $second, 'shirt_number' => 1, 'type' => 'owned', 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    public function test_the_same_player_cannot_be_in_one_squad_twice(): void
+    {
+        [$teamId, $clubId] = $this->makeTeam();
+        $playerId = DB::table('players')->insertGetId(['club_id' => $clubId, 'name' => 'Player A', 'position' => 'Goalkeeper', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('squad_memberships')->insert(['team_id' => $teamId, 'player_id' => $playerId, 'shirt_number' => 1, 'type' => 'owned', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->expectException(QueryException::class);
+        DB::table('squad_memberships')->insert(['team_id' => $teamId, 'player_id' => $playerId, 'shirt_number' => 2, 'type' => 'owned', 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    /**
+     * El mismo dorsal en dos temporadas del mismo club es correcto: el dorsal
+     * pertenece a la plantilla de ese año, no al club para siempre.
+     */
+    public function test_the_same_shirt_number_in_two_seasons_is_allowed(): void
+    {
+        [$teamA, $clubId] = $this->makeTeam();
+        [$teamB] = $this->makeTeam($clubId);
+        $playerId = DB::table('players')->insertGetId(['club_id' => $clubId, 'name' => 'Player A', 'position' => 'Goalkeeper', 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('squad_memberships')->insert(['team_id' => $teamA, 'player_id' => $playerId, 'shirt_number' => 9, 'type' => 'owned', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('squad_memberships')->insert(['team_id' => $teamB, 'player_id' => $playerId, 'shirt_number' => 9, 'type' => 'owned', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->assertSame(2, DB::table('squad_memberships')->where('player_id', $playerId)->count());
+    }
+
+    /**
+     * @return array{0: int, 1: int} [teamId, clubId]
+     */
+    private function makeTeam(?int $clubId = null): array
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => 'Temporada '.fake()->unique()->numberBetween(1, 9999), 'created_at' => now(), 'updated_at' => now()]);
+        $clubId ??= DB::table('clubs')->insertGetId(['name' => 'Club '.fake()->unique()->numberBetween(1, 9999), 'short_name' => 'CLB', 'created_at' => now(), 'updated_at' => now()]);
+        $teamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'club_id' => $clubId, 'created_at' => now(), 'updated_at' => now()]);
+
+        return [$teamId, $clubId];
     }
 
     public function test_matchdays_table_has_expected_columns(): void
@@ -167,15 +231,13 @@ class SchemaMigrationTest extends TestCase
         DB::table('teams')->insert(['season_id' => $seasonId, 'club_id' => $clubRiverId, 'created_at' => now(), 'updated_at' => now()]);
     }
 
-    public function test_duplicate_shirt_number_within_same_team_is_rejected(): void
+    public function test_one_club_cannot_have_two_stadiums(): void
     {
-        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
-        $clubRiverId = DB::table('clubs')->insertGetId(['name' => 'River', 'short_name' => 'RIV', 'created_at' => now(), 'updated_at' => now()]);
-        $teamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'club_id' => $clubRiverId, 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('players')->insert(['team_id' => $teamId, 'name' => 'Player A', 'position' => 'GK', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $clubId = DB::table('clubs')->insertGetId(['name' => 'Manaos FC', 'short_name' => 'MAN', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('stadiums')->insert(['club_id' => $clubId, 'name' => 'Monumental', 'city' => 'City', 'created_at' => now(), 'updated_at' => now()]);
 
         $this->expectException(QueryException::class);
-        DB::table('players')->insert(['team_id' => $teamId, 'name' => 'Player B', 'position' => 'DF', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('stadiums')->insert(['club_id' => $clubId, 'name' => 'Second', 'city' => 'City', 'created_at' => now(), 'updated_at' => now()]);
     }
 
     public function test_duplicate_matchday_number_within_same_division_is_rejected(): void
@@ -203,16 +265,5 @@ class SchemaMigrationTest extends TestCase
         DB::table('matchdays')->insert(['season_id' => $seasonId, 'division_id' => $segundaId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
 
         $this->assertSame(2, DB::table('matchdays')->where('season_id', $seasonId)->where('number', 1)->count());
-    }
-
-    public function test_duplicate_stadium_for_same_team_is_rejected(): void
-    {
-        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
-        $clubRiverId = DB::table('clubs')->insertGetId(['name' => 'River', 'short_name' => 'RIV', 'created_at' => now(), 'updated_at' => now()]);
-        $teamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'club_id' => $clubRiverId, 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('stadiums')->insert(['team_id' => $teamId, 'name' => 'Monumental', 'city' => 'City', 'created_at' => now(), 'updated_at' => now()]);
-
-        $this->expectException(QueryException::class);
-        DB::table('stadiums')->insert(['team_id' => $teamId, 'name' => 'Second', 'city' => 'City', 'created_at' => now(), 'updated_at' => now()]);
     }
 }

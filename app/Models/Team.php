@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use App\Observers\TeamObserver;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable(['season_id', 'division_id', 'club_id'])]
+#[ObservedBy(TeamObserver::class)]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
@@ -57,14 +60,18 @@ class Team extends Model
         return $this->belongsTo(Division::class);
     }
 
-    public function players(): HasMany
+    /**
+     * La plantilla de ESTA temporada: pertenencias, no jugadores sueltos. La
+     * identidad de cada uno cuelga del club (Fase 9).
+     */
+    public function memberships(): HasMany
     {
-        return $this->hasMany(Player::class);
+        return $this->hasMany(SquadMembership::class);
     }
 
-    public function stadium(): HasOne
+    public function players(): HasManyThrough
     {
-        return $this->hasOne(Stadium::class);
+        return $this->hasManyThrough(Player::class, SquadMembership::class, 'team_id', 'id', 'id', 'player_id');
     }
 
     public function homeGames(): HasMany

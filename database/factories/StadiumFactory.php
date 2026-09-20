@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
 use App\Models\Stadium;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -32,6 +33,9 @@ class StadiumFactory extends Factory
     /**
      * Define the model's default state.
      *
+     * `team_id` se sigue aceptando por comodidad —el estadio se pedía por
+     * equipo hasta la Fase 9— y se traduce al club de ese equipo.
+     *
      * @return array<string, mixed>
      */
     public function definition(): array
@@ -39,10 +43,24 @@ class StadiumFactory extends Factory
         $stadium = fake()->randomElement(self::STADIUMS);
 
         return [
-            'team_id' => Team::factory(),
+            'club_id' => fn (array $attributes) => isset($attributes['team_id'])
+                ? (int) Team::query()->whereKey($attributes['team_id'])->value('club_id')
+                : Club::factory()->create()->getKey(),
             'name' => $stadium['name'],
             'city' => $stadium['city'],
             'capacity' => fake()->numberBetween(8000, 60000),
         ];
+    }
+
+    /**
+     * Mismo motivo que en TeamFactory y PlayerFactory: los factories construyen
+     * el modelo sin protección de asignación masiva, así que un `team_id` que
+     * ya no es columna llegaría al INSERT.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Stadium $stadium): void {
+            unset($stadium->team_id);
+        });
     }
 }

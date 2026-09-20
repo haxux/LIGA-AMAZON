@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\Teams\Pages\EditTeam;
-use App\Filament\Resources\Teams\RelationManagers\StadiumRelationManager;
-use App\Models\Team;
+use App\Filament\Resources\Clubs\Pages\EditClub;
+use App\Filament\Resources\Clubs\RelationManagers\StadiumRelationManager;
+use App\Models\Club;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -23,11 +23,11 @@ class StadiumRelationManagerTest extends TestCase
 
     public function test_creating_a_stadium_from_the_relation_manager_persists_and_links_it_to_the_team(): void
     {
-        $team = Team::factory()->create();
+        $club = Club::factory()->create();
 
         Livewire::test(StadiumRelationManager::class, [
-            'ownerRecord' => $team,
-            'pageClass' => EditTeam::class,
+            'ownerRecord' => $club,
+            'pageClass' => EditClub::class,
         ])
             ->mountTableAction('create')
             ->setTableActionData([
@@ -39,25 +39,25 @@ class StadiumRelationManagerTest extends TestCase
             ->assertHasNoTableActionErrors();
 
         $this->assertDatabaseHas('stadiums', [
-            'team_id' => $team->id,
+            'club_id' => $club->id,
             'name' => 'Arena Teste',
         ]);
 
-        $this->assertTrue($team->fresh()->stadium()->exists());
+        $this->assertTrue($club->fresh()->stadium()->exists());
     }
 
-    public function test_create_action_is_hidden_once_the_team_already_has_a_stadium(): void
+    public function test_create_action_is_hidden_once_the_club_already_has_a_stadium(): void
     {
-        $team = Team::factory()->create();
-        $team->stadium()->create([
+        $club = Club::factory()->create();
+        $club->stadium()->create([
             'name' => 'Existing Arena',
             'city' => 'Manaus',
             'capacity' => 15000,
         ]);
 
         Livewire::test(StadiumRelationManager::class, [
-            'ownerRecord' => $team,
-            'pageClass' => EditTeam::class,
+            'ownerRecord' => $club,
+            'pageClass' => EditClub::class,
         ])
             ->assertTableActionHidden('create');
     }

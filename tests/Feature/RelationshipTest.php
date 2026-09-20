@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Club;
 use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Player;
 use App\Models\Season;
+use App\Models\SquadMembership;
 use App\Models\Stadium;
 use App\Models\StandingZone;
 use App\Models\Team;
@@ -26,22 +28,40 @@ class RelationshipTest extends TestCase
         $this->assertTrue($team->season->is($season));
     }
 
-    public function test_team_and_player_relationship_resolves_both_directions(): void
+    public function test_club_and_player_relationship_resolves_both_directions(): void
     {
-        $team = Team::factory()->create();
-        $player = Player::factory()->for($team)->create();
+        $club = Club::factory()->create();
+        $player = Player::factory()->for($club)->create();
 
-        $this->assertTrue($team->players->contains($player));
-        $this->assertTrue($player->team->is($team));
+        $this->assertTrue($club->players->contains($player));
+        $this->assertTrue($player->club->is($club));
     }
 
-    public function test_team_and_stadium_relationship_resolves_both_directions(): void
+    /**
+     * El equipo llega a sus jugadores a través de la plantilla de esa
+     * temporada, no directamente: es lo que permite que la plantilla del año
+     * pasado siga siendo consultable (Fase 9).
+     */
+    public function test_a_squad_membership_links_a_player_to_one_seasons_team(): void
     {
         $team = Team::factory()->create();
-        $stadium = Stadium::factory()->for($team)->create();
+        $player = Player::factory()->create(['club_id' => $team->club_id]);
+        $membership = SquadMembership::factory()->create(['team_id' => $team->id, 'player_id' => $player->id]);
 
-        $this->assertTrue($team->stadium->is($stadium));
-        $this->assertTrue($stadium->team->is($team));
+        $this->assertTrue($team->memberships->contains($membership));
+        $this->assertTrue($team->players->contains($player));
+        $this->assertTrue($player->memberships->contains($membership));
+        $this->assertTrue($membership->team->is($team));
+        $this->assertTrue($membership->player->is($player));
+    }
+
+    public function test_club_and_stadium_relationship_resolves_both_directions(): void
+    {
+        $club = Club::factory()->create();
+        $stadium = Stadium::factory()->for($club)->create();
+
+        $this->assertTrue($club->stadium->is($stadium));
+        $this->assertTrue($stadium->club->is($club));
     }
 
     public function test_season_and_matchday_relationship_resolves_both_directions(): void

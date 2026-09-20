@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Clubs;
 use App\Filament\Resources\Clubs\Pages\CreateClub;
 use App\Filament\Resources\Clubs\Pages\EditClub;
 use App\Filament\Resources\Clubs\Pages\ListClubs;
+use App\Filament\Resources\Clubs\RelationManagers\PlayersRelationManager;
+use App\Filament\Resources\Clubs\RelationManagers\StadiumRelationManager;
 use App\Filament\Resources\Clubs\Schemas\ClubForm;
 use App\Filament\Resources\Clubs\Tables\ClubsTable;
 use App\Models\Club;
@@ -33,6 +35,14 @@ class ClubResource extends Resource
     public static function table(Table $table): Table
     {
         return ClubsTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            PlayersRelationManager::class,
+            StadiumRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

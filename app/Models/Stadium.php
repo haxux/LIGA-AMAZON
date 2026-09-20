@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['team_id', 'name', 'city', 'capacity'])]
+#[Fillable(['club_id', 'name', 'city', 'capacity'])]
 class Stadium extends Model
 {
     /** @use HasFactory<StadiumFactory> */
@@ -21,8 +21,8 @@ class Stadium extends Model
         ];
     }
 
-    public function team(): BelongsTo
+    public function club(): BelongsTo
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(Club::class);
     }
 }

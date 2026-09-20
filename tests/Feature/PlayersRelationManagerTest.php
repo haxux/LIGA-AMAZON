@@ -2,15 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\Teams\Pages\EditTeam;
-use App\Filament\Resources\Teams\RelationManagers\PlayersRelationManager;
+use App\Filament\Resources\Clubs\Pages\EditClub;
+use App\Filament\Resources\Clubs\RelationManagers\PlayersRelationManager;
+use App\Models\Club;
 use App\Models\Player;
-use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
 
+/**
+ * Desde la Fase 9 los jugadores cuelgan del club, no del equipo de una
+ * temporada: este gestor edita su identidad y vive en `ClubResource`.
+ */
 class PlayersRelationManagerTest extends TestCase
 {
     use RefreshDatabase;
@@ -22,62 +26,54 @@ class PlayersRelationManagerTest extends TestCase
         $this->actingAs(User::factory()->create());
     }
 
-    public function test_lists_only_the_owning_teams_players(): void
+    public function test_lists_only_the_owning_clubs_players(): void
     {
-        $teamA = Team::factory()->create();
-        $teamB = Team::factory()->create();
-        $playerA = Player::factory()->create(['team_id' => $teamA->id]);
-        $playerB = Player::factory()->create(['team_id' => $teamB->id]);
+        $clubA = Club::factory()->create();
+        $clubB = Club::factory()->create();
+        $playerA = Player::factory()->create(['club_id' => $clubA->id]);
+        $playerB = Player::factory()->create(['club_id' => $clubB->id]);
 
         Livewire::test(PlayersRelationManager::class, [
-            'ownerRecord' => $teamA,
-            'pageClass' => EditTeam::class,
+            'ownerRecord' => $clubA,
+            'pageClass' => EditClub::class,
         ])
             ->assertCanSeeTableRecords([$playerA])
             ->assertCanNotSeeTableRecords([$playerB]);
     }
 
-    public function test_creating_a_player_from_the_relation_manager_adds_it_directly_to_the_team(): void
+    public function test_creating_a_player_from_the_relation_manager_files_them_under_the_club(): void
     {
-        $team = Team::factory()->create();
+        $club = Club::factory()->create();
 
         Livewire::test(PlayersRelationManager::class, [
-            'ownerRecord' => $team,
-            'pageClass' => EditTeam::class,
+            'ownerRecord' => $club,
+            'pageClass' => EditClub::class,
         ])
             ->mountTableAction('create')
             ->setTableActionData([
                 'name' => 'Squad Player',
                 'position' => 'Defender',
-                'shirt_number' => 4,
             ])
             ->callMountedTableAction()
             ->assertHasNoTableActionErrors();
 
         $this->assertDatabaseHas('players', [
-            'team_id' => $team->id,
+            'club_id' => $club->id,
             'name' => 'Squad Player',
         ]);
     }
 
-    public function test_duplicate_shirt_number_within_the_relation_managers_team_is_rejected_as_a_form_error(): void
+    /**
+     * El dorsal pertenece a la plantilla de una temporada, así que no se pide
+     * al dar de alta la identidad de un jugador.
+     */
+    public function test_the_identity_form_does_not_ask_for_a_shirt_number(): void
     {
-        $team = Team::factory()->create();
-        Player::factory()->create(['team_id' => $team->id, 'shirt_number' => 4]);
+        $component = Livewire::test(PlayersRelationManager::class, [
+            'ownerRecord' => Club::factory()->create(),
+            'pageClass' => EditClub::class,
+        ])->mountTableAction('create')->instance();
 
-        Livewire::test(PlayersRelationManager::class, [
-            'ownerRecord' => $team,
-            'pageClass' => EditTeam::class,
-        ])
-            ->mountTableAction('create')
-            ->setTableActionData([
-                'name' => 'Duplicate Number Player',
-                'position' => 'Defender',
-                'shirt_number' => 4,
-            ])
-            ->callMountedTableAction()
-            ->assertHasTableActionErrors(['shirt_number']);
-
-        $this->assertSame(1, Player::where('team_id', $team->id)->where('shirt_number', 4)->count());
+        $this->assertFalse(str_contains(json_encode($component->mountedActions ?? []), 'shirt_number'));
     }
 }

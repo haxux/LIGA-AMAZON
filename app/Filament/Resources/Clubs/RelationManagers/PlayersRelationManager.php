@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Teams\RelationManagers;
+namespace App\Filament\Resources\Clubs\RelationManagers;
 
 use App\Filament\Resources\Players\Schemas\PlayerForm;
 use Filament\Actions\BulkActionGroup;
@@ -21,7 +21,7 @@ class PlayersRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema
-            ->components(PlayerForm::teamAgnosticFields());
+            ->components(PlayerForm::clubAgnosticFields());
     }
 
     public function table(Table $table): Table
@@ -33,8 +33,6 @@ class PlayersRelationManager extends RelationManager
                     ->searchable(),
                 TextColumn::make('position')
                     ->badge(),
-                TextColumn::make('shirt_number')
-                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('position')->options(array_combine(PlayerForm::POSITIONS, PlayerForm::POSITIONS)),

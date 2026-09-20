@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Teams\RelationManagers;
+namespace App\Filament\Resources\Clubs\RelationManagers;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;

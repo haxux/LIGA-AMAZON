@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['team_id', 'name', 'position', 'birth_date', 'shirt_number'])]
+#[Fillable(['club_id', 'name', 'position', 'birth_date'])]
 class Player extends Model
 {
     /** @use HasFactory<PlayerFactory> */
@@ -35,9 +35,28 @@ class Player extends Model
         ];
     }
 
-    public function team(): BelongsTo
+    public function club(): BelongsTo
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(Club::class);
+    }
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(SquadMembership::class);
+    }
+
+    /**
+     * El equipo en el que juega esta temporada, si está inscrito en ella. No es
+     * un accesor de compatibilidad: `Player::team()` desapareció en la Fase 9
+     * porque su significado cambió — un jugador ya no pertenece a un equipo,
+     * pertenece a un club y participa en plantillas.
+     */
+    public function teamIn(Season $season): ?Team
+    {
+        return $this->memberships()
+            ->whereHas('team', fn ($query) => $query->where('season_id', $season->getKey()))
+            ->with('team')
+            ->first()?->team;
     }
 
     public function gameEvents(): HasMany

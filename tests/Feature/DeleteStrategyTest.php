@@ -18,8 +18,8 @@ class DeleteStrategyTest extends TestCase
         $homeTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'club_id' => $clubHomeFCId, 'created_at' => now(), 'updated_at' => now()]);
         $clubAwayFCId = DB::table('clubs')->insertGetId(['name' => 'Away FC', 'short_name' => 'AWY', 'created_at' => now(), 'updated_at' => now()]);
         $awayTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'club_id' => $clubAwayFCId, 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('stadiums')->insert(['team_id' => $homeTeamId, 'name' => 'Arena', 'city' => 'City', 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('players')->insert(['team_id' => $homeTeamId, 'name' => 'Player A', 'position' => 'GK', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('stadiums')->insert(['club_id' => $clubHomeFCId, 'name' => 'Arena', 'city' => 'City', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('players')->insert(['club_id' => $clubHomeFCId, 'name' => 'Player A', 'position' => 'Goalkeeper', 'created_at' => now(), 'updated_at' => now()]);
         $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
         $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('games')->insert(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
@@ -53,8 +53,10 @@ class DeleteStrategyTest extends TestCase
 
         $this->assertSame(0, DB::table('teams')->where('season_id', $seasonId)->count());
         $this->assertSame(0, DB::table('matchdays')->where('season_id', $seasonId)->count());
-        $this->assertSame(0, DB::table('stadiums')->where('team_id', $homeTeamId)->count());
-        $this->assertSame(0, DB::table('players')->where('team_id', $homeTeamId)->count());
+        // El club sobrevive al borrado de la temporada: su identidad no es de un
+        // año. Lo que se va con ella es su inscripción, no el club.
+        $this->assertSame(1, DB::table('clubs')->where('id', $clubHomeFCId)->count());
+        $this->assertSame(0, DB::table('squad_memberships')->where('team_id', $homeTeamId)->count());
         $this->assertSame(0, DB::table('games')->where('matchday_id', $matchdayId)->count());
     }
 
@@ -156,7 +158,7 @@ class DeleteStrategyTest extends TestCase
         $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
         $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
         $gameId = DB::table('games')->insertGetId(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
-        $playerId = DB::table('players')->insertGetId(['team_id' => $homeTeamId, 'name' => 'Player A', 'position' => 'GK', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $playerId = DB::table('players')->insertGetId(['club_id' => $clubHomeFCId, 'name' => 'Player A', 'position' => 'Goalkeeper', 'created_at' => now(), 'updated_at' => now()]);
 
         return [$gameId, $playerId];
     }

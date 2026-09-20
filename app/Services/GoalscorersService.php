@@ -44,10 +44,22 @@ final class GoalscorersService
 
         $rows = Player::query()
             ->whereIn('id', $counts->keys())
-            ->with('team')
+            ->with([
+                'club',
+                // La pertenencia de esta temporada dice dónde jugó realmente,
+                // cesiones incluidas; el club propietario queda de respaldo.
+                'memberships' => fn ($query) => $query->whereHas(
+                    'team',
+                    fn (Builder $teamQuery) => $teamQuery->where('season_id', $season->getKey()),
+                )->with('team.club'),
+            ])
             ->orderBy('id')
             ->get()
-            ->map(fn (Player $player) => new ScorerRow($player, (int) $counts[$player->getKey()]))
+            ->map(fn (Player $player) => new ScorerRow(
+                $player,
+                (int) $counts[$player->getKey()],
+                $player->memberships->first()?->team?->club?->short_name ?? $player->club?->short_name,
+            ))
             ->sortBy([['count', 'desc']])
             ->values();
 

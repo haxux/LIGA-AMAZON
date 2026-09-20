@@ -54,15 +54,18 @@ class GameEventsRelationManager extends RelationManager
                     }),
                 Select::make('player_id')
                     ->relationship('player', 'name', fn (Builder $query, Get $get) => $query
-                        ->whereIn('team_id', [
+                        // Las dos plantillas de ESTA temporada: desde la Fase 9 el
+                        // jugador pertenece al club y su participación en el año
+                        // vive en squad_memberships.
+                        ->whereHas('memberships', fn (Builder $memberships) => $memberships->whereIn('team_id', [
                             $this->getOwnerRecord()->home_team_id,
                             $this->getOwnerRecord()->away_team_id,
-                        ])
+                        ]))
                         ->when(
                             $get('type') === GameEvent::TYPE_CLEAN_SHEET,
                             fn (Builder $query) => $query->where('position', Player::POSITION_GOALKEEPER),
                         ))
-                    ->getOptionLabelFromRecordUsing(fn (Player $record): string => "{$record->team->short_name} · #{$record->shirt_number} {$record->name}")
+                    ->getOptionLabelFromRecordUsing(fn (Player $record): string => "{$record->club?->short_name} · {$record->name}")
                     ->required()
                     ->searchable()
                     ->preload(),

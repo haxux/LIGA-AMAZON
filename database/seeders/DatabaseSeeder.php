@@ -68,7 +68,7 @@ class DatabaseSeeder extends Seeder
             ->values();
 
         $teams->each(function (Team $team) {
-            Stadium::factory()->create(['team_id' => $team->id]);
+            Stadium::factory()->create(['club_id' => $team->club_id]);
             Player::factory()->count(self::PLAYERS_PER_TEAM)->create(['team_id' => $team->id]);
         });
 

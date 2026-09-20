@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Players\Tables;
 
 use App\Filament\Resources\Players\Schemas\PlayerForm;
-use App\Filament\Support\TeamOptions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,13 +17,12 @@ class PlayersTable
         return $table
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('team.club.name')->label('Team')->searchable()->sortable(),
+                TextColumn::make('club.name')->label('Club')->searchable()->sortable(),
                 TextColumn::make('position')->badge(),
-                TextColumn::make('shirt_number')->sortable(),
             ])
             ->filters([
                 SelectFilter::make('position')->options(array_combine(PlayerForm::POSITIONS, PlayerForm::POSITIONS)),
-                SelectFilter::make('team')->options(fn (): array => TeamOptions::for()),
+                SelectFilter::make('club')->relationship('club', 'name'),
             ])
             ->recordActions([
                 EditAction::make(),
