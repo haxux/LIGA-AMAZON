@@ -24,7 +24,7 @@
             <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-8 px-6 py-3">
                 <a href="{{ route('site.standings') }}" class="flex items-baseline gap-2 font-display text-[27px] leading-none">
                     <span class="font-extrabold text-brand">AMAZON</span>
-                    <span class="font-semibold tracking-[0.14em] text-white">SUPERLEAGUE</span>
+                    <span class="font-semibold tracking-[0.14em] text-white">TOERNOOIEN</span>
                 </a>
 
                 <nav class="flex flex-wrap items-center gap-7 font-display text-base font-semibold uppercase tracking-[0.12em]">
@@ -47,7 +47,7 @@
                 <div class="max-w-xs">
                     <div class="flex items-baseline gap-2 font-display text-xl">
                         <span class="font-extrabold text-brand">AMAZON</span>
-                        <span class="font-semibold tracking-[0.14em] text-white">SUPERLEAGUE</span>
+                        <span class="font-semibold tracking-[0.14em] text-white">TOERNOOIEN</span>
                     </div>
                     <p class="mt-3 text-sm leading-relaxed">Clasificación, partidos y goleadores de la liga.</p>
                 </div>
@@ -70,7 +70,7 @@
             </div>
 
             <div class="mx-auto mt-6 max-w-6xl border-t border-white/10 px-6 pt-4 font-mono text-[10px] tracking-[0.08em] text-white/40">
-                &copy; {{ now()->year }} AMAZON SUPERLEAGUE
+                &copy; {{ now()->year }} AMAZON TOERNOOIEN
             </div>
         </footer>
     </body>
