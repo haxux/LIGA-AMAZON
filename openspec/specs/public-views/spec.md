@@ -45,9 +45,25 @@ The standings page (`/`) MUST resolve the active season, then render one standin
 - WHEN season B is marked `is_current` instead, and the standings page is requested again
 - THEN it renders season B's divisions and teams, not season A's
 
-### Requirement: Partidos page groups games by matchday with fixture/result branching
+### Requirement: Partidos page groups games by division and matchday with fixture/result branching
 
-The partidos page (`/partidos`) MUST resolve the active season, then render its games grouped by matchday. Each game MUST render as a result card when both `home_score` and `away_score` are non-null, or as a fixture card when both are null. No separate calendar/results route or status field MUST be used to decide this.
+The partidos page (`/partidos`) MUST render games grouped by division and, within each division, by matchday. Each game MUST render as a result card when both `home_score` and `away_score` are non-null, or as a fixture card when both are null. No separate calendar/results route or status field MUST be used to decide this.
+
+The page MUST offer three filters, submitted as a plain GET form so each selection is a shareable URL: `temporada` (defaulting to the active season), `division` (defaulting to `todas`, i.e. every division as its own section), and `jornada` (defaulting to the matchday being played now, or `todas` for the whole calendar). A filter value that does not exist in the current selection — including one left stale by a season change — MUST fall back to that filter's default instead of erroring.
+
+`MatchdayResolver` MUST define "the matchday being played now" as the earliest matchday whose date is today or later; once every date has passed, the most recent one; and, when no matchday carries a date, the lowest-numbered one.
+
+#### Scenario: The page opens on the current jornada of every division
+
+- GIVEN a season whose divisions have matchdays before, on, and after today
+- WHEN the partidos page is requested with no filters
+- THEN each division renders its own section showing only the matchday dated today or next
+
+#### Scenario: A stale filter falls back instead of erroring
+
+- GIVEN a URL carrying a division or jornada that the selected season does not have
+- WHEN the partidos page is requested
+- THEN the page responds 200 and applies that filter's default
 
 #### Scenario: Scored matchday renders result cards
 
