@@ -2,47 +2,25 @@
     <h1 class="font-display mb-1 text-3xl uppercase tracking-wide text-ink">Partidos</h1>
     <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/50">FIXTURES</div>
 
-    @php
-        $labelClass = 'mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/50';
-        $selectClass = 'w-full rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white';
-    @endphp
+    <x-site.filter-bar :action="route('site.fixtures')">
+        <x-site.filter-select
+            name="temporada"
+            label="TEMPORADA"
+            :options="$seasons->pluck('name', 'id')"
+            :selected="$selectedSeason->id" />
 
-    {{-- Plain GET form: the filters are shareable URLs, and the page still
-         works with JavaScript off (the submit button below). --}}
-    <form method="GET" action="{{ route('site.fixtures') }}" class="mb-8 grid gap-4 rounded-md bg-surface p-4 sm:grid-cols-3">
-        <label>
-            <span class="{{ $labelClass }}">TEMPORADA</span>
-            <select name="temporada" onchange="this.form.submit()" class="{{ $selectClass }}">
-                @foreach ($seasons as $season)
-                    <option value="{{ $season->id }}" @selected($season->is($selectedSeason))>{{ $season->name }}</option>
-                @endforeach
-            </select>
-        </label>
+        <x-site.filter-select
+            name="division"
+            label="DIVISIÓN"
+            :options="collect([$all => 'Todas'])->union($divisions->pluck('name', 'id'))"
+            :selected="$selectedDivision?->id ?? $all" />
 
-        <label>
-            <span class="{{ $labelClass }}">DIVISIÓN</span>
-            <select name="division" onchange="this.form.submit()" class="{{ $selectClass }}">
-                <option value="{{ $all }}" @selected($selectedDivision === null)>Todas</option>
-                @foreach ($divisions as $division)
-                    <option value="{{ $division->id }}" @selected($selectedDivision?->is($division))>{{ $division->name }}</option>
-                @endforeach
-            </select>
-        </label>
-
-        <label>
-            <span class="{{ $labelClass }}">JORNADA</span>
-            <select name="jornada" onchange="this.form.submit()" class="{{ $selectClass }}">
-                <option value="{{ $all }}" @selected($selectedNumber === null)>Todas</option>
-                @foreach ($numbers as $number)
-                    <option value="{{ $number }}" @selected($selectedNumber === $number)>Jornada {{ $number }}</option>
-                @endforeach
-            </select>
-        </label>
-
-        <noscript>
-            <button type="submit" class="rounded-[4px] bg-brand px-4 py-2 font-display text-base font-bold uppercase tracking-[0.08em] text-ink">Filtrar</button>
-        </noscript>
-    </form>
+        <x-site.filter-select
+            name="jornada"
+            label="JORNADA"
+            :options="collect([$all => 'Todas'])->union($numbers->mapWithKeys(fn (int $number) => [$number => 'Jornada '.$number]))"
+            :selected="$selectedNumber ?? $all" />
+    </x-site.filter-bar>
 
     @forelse ($groups as $group)
         <section class="mb-10">

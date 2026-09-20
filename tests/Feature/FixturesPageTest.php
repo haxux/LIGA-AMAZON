@@ -74,6 +74,19 @@ class FixturesPageTest extends TestCase
             ->assertSeeInOrder(['Jornada 1', 'Jornada 2']);
     }
 
+    public function test_the_filter_bar_renders_its_three_selects(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        $this->gameIn(Matchday::factory()->for($season)->create(['number' => 1]), 'Manaos FC', 'Tapajós SC');
+
+        $this->get(route('site.fixtures'))
+            ->assertOk()
+            ->assertSee('name="temporada"', false)
+            ->assertSee('name="division"', false)
+            ->assertSee('name="jornada"', false)
+            ->assertSee('<option value="todas"', false);
+    }
+
     public function test_defaults_to_the_current_season(): void
     {
         $current = Season::factory()->create(['is_current' => true]);

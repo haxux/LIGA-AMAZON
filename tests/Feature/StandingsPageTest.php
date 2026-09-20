@@ -56,6 +56,47 @@ class StandingsPageTest extends TestCase
             ->assertDontSee('Season A Team');
     }
 
+    public function test_the_season_filter_renders_and_defaults_to_the_current_season(): void
+    {
+        $current = Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
+        Season::factory()->create(['is_current' => false, 'name' => '2025/26']);
+        $division = Division::factory()->create(['season_id' => $current->id, 'name' => 'Primera']);
+        Team::factory()->for($current)->create(['division_id' => $division->id, 'name' => 'Manaos FC']);
+
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('name="temporada"', false)
+            ->assertSee('<option value="'.$current->id.'" selected', false)
+            ->assertSee('Manaos FC');
+    }
+
+    public function test_another_season_can_be_selected_from_the_filter(): void
+    {
+        $current = Season::factory()->create(['is_current' => true]);
+        $currentDivision = Division::factory()->create(['season_id' => $current->id, 'name' => 'Primera']);
+        Team::factory()->for($current)->create(['division_id' => $currentDivision->id, 'name' => 'Season A Team']);
+
+        $old = Season::factory()->create(['is_current' => false]);
+        $oldDivision = Division::factory()->create(['season_id' => $old->id, 'name' => 'Segunda']);
+        Team::factory()->for($old)->create(['division_id' => $oldDivision->id, 'name' => 'Season B Team']);
+
+        $this->get(route('site.standings', ['temporada' => $old->id]))
+            ->assertOk()
+            ->assertSee('Season B Team')
+            ->assertDontSee('Season A Team');
+    }
+
+    public function test_an_unknown_season_falls_back_to_the_current_one(): void
+    {
+        $current = Season::factory()->create(['is_current' => true]);
+        $division = Division::factory()->create(['season_id' => $current->id, 'name' => 'Primera']);
+        Team::factory()->for($current)->create(['division_id' => $division->id, 'name' => 'Manaos FC']);
+
+        $this->get(route('site.standings', ['temporada' => 9999]))
+            ->assertOk()
+            ->assertSee('Manaos FC');
+    }
+
     public function test_page_returns_404_when_no_seasons_exist(): void
     {
         $this->get(route('site.standings'))->assertNotFound();
