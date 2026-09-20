@@ -130,35 +130,53 @@ credentials included — to any visitor who triggers an uncaught exception.
 - AND `APP_KEY` is empty
 - AND no real password, secret or key value appears in it
 
-### Requirement: Container-host operational gaps are recorded as pending
+### Requirement: Schema migrations are applied by the container entrypoint
 
-Two gaps were found on the container host (Vercel) while deploying the matchday-division
-change, and MUST be recorded in the deployment document as open items with their reason,
-each with the evidence that identified it:
+The container entrypoint MUST apply outstanding migrations on boot, without prompting and
+without seeding, and MUST take a lock shared across instances while doing so — the host may
+start several at once. The lock store MUST therefore be one every instance can see; the
+production template pins the cache store to the database for this reason. Only a database
+with no lock table yet MAY be migrated unlocked.
 
-1. **Schema migrations are not part of the deploy.** The container entrypoint runs
-   `config:cache`, `route:cache` and `view:cache`, and nothing else. `php artisan migrate`
-   MUST therefore be run by hand against the managed database after every schema change.
-   Until it is, the deployed code runs against the old schema: on 2026-09-20 that surfaced
-   as a fixtures page answering 200 with no games at all — Eloquent read the missing
-   `division_id` as null on every matchday instead of failing, so nothing in the logs
-   pointed at the real cause.
-2. **Cold-start latency exceeds a minute.** The first request to an idle instance was
-   observed to hang past 60 s (`/goleadores`, `/noticias`, `/partidos?division=…`), while
-   the next request to the same route answered in ~0.6 s. Compiling views is not the
-   cause — the entrypoint caches them at boot — so the cost belongs to the container start
-   itself, and any fix belongs to the host configuration rather than the application.
+The entrypoint MUST stop the container on failure rather than serve against a schema it could
+not reach: the failure this replaces was silent, a page answering 200 with no data because
+Eloquent read a missing column as null.
 
-Neither is resolved here: the first needs a decision on whether migrations belong in the
-entrypoint (applied on every boot, including concurrent instances) or stay a deliberate
-manual step; the second needs host-level tuning that has not been measured yet.
+A rollback MUST remain a deliberate manual act, and the deployment document MUST carry the
+command: rolling the code back does not roll the schema back.
 
-#### Scenario: Both gaps are traceable from the deployment document
+#### Scenario: A deploy carrying a migration needs no manual step
 
-- GIVEN an operator preparing a release that changes the schema
-- WHEN they read the deployment document
-- THEN both the manual migration step and the cold-start behaviour appear there, each with
-  its reason and the evidence behind it
+- GIVEN a deploy whose code expects a column the database does not have
+- WHEN the container boots
+- THEN the migration is applied before the first request is served
+
+#### Scenario: Several instances booting together migrate once
+
+- GIVEN the host starts more than one instance of the same deploy
+- WHEN each runs the entrypoint
+- THEN one applies the migrations and the others proceed without touching the schema
+
+### Requirement: Cold-start work is baked into the image where it does not read the environment
+
+Cache-building steps that read no environment — the route cache and the view cache — MUST be
+built into the image, not run at boot: the host scales to zero after five minutes of
+inactivity, so every one of them is paid again on each cold start. `config:cache` MUST stay at
+boot, because it freezes every `env()` call and the build has neither `APP_KEY` nor database
+credentials.
+
+The deployment document MUST record what was measured, including the part that is not the
+application's: container start to first response is ~4 s locally with the image present, of
+which Laravel's own work is ~1 s, against the 60–90 s observed on a sleeping production
+instance. Closing that gap needs a host-level decision (a warm instance), and the document
+MUST say so rather than imply the application can fix it.
+
+#### Scenario: The boot sequence holds only environment-dependent work
+
+- GIVEN the container entrypoint
+- WHEN it is read
+- THEN it caches the configuration and migrates, and neither the route cache nor the view
+  cache appears in it
 
 ### Requirement: Deferred host-specific hardening is recorded, not dropped
 

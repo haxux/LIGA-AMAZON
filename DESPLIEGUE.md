@@ -82,7 +82,8 @@ En orden. Los pasos marcados **⚠** dependen de decisiones de §3.
 4. `composer install --no-dev --optimize-autoloader`
 5. `npm ci && npm run build`
 6. `php artisan migrate --force` — **sin `--seed`**. Los datos se cargan desde
-   el panel.
+   el panel. En el contenedor de Vercel este paso **ya no es manual**: lo hace
+   el entrypoint en cada arranque (§5.1).
 7. `php artisan storage:link` — obligatorio. El symlink del repo apunta a
    `/var/www/html/...` (ruta absoluta del contenedor) y queda roto en cualquier
    otro sitio. Sin esto no se ve ningún escudo ni portada.
@@ -232,37 +233,67 @@ Registrado para que no se vuelva a plantear sin saber que ya se decidió.
 
 ---
 
-## 5. Pendiente — operativa del host de contenedores (Vercel)
+## 5. Operativa del host de contenedores (Vercel)
 
-El hosting ya está decidido (contenedor en Vercel, §2 del `Dockerfile.vercel`).
-Estos dos puntos salieron al desplegar el cambio de jornadas por división el
-2026-09-20 y siguen abiertos.
+El hosting ya está decidido (contenedor en Vercel, `Dockerfile.vercel`). Estos
+dos puntos salieron al desplegar el cambio de jornadas por división el
+2026-09-20; ambos están tratados, con lo que queda fuera del alcance de la
+aplicación señalado como tal.
 
-**5.1 Las migraciones no forman parte del despliegue.** El entrypoint ejecuta
-`config:cache`, `route:cache` y `view:cache`, nada más. Después de cada cambio
-de esquema hay que correr a mano, contra la base gestionada:
+**5.1 Las migraciones se aplican al arrancar el contenedor.** El entrypoint
+ejecuta ahora, en este orden: `config:cache`, y después las migraciones.
+Cubierto por `ContainerDeployTest`.
+
+Se usa `migrate --force --isolated`. El cerrojo de `--isolated` vive en el
+almacén de caché, y producción lo tiene en la base de datos
+(`CACHE_STORE=database`), así que es un cerrojo **compartido entre instancias**:
+si el host levanta varias a la vez, una migra y el resto sigue sin tocar el
+esquema. La rama sin cerrojo del entrypoint existe sólo para una base recién
+creada, que aún no tiene tabla `cache_locks`.
+
+Lo que esto compra: el fallo que motivó el cambio era **silencioso**. Con
+`matchdays.division_id` sin crear, Eloquent leyó la columna como null en cada
+jornada en vez de reventar, así que `/partidos` devolvía 200 sin un solo
+partido y en los logs no había nada.
+
+Lo que esto cuesta, y conviene tener presente: una migración destructiva se
+aplica sola en cuanto se despliega, y **volver atrás el código no vuelve atrás
+el esquema**. Para una reversión hay que ejecutar el rollback a mano:
 
 ```bash
 docker compose exec -T app sh -c 'set -a; . ./.env.tidb; set +a; \
-  DB_DATABASE=liga_amazon php artisan migrate --force'
+  DB_DATABASE=liga_amazon php artisan migrate:rollback --step=1 --force'
 ```
 
 (`.env.tidb` trae el usuario administrador; su `DB_DATABASE` apunta a la base
 desechable de tests, de ahí que se sobrescriba.)
 
-Mientras no se corra, el código desplegado trabaja contra el esquema viejo.
-Y el fallo es **silencioso**: con `matchdays.division_id` ausente, Eloquent leyó
-la columna como null en cada jornada en vez de reventar, así que `/partidos`
-devolvía 200 sin un solo partido y en los logs no había nada. Una página vacía
-después de desplegar es, hasta que se demuestre lo contrario, una migración sin
-correr.
+**5.2 Arranque en frío.** El host escala a cero tras 5 minutos sin tráfico, así
+que la primera petición después de un rato paga el arranque entero. Medido:
 
-Decisión pendiente: meterlas en el entrypoint —se aplicarían en cada arranque,
-también en instancias concurrentes— o dejarlas como paso manual deliberado.
+| Tramo | Medida |
+|---|---|
+| Primera petición en producción a una instancia dormida | 60–90 s (llegó a agotar un `--max-time 90`) |
+| Petición siguiente, misma ruta | ~0,6 s |
+| Contenedor local, imagen ya presente: `docker run` → primer 200 | **4,2 s** |
+| `config:cache` / `route:cache` / `view:cache` / `migrate`, dentro de la imagen | 0,41 / 0,34 / 0,58 / 0,65 s |
 
-**5.2 Arranque en frío por encima del minuto.** La primera petición a una
-instancia dormida se colgó más de 60 s en `/goleadores`, `/noticias` y
-`/partidos?division=…`; la siguiente a esa misma ruta respondió en ~0,6 s. No es
-compilación de vistas: el entrypoint ya las cachea al arrancar. El coste es del
-arranque del contenedor, así que el arreglo es de configuración del host, no de
-la aplicación. Falta medirlo en serio antes de tocar nada.
+La lectura: el arranque del contenedor son ~4 s, de los cuales el trabajo de
+Laravel es poco más de 1 s. El minuto largo que se ve en producción **no está
+en la aplicación** — es aprovisionamiento del host y descarga de la imagen
+(~340 MB en amd64: 203 MB la aplicación con su `vendor`, 60 MB las extensiones
+de PHP, 58 MB el binario de FrankenPHP).
+
+Aplicado por nuestra parte: `route:cache` y `view:cache` se hornean en la
+imagen (ninguno lee entorno: las rutas no usan `env()` y el panel cuelga de un
+path fijo), así que dejan de pagarse en cada arranque. Es ~0,9 s menos de
+trabajo por arranque; no mueve la aguja del minuto, y decir lo contrario sería
+mentir sobre la medición.
+
+Lo que sí la movería está fuera de la aplicación y necesita una decisión:
+
+- Mantener una instancia caliente (configuración de escalado del proyecto en
+  Vercel, o un cron externo golpeando el sitio cada pocos minutos). Es la única
+  solución real al escalado a cero, y se paga en cómputo permanente.
+- Seguir adelgazando la imagen. El grueso es `vendor` con Filament dentro;
+  recortar ahí es trabajo de horas para ganar decenas de MB.
