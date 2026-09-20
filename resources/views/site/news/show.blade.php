@@ -1,7 +1,7 @@
 <x-layouts.site :title="$item->title . ' — Liga Amazon'">
     <article class="mx-auto max-w-3xl">
         @if ($item->cover_path)
-            <img src="{{ Storage::disk('public')->url($item->cover_path) }}" alt="{{ $item->title }}" class="mb-6 w-full rounded-md bg-surface-muted object-cover">
+            <img src="{{ Storage::disk(config('filesystems.uploads'))->url($item->cover_path) }}" alt="{{ $item->title }}" class="mb-6 w-full rounded-md bg-surface-muted object-cover">
         @endif
 
         <h1 class="font-display mb-2 text-3xl uppercase tracking-wide text-ink">{{ $item->title }}</h1>

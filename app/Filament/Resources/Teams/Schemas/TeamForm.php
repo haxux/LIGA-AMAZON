@@ -37,17 +37,21 @@ class TeamForm
                 FileUpload::make('crest_path')
                     ->image()
                     // ->image() sets acceptedFileTypes(['image/*']), which becomes the
-                    // rule `mimetypes:image/*` and matches image/svg+xml. Public-disk
-                    // files are served same-origin under /storage/, so a script-bearing
-                    // SVG would run with this site's privileges, including access to an
-                    // authenticated admin session. The explicit list below overrides that
-                    // wildcard and MUST stay after ->image(), which would otherwise
-                    // restore it. Raster formats only — they cannot carry script.
+                    // rule `mimetypes:image/*` and matches image/svg+xml. On the local
+                    // 'public' disk these files are served same-origin under /storage/,
+                    // so a script-bearing SVG would run with this site's privileges,
+                    // including access to an authenticated admin session. On object
+                    // storage the serving origin differs, which narrows the blast radius
+                    // but does not remove it: a stored SVG is still script that another
+                    // visitor's browser will execute. The rule holds on both disks. The
+                    // explicit list below overrides that wildcard and MUST stay after
+                    // ->image(), which would otherwise restore it. Raster formats only —
+                    // they cannot carry script.
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
-                    // Below nginx's client_max_body_size and PHP's post_max_size, so an
-                    // oversized file fails as a readable form error, not a 413.
+                    // Below the web server's body limit and PHP's post_max_size, so
+                    // an oversized file fails as a readable form error, not a 413.
                     ->maxSize(2048)
-                    ->disk('public')
+                    ->disk(config('filesystems.uploads'))
                     ->directory('crests')
                     ->visibility('public'),
                 TextInput::make('founded_year')

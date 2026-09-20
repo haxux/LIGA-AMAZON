@@ -17,6 +17,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Uploads Disk
+    |--------------------------------------------------------------------------
+    |
+    | Where admin-uploaded images (team crests, news covers) are written and
+    | served from. Deliberately separate from 'default': that one is 'local',
+    | which is private storage, while these files must be publicly readable.
+    |
+    | Locally this stays 'public'. On any host with an ephemeral filesystem —
+    | Vercel and every other serverless runtime — it must point at object
+    | storage ('s3'), or every upload disappears with the container that
+    | received it. Changing this one value moves all seven call sites.
+    |
+    */
+
+    'uploads' => env('UPLOADS_DISK', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -56,7 +74,13 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
+            // true, unlike every other disk here. This is the uploads disk in
+            // production, and a rejected write returns false rather than
+            // raising: Filament would save the record with a path to an object
+            // that was never stored, and the broken crest would be the only
+            // symptom, with nothing in the logs. Failing loudly turns that into
+            // a visible error at the moment the admin uploads the file.
+            'throw' => true,
             'report' => false,
         ],
 

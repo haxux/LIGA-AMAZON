@@ -15,7 +15,7 @@ class NewsTable
     {
         return $table
             ->columns([
-                ImageColumn::make('cover_path')->disk('public'),
+                ImageColumn::make('cover_path')->disk(config('filesystems.uploads')),
                 TextColumn::make('title')->searchable()->sortable(),
                 TextColumn::make('team.name')->label('Team')->searchable()->sortable(),
                 TextColumn::make('published_at')->dateTime()->sortable(),
