@@ -1,0 +1,30 @@
+# El contexto de build no debe llevar secretos ni artefactos locales.
+.git
+.github
+
+# Todo fichero de entorno, incluidos .env.tidb y .env.tidb.app, que contienen
+# credenciales reales de la base de datos. Las variables de producción las
+# inyecta Vercel en ejecución, nunca la imagen.
+.env
+.env.*
+
+# Se reinstalan dentro del build, y copiarlos rompería la imagen si el host es
+# de otra arquitectura.
+node_modules
+vendor
+public/build
+
+# Entorno de desarrollo: PHP-FPM y nginx, que no intervienen en Vercel.
+# docker/vercel sí se copia, porque contiene el entrypoint.
+docker/nginx
+docker/php
+docker-compose.yml
+
+# No hacen falta en producción.
+tests
+phpunit.xml
+phpunit.tidb.xml
+scripts
+storage/logs
+.phpunit.result.cache
+public/hot

@@ -1,0 +1,29 @@
+# Qué NO se sube a Vercel al desplegar.
+#
+# Es un fichero distinto de .dockerignore y hace falta igualmente: .dockerignore
+# decide qué entra en la imagen, pero el CLI sube el contexto antes de eso y no
+# mira ni .gitignore ni .dockerignore. Sin este fichero, .env.r2 y .env.tidb.app
+# — credenciales reales de R2 y de la base de datos — se subirían al servidor de
+# build aunque nunca llegaran a la imagen.
+.env
+.env.*
+
+# El build las reinstala dentro del contenedor. Subirlas sólo alarga el
+# despliegue, y vendor/ compilado en otra arquitectura rompería la imagen.
+node_modules
+vendor
+public/build
+
+# Entorno de desarrollo: PHP-FPM y nginx no intervienen en Vercel.
+docker/nginx
+docker/php
+docker-compose.yml
+
+# No hacen falta en producción.
+tests
+phpunit.xml
+phpunit.tidb.xml
+scripts
+storage/logs
+.phpunit.result.cache
+public/hot

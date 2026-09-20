@@ -1,0 +1,11 @@
+# Servidor de producción en Vercel (FrankenPHP). El docker/nginx/default.conf
+# del repositorio es de desarrollo y no interviene aquí.
+:{$PORT:80} {
+	root /app/public
+	encode zstd gzip
+
+	# /storage ya no se sirve desde disco: las subidas del panel viven en el
+	# bucket de objetos (UPLOADS_DISK=s3). Aquí no hay nada que proteger de
+	# ejecución de PHP, que era el §3.3 de DESPLIEGUE.md.
+	php_server
+}
