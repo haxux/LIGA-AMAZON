@@ -52,9 +52,19 @@ los 29 jugadores y sus estadios, y un fichaje de la temporada pasada no diría n
 plantilla de hoy. El propietario lo zanjó al plantearlo: *"eso se debe corregir también
 entonces ahora en la fase 9 el jugador no debe ser por temporada"*.
 
-Ambos se mueven al club en la misma migración. El estadio no se preguntó, pero es
-exactamente el mismo caso —un club no cambia de estadio al cambiar de año— y hacerlo en dos
-tandas costaría dos migraciones sobre las mismas tablas.
+La corrección no es mover el jugador al club sin más, porque entonces se perdería quién estuvo
+en cada plantilla y el dorsal quedaría fijado para siempre, siendo que cambia cada temporada.
+Se parte en dos: **el jugador pertenece al club** (identidad) y **una pertenencia por
+temporada** registra dónde juega ese año, con su dorsal y su tipo (propiedad o cesión). El
+detalle está en el diseño D1b.
+
+Encaja con lo que ya hay: el `unique(team_id, shirt_number)` de `players` es exactamente el
+índice que la tabla de pertenencias necesita, así que la migración no inventa restricciones,
+las lleva al sitio donde significan algo. Y en producción los 29 jugadores están todos en una
+única temporada, sin nombres repetidos, así que el reparto es uno a uno.
+
+El estadio no se preguntó, pero es el mismo caso —un club no cambia de estadio al cambiar de
+año— y hacerlo en dos tandas costaría dos migraciones sobre las mismas tablas.
 
 Lo que queda en `teams` después de esto es sólo `season_id`, `division_id` y `club_id`: la
 participación, y nada más. Los partidos siguen enfrentando equipos-temporada, que es lo
@@ -66,9 +76,11 @@ correcto: un partido ocurre en una temporada y una división concretas.
 
 - Tabla `clubs` con la identidad permanente (nombre, nombre corto, escudo, año de fundación).
   `teams` conserva temporada y división, gana `club_id` y cede esos cuatro campos al club.
-- **Jugadores y estadios pasan a colgar del club**, no del equipo-temporada (ver más abajo).
-- Migración de datos: un club por cada nombre distinto de `teams`, con `club_id` rellenado;
-  cada jugador y cada estadio reapuntados al club de su equipo actual.
+- **El jugador pasa a colgar del club**, con una tabla de pertenencias por temporada que
+  guarda dorsal y tipo (propiedad o cesión). Los estadios pasan al club.
+- Inscribir un club en una temporada arrastra automáticamente su plantilla anterior.
+- Migración de datos: un club por cada nombre distinto de `teams`; cada jugador se parte en
+  identidad más pertenencia a su temporada actual; cada estadio reapuntado a su club.
 - `users.role` (`admin` | `tecnico`), `users.club_id` para el técnico, y políticas por
   registro: un técnico sólo escribe sobre su club.
 - Acceso desde el sitio público: enlace de entrada, sesión, y el escudo del club arriba a la
@@ -164,5 +176,6 @@ Ninguna. Las tres que había se resolvieron el 2026-09-20:
   los administradores. No se añade `users.username`; se entra por email y se ahorra el trabajo
   de tocar la autenticación de Filament.
 - **O2 — Nombre visible del técnico.** Resuelta: el `name` de su cuenta.
-- **O3 — Plantillas por temporada.** Resuelta y **subida a la Fase 9**: jugadores y estadios
-  cuelgan del club.
+- **O3 — Plantillas por temporada.** Resuelta y **subida a la Fase 9**: el jugador cuelga del
+  club y una tabla de pertenencias guarda cada temporada, con dorsal y tipo. Al inscribir un
+  club en una temporada nueva, su plantilla se hereda sola.

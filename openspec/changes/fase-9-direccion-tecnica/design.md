@@ -22,26 +22,51 @@ en `clubs` más `unique(season_id, club_id)` en `teams` — un club no puede est
 la misma temporada. Esa segunda restricción es también lo que sostiene el `down()` de la
 migración (ver el plan de reversión de la propuesta).
 
-## D1b — Jugadores y estadios cuelgan del club, no del equipo-temporada
+## D1b — El jugador se parte en identidad (club) y pertenencia (temporada)
 
-`players.team_id` → `players.club_id`; `stadiums.team_id` → `stadiums.club_id`. La unicidad
-del dorsal se mueve con ellos: `unique(team_id, shirt_number)` pasa a `unique(club_id,
-shirt_number)`, que además es lo que un dorsal significa — es del club, no del año.
+Hoy `players` mezcla dos cosas: **quién es** un jugador (nombre, fecha de nacimiento,
+posición) y **dónde juega este año** (`team_id`, `shirt_number`, con `unique(team_id,
+shirt_number)`). Esa mezcla es la razón de que una plantilla sea por temporada y de que haya
+que teclearla entera cada año.
 
-Sin esto, cada temporada nueva obligaría a volver a dar de alta la plantilla entera, y la
-Fase 12 no podría contar nada coherente: un fichaje de la temporada pasada apuntaría a un
-jugador que en la actual es otra fila.
+Se parten en dos:
 
-La contrapartida, dicha en claro: **la aplicación deja de saber quién estuvo en la plantilla
-en una temporada pasada**. Hoy lo sabe por accidente —una fila por temporada—, pero a cambio
-de rehacerlo todo cada año. La Fase 12 recupera esa historia por el lado correcto, que son los
-traspasos con su fecha y su temporada; si en algún momento hace falta la foto exacta de una
-plantilla antigua, se añade una tabla de pertenencias por temporada sin deshacer nada de esto.
+- `players` conserva la identidad y gana `club_id`, el club **propietario**.
+- `squad_memberships`: `team_id` (la participación del club en una temporada y división),
+  `player_id`, `shirt_number` y `type` (`owned` o `loan`), con `unique(team_id, shirt_number)`
+  y `unique(team_id, player_id)`.
 
-`Player::team()` desaparece como relación y pasa a ser `Player::club()`. Son tres puntos que
-lo leen —`GoalscorersService`, la lista pública de goleadores y la etiqueta del selector de
-jugadores en los eventos— y en los tres lo que se quiere mostrar es el club, así que se
-renombran en lugar de disfrazarse con un accesor: aquí el significado cambia, y en D1 no.
+Nótese que ese primer índice es literalmente el que `players` tiene hoy: la tabla nueva no
+inventa una restricción, se lleva la que ya existía al sitio donde significa algo. Y resuelve
+un defecto que estaba enterrado: **el dorsal cambia de temporada**, así que atarlo al club y
+para siempre —lo que pasaría si el jugador colgara sólo del club— habría sido falso.
+
+`stadiums.team_id` pasa a `stadiums.club_id`: un club no cambia de estadio al cambiar de año.
+
+Ventaja que viene de regalo: `game_events.player_id` apunta ahora a una identidad que sobrevive
+a las temporadas, así que los goles de un jugador se acumulan en su ficha en lugar de repartirse
+entre una fila por año, que es lo que ocurre hoy sin que nadie lo haya pedido.
+
+La cesión deja de ser un caso especial: es una pertenencia cuyo `type` es `loan` y cuyo club
+propietario (`players.club_id`) no es el del `team_id` donde juega. La Fase 12 escribe eso, no
+un mecanismo aparte.
+
+**Qué plantilla se lee en cada sitio**: la del técnico y la ficha pública son las pertenencias
+de la temporada seleccionada. La etiqueta de club en la lista de goleadores sale de la
+pertenencia de esa temporada — que es donde el jugador realmente jugó, cesiones incluidas —, y
+cae al club propietario si no hubiera ninguna.
+
+## D1c — Inscribir un club en una temporada arrastra su plantilla
+
+Crear la fila de `teams` que inscribe a un club en una temporada copia las pertenencias de su
+participación anterior más reciente: mismos jugadores, mismos dorsales, y desde ahí se ajusta.
+Decisión del propietario: automático al inscribir, no un botón aparte.
+
+Se implementa como un observador de `Team::created`, y por tanto queda mudo bajo
+`WithoutModelEvents` — que es lo que usa `DatabaseSeeder` y lo que ya hace con los guards de
+`Game`, `Season` y `Matchday`. El seeder arma sus plantillas explícitamente, como hasta ahora.
+
+Los jugadores marcados como salidos de la liga (D9) no se heredan.
 
 ## D2 — La migración crea un club por nombre distinto, y falla ruidosamente si algo no cuadra
 

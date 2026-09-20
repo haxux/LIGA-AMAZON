@@ -31,24 +31,32 @@ queda el esqueleto de las siguientes para que el orden no se pierda.
 - [ ] 1.8 Probar la migración contra un TiDB desechable (`./scripts/test-tidb.sh`) antes de
       dar la unidad por buena.
 
-## Unidad 2 — Plantillas y estadios al club (TDD)
+## Unidad 2 — Identidad del jugador, pertenencias y estadios (TDD)
 
-- [ ] 2.1 RED: test de esquema — `players.club_id` con `unique(club_id, shirt_number)` y
-      `stadiums.club_id` único; ninguna de las dos conserva `team_id`.
-- [ ] 2.2 RED: test de migración de datos — cada jugador y cada estadio quedan apuntando al
-      club del equipo en el que estaban, sin perder ninguna fila.
-- [ ] 2.3 Migración: añadir `club_id` a ambas, rellenar desde `teams.club_id`, rehacer índices
-      y soltar `team_id`.
-      **CONSTRAINT**: mismo orden de índices que en la unidad 1, y `stadiums.team_id` es
+- [ ] 2.1 RED: test de esquema — `players` con `club_id` y sin `team_id` ni `shirt_number`;
+      `squad_memberships` con `team_id`, `player_id`, `shirt_number`, `type` y sus dos índices
+      únicos; `stadiums.club_id` único.
+- [ ] 2.2 RED: test de migración de datos — cada fila de `players` de hoy produce una identidad
+      y una pertenencia a su equipo actual, conservando el dorsal; ningún jugador se pierde ni
+      se duplica; los estadios quedan en su club.
+- [ ] 2.3 Migración: crear `squad_memberships`, poblarla desde `players`, añadir `players.club_id`
+      desde `teams.club_id`, soltar `team_id` y `shirt_number` de `players`, y mover el estadio.
+      **CONSTRAINT**: mismo orden de índices que en la unidad 1; `stadiums.team_id` es
       `unique()`, así que su índice también sostiene la FK.
-- [ ] 2.4 Modelos: `Player::club()` y `Stadium::club()`; `Club::players()` y `Club::stadium()`.
-      `Player::team()` se elimina, no se disfraza — aquí el significado cambia (design D1b).
-- [ ] 2.5 Actualizar los tres puntos que leían `player->team`: `GoalscorersService`, la lista
-      pública de goleadores y la etiqueta del selector en el gestor de eventos.
-- [ ] 2.6 Panel: el gestor de jugadores se mueve de `TeamResource` a `ClubResource`, igual que
-      el de estadio. El selector de jugadores de un partido pasa a filtrar por los clubes de
-      los dos equipos.
-- [ ] 2.7 GREEN: suite entera, con los tests de jugadores y estadios actualizados al club.
+- [ ] 2.4 Modelos: `Player::club()`, `Player::memberships()`, `Team::memberships()`,
+      `Club::players()`, `Club::stadium()`, `SquadMembership`. `Player::team()` se elimina:
+      aquí el significado cambia y disfrazarlo con un accesor mentiría (design D1b).
+- [ ] 2.5 RED + verde: observador de `Team::created` que hereda las pertenencias de la
+      participación anterior del club, saltándose a los salidos de la liga.
+      **CONSTRAINT**: queda mudo bajo `WithoutModelEvents`, como los guards existentes; el
+      seeder sigue armando sus plantillas a mano.
+- [ ] 2.6 Actualizar los tres puntos que leían `player->team`: `GoalscorersService`, la lista
+      pública de goleadores y la etiqueta del selector en el gestor de eventos. La etiqueta de
+      club sale de la pertenencia de esa temporada, con el club propietario como respaldo.
+- [ ] 2.7 Panel: el gestor de jugadores pasa a `ClubResource` (identidad) y las pertenencias se
+      gestionan desde el equipo de cada temporada; el estadio, a `ClubResource`. El selector de
+      jugadores de un partido filtra por las pertenencias de esa temporada.
+- [ ] 2.8 GREEN: suite entera, con los tests de jugadores y estadios actualizados.
 
 ## Unidad 3 — Rol y cuentas (TDD)
 
