@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Divisions;
 use App\Filament\Resources\Divisions\Pages\CreateDivision;
 use App\Filament\Resources\Divisions\Pages\EditDivision;
 use App\Filament\Resources\Divisions\Pages\ListDivisions;
+use App\Filament\Resources\Divisions\RelationManagers\StandingZonesRelationManager;
 use App\Filament\Resources\Divisions\Schemas\DivisionForm;
 use App\Filament\Resources\Divisions\Tables\DivisionsTable;
 use App\Models\Division;
@@ -66,7 +67,7 @@ class DivisionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            StandingZonesRelationManager::class,
         ];
     }
 

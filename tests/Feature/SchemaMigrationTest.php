@@ -53,6 +53,13 @@ class SchemaMigrationTest extends TestCase
         ]));
     }
 
+    public function test_standing_zones_table_has_expected_columns(): void
+    {
+        $this->assertTrue(Schema::hasColumns('standing_zones', [
+            'id', 'division_id', 'label', 'color', 'from_position', 'to_position', 'created_at', 'updated_at',
+        ]));
+    }
+
     public function test_games_table_has_expected_columns(): void
     {
         $this->assertTrue(Schema::hasColumns('games', [

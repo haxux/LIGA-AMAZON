@@ -19,17 +19,20 @@ class StandingsController extends SiteController
         // back to the active one rather than erroring.
         $season = $seasons->firstWhere('id', $request->integer('temporada')) ?? $this->activeSeason();
 
-        $divisions = $season->divisions()->has('teams')->orderBy('id')->get();
+        $divisions = $season->divisions()->has('teams')->with('standingZones')->orderBy('id')->get();
 
         // D6: a season with teams but zero qualifying divisions (reachable —
         // teams.division_id is permanently nullable) renders one unnamed
         // table via forSeason() instead of a blank page.
         $tables = $divisions->isEmpty()
-            ? [['heading' => null, 'rows' => $standings->forSeason($season)]]
+            ? [['heading' => null, 'rows' => $standings->forSeason($season), 'zones' => collect()]]
             : $divisions
                 ->map(fn (Division $division) => [
                     'heading' => $division->name,
                     'rows' => $standings->forDivision($division),
+                    // Promotion/relegation bands are a property of the division,
+                    // so the seasonless fallback table above simply has none.
+                    'zones' => $division->standingZones,
                 ])
                 ->all();
 

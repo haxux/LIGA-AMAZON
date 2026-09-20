@@ -88,6 +88,26 @@ Both team Selects on the Game form (in `GameResource` and in the `MatchdayResour
 - WHEN an operator opens its games, in either the resource or the relation manager
 - THEN only Primera clubs are offered, and submitting a Segunda club is rejected as a form error
 
+### Requirement: Standings zones are edited from their division
+
+`DivisionResource` MUST expose a `StandingZonesRelationManager` for defining that division's
+bands: a label shown in the public legend, a colour picked from `StandingZone::COLORS`, and
+the first and last positions covered. An inverted range and an overlap with a sibling band
+MUST both surface as field errors rather than as an exception escaping the model guard, and a
+band being edited MUST NOT count as overlapping itself.
+
+#### Scenario: A band is defined from the division page
+
+- GIVEN an operator editing a division
+- WHEN they add a band labelled "Descenso" over the last two positions
+- THEN it is persisted against that division and appears in the public table's legend
+
+#### Scenario: A band cannot be widened over its neighbour
+
+- GIVEN a division with bands over positions 1–3 and 4–6
+- WHEN the operator widens the first band to position 5
+- THEN the form rejects it, naming the band that already holds those positions
+
 ### Requirement: Team crest upload wires to the Fase 2 public disk
 
 `TeamResource`'s form MUST include a `FileUpload` component bound to the `public` disk, storing new files under `crests/`. Uploading a new crest MUST replace the team's `crest_path`, and the resulting file MUST be retrievable via its public URL.

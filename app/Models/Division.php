@@ -29,4 +29,14 @@ class Division extends Model
     {
         return $this->hasMany(Matchday::class);
     }
+
+    /**
+     * Ordered on the relationship: every consumer — the panel's relation
+     * manager and the public legend alike — wants them top of the table
+     * downwards, and the bands cannot overlap, so the order is total.
+     */
+    public function standingZones(): HasMany
+    {
+        return $this->hasMany(StandingZone::class)->orderBy('from_position');
+    }
 }

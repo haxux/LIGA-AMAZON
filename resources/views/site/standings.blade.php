@@ -11,6 +11,6 @@
     </x-site.filter-bar>
 
     @foreach ($tables as $table)
-        <x-site.standings-table :heading="$table['heading']" :rows="$table['rows']" />
+        <x-site.standings-table :heading="$table['heading']" :rows="$table['rows']" :zones="$table['zones']" />
     @endforeach
 </x-layouts.site>

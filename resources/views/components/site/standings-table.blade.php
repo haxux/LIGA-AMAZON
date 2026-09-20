@@ -1,4 +1,8 @@
-@props(['heading', 'rows'])
+@props(['heading', 'rows', 'zones' => null])
+
+@php
+    $zones = collect($zones);
+@endphp
 
 <section class="mb-10 overflow-hidden rounded-md bg-surface">
     @if ($heading)
@@ -23,7 +27,17 @@
         <tbody>
             @foreach ($rows as $index => $row)
                 <tr class="border-t border-white/[0.055] hover:bg-white/[0.045]">
-                    <td class="px-4 py-2 font-mono text-xs text-white/50">{{ $index + 1 }}</td>
+                    @php
+                        $zone = $zones->first(fn ($candidate) => $candidate->covers($index + 1));
+                    @endphp
+                    <td class="relative px-4 py-2 font-mono text-xs text-white/50">
+                        @if ($zone)
+                            {{-- Inline colour: it comes from StandingZone::COLORS, a closed
+                                 palette, so there is no arbitrary value reaching the page. --}}
+                            <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
+                        @endif
+                        {{ $index + 1 }}
+                    </td>
                     <td class="px-4 py-2">
                         <div class="flex items-center gap-3">
                             <x-site.team-crest :team="$row->team" />
@@ -43,14 +57,14 @@
         </tbody>
     </table>
 
-    <div class="flex items-center gap-4 px-4 py-3 font-mono text-[10px] tracking-[0.06em] text-white/40">
-        <span class="flex items-center gap-1.5">
-            <span class="size-2 rounded-sm bg-brand"></span>
-            CLASIFICACIÓN
-        </span>
-        <span class="flex items-center gap-1.5">
-            <span class="size-2 rounded-sm bg-loss"></span>
-            DESCENSO
-        </span>
-    </div>
+    @if ($zones->isNotEmpty())
+        <div class="flex flex-wrap items-center gap-4 px-4 py-3 font-mono text-[10px] tracking-[0.06em] text-white/40">
+            @foreach ($zones as $zone)
+                <span class="flex items-center gap-1.5">
+                    <span class="size-2 rounded-sm" style="background-color: {{ $zone->hex() }}"></span>
+                    {{ mb_strtoupper($zone->label) }}
+                </span>
+            @endforeach
+        </div>
+    @endif
 </section>

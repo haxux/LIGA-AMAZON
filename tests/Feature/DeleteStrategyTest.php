@@ -101,6 +101,17 @@ class DeleteStrategyTest extends TestCase
         $this->assertSame(0, DB::table('games')->where('id', $gameId)->count());
     }
 
+    public function test_deleting_a_division_cascades_to_its_standing_zones(): void
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        $zoneId = DB::table('standing_zones')->insertGetId(['division_id' => $divisionId, 'label' => 'Ascenso', 'color' => 'green', 'from_position' => 1, 'to_position' => 2, 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('divisions')->where('id', $divisionId)->delete();
+
+        $this->assertSame(0, DB::table('standing_zones')->where('id', $zoneId)->count());
+    }
+
     public function test_deleting_a_division_with_teams_is_restricted(): void
     {
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);

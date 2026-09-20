@@ -30,7 +30,17 @@ Every public page that requires a season MUST resolve it as: the season with `is
 
 ### Requirement: Standings page renders one table per non-empty division
 
-The standings page (`/`) MUST resolve the active season, then render one standings table per division belonging to that season with at least one team assigned, using `StandingsService::forDivision()` per division. A division with zero teams MUST render nothing — no placeholder.
+The standings page (`/`) MUST render one standings table per division belonging to the selected season with at least one team assigned, using `StandingsService::forDivision()` per division. A division with zero teams MUST render nothing — no placeholder.
+
+The page MUST carry the same `?temporada` filter as partidos: it defaults to the active season and falls back to it when the value is unknown. Both pages MUST share one filter-bar component, submitted as a plain GET form.
+
+Each table MUST paint the standings zones of its division: a colour bar on the position cell of every row the zone covers, and a legend under the table listing each zone's label and colour. A division with no zones MUST render neither bar nor legend — the table carries no default bands of its own.
+
+#### Scenario: A zone paints its rows and appears in the legend
+
+- GIVEN a division whose first two positions belong to an "Ascenso" zone
+- WHEN the standings page is requested
+- THEN the first two rows carry that zone's colour, the third does not, and the legend lists "Ascenso" in that colour
 
 #### Scenario: Divisions with teams each render a table
 

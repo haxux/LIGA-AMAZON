@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Division;
 use App\Models\Season;
+use App\Models\StandingZone;
 use App\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -95,6 +96,60 @@ class StandingsPageTest extends TestCase
         $this->get(route('site.standings', ['temporada' => 9999]))
             ->assertOk()
             ->assertSee('Manaos FC');
+    }
+
+    public function test_zone_rows_carry_their_colour_and_the_legend_lists_them(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        $division = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        Team::factory()->for($season)->create(['division_id' => $division->id, 'name' => 'Manaos FC']);
+        StandingZone::factory()->create([
+            'division_id' => $division->id,
+            'label' => 'Ascenso',
+            'color' => 'green',
+            'from_position' => 1,
+            'to_position' => 1,
+        ]);
+
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('background-color: '.StandingZone::COLORS['green']['hex'], false)
+            ->assertSee('ASCENSO');
+    }
+
+    public function test_a_division_without_zones_renders_no_legend(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        $division = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        Team::factory()->for($season)->create(['division_id' => $division->id, 'name' => 'Manaos FC']);
+
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('Manaos FC')
+            ->assertDontSee('background-color:', false);
+    }
+
+    /**
+     * A band stops where it is told to: the second row of a one-position
+     * zone must come out unpainted.
+     */
+    public function test_a_row_outside_every_zone_is_left_unpainted(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        $division = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        Team::factory()->for($season)->count(2)->create(['season_id' => $season->id, 'division_id' => $division->id]);
+        StandingZone::factory()->create([
+            'division_id' => $division->id,
+            'label' => 'Ascenso',
+            'color' => 'green',
+            'from_position' => 1,
+            'to_position' => 1,
+        ]);
+
+        $html = $this->get(route('site.standings'))->assertOk()->getContent();
+
+        // One row bar plus one legend swatch — never a second row bar.
+        $this->assertSame(2, substr_count($html, 'background-color: '.StandingZone::COLORS['green']['hex']));
     }
 
     public function test_page_returns_404_when_no_seasons_exist(): void

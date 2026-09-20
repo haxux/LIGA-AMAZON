@@ -18,6 +18,7 @@ The system MUST create the following tables (all with `id` and `timestamps()`):
 | stadiums | team_id (FK→teams, cascade, unique), name, city, capacity (nullable) | 1:1 with team |
 | matchdays | season_id (FK→seasons, cascade), division_id (FK→divisions, cascade), number, date (nullable, nominal) | unique(season_id, division_id, number) |
 | games | matchday_id (FK→matchdays, cascade), home_team_id/away_team_id (FK→teams, restrict), kickoff_at (nullable), home_score/away_score (nullable) | indexed FKs |
+| standing_zones | division_id (FK→divisions, cascade), label, color (palette key), from_position, to_position | unique(division_id, label) |
 
 `seasons` MUST have an `is_current` boolean flag (default false) identifying the active season for public display. `teams` are per-season — the system MUST NOT model a cross-season club identity.
 
@@ -137,6 +138,30 @@ The system MUST create a `divisions` table (`name`, `season_id` FK→seasons `ca
 - GIVEN a season with one or more divisions
 - WHEN the season is deleted
 - THEN its divisions are removed along with it
+
+### Requirement: Standings zones band a division's table by position
+
+The system MUST store promotion, relegation and European bands as positions on a division —
+never as team ids — because the table itself is derived live and holds no persisted rows.
+Colours MUST come from a closed palette declared on `StandingZone`, so a band can never be
+given a value that disappears against the table's surface, and restyling the site cannot mean
+rewriting rows.
+
+Two invariants MUST be enforced at model level: a band's last position cannot sit above its
+first, and two bands of one division cannot cover the same position. Bands of different
+divisions are independent.
+
+#### Scenario: Overlapping bands are refused
+
+- GIVEN a division with a band covering positions 1 to 3
+- WHEN a second band covering positions 3 to 6 is saved
+- THEN it is rejected, naming the band that already holds position 3
+
+#### Scenario: Division deletion cascades to its bands
+
+- GIVEN a division with standings zones
+- WHEN the division is deleted
+- THEN its `standing_zones` rows are removed
 
 ### Requirement: Game events record per-player occurrences
 

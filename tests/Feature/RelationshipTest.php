@@ -8,6 +8,7 @@ use App\Models\Matchday;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\Stadium;
+use App\Models\StandingZone;
 use App\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -59,6 +60,15 @@ class RelationshipTest extends TestCase
 
         $this->assertTrue($division->matchdays->contains($matchday));
         $this->assertTrue($matchday->division->is($division));
+    }
+
+    public function test_division_and_standing_zone_relationship_resolves_both_directions(): void
+    {
+        $division = Division::factory()->create();
+        $zone = StandingZone::factory()->for($division)->create();
+
+        $this->assertTrue($division->standingZones->contains($zone));
+        $this->assertTrue($zone->division->is($division));
     }
 
     public function test_matchday_and_game_relationship_resolves_both_directions(): void
