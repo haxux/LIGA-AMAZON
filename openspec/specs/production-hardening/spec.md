@@ -166,13 +166,21 @@ command: rolling the code back does not roll the schema back.
 - WHEN each runs the entrypoint
 - THEN one applies the migrations and the others proceed without touching the schema
 
-### Requirement: Cold-start work is baked into the image where it does not read the environment
+### Requirement: Cold-start work is baked into the image only where it truly reads no environment
 
-Cache-building steps that read no environment — the route cache and the view cache — MUST be
-built into the image, not run at boot: the host scales to zero after five minutes of
-inactivity, so every one of them is paid again on each cold start. `config:cache` MUST stay at
-boot, because it freezes every `env()` call and the build has neither `APP_KEY` nor database
-credentials.
+The view cache MUST be built into the image: Blade compilation reads no environment, and the
+host scales to zero after five minutes, so every boot would otherwise pay for it again.
+
+`config:cache` MUST stay at boot, because it freezes every `env()` call and the build has
+neither `APP_KEY` nor database credentials.
+
+`route:cache` MUST stay at boot as well. This was learned the hard way: it was moved into the
+image on the argument that routes read no environment, and Livewire's do — its endpoint prefix
+is `sha256(config('app.key').'livewire-endpoint')`, so routes cached without an `APP_KEY`
+answer on a hash no served page ever generates again. Both `livewire.min.js` and the `/update`
+endpoint every interaction posts to returned 404, leaving the panel without JavaScript and no
+visible error, while the public site — which uses no Livewire — kept working and hid the
+breakage.
 
 The deployment document MUST record what was measured, including the part that is not the
 application's, and MUST record which suspicions were ruled out and how. Measured: the
@@ -181,12 +189,12 @@ against the production database), while the first request after eight minutes of
 unanswered for 180 s. Closing that gap needs a host-level decision — a warm instance — and the
 document MUST say so rather than imply the application can fix it.
 
-#### Scenario: The boot sequence holds only environment-dependent work
+#### Scenario: The boot sequence holds every environment-dependent step
 
 - GIVEN the container entrypoint
 - WHEN it is read
-- THEN it caches the configuration and migrates, and neither the route cache nor the view
-  cache appears in it
+- THEN it caches the configuration AND the routes, and migrates; only the view cache is left
+  to the image
 
 ### Requirement: Deferred host-specific hardening is recorded, not dropped
 

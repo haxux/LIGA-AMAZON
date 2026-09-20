@@ -13,10 +13,15 @@ set -e
 # todavia ni APP_KEY ni las credenciales de la base de datos. Hornearlo en la
 # imagen desplegaria una aplicacion apuntando a la nada.
 #
-# route:cache y view:cache, en cambio, no leen entorno alguno (las rutas no
-# usan env() y el panel vive en un path fijo), asi que se hornean en la imagen
-# y no se repiten en cada arranque en frio. Ver §5.2 de DESPLIEGUE.md.
+# view:cache, en cambio, se hornea en la imagen: Blade no lee entorno.
+#
+# route:cache vuelve a estar AQUI y no en el build: Livewire deriva el prefijo de
+# sus endpoints de APP_KEY, que durante el build no existe, asi que unas rutas
+# cacheadas alli apuntan a un hash que ninguna pagina servida vuelve a generar.
+# El sintoma es el panel sin JavaScript y un 404 en livewire.min.js, con el sitio
+# publico intacto porque no usa Livewire. Ver §5.2 de DESPLIEGUE.md.
 php artisan config:cache
+php artisan route:cache
 
 # §5.1 de DESPLIEGUE.md: las migraciones se aplican al arrancar, no a mano.
 #

@@ -373,11 +373,26 @@ descartó una a una cada sospecha propia:
 - No son los permisos del usuario de la aplicación: su rol incluye `CREATE`,
   `ALTER`, `DROP` e `INDEX`, así que puede migrar.
 
-Aplicado por nuestra parte: `route:cache` y `view:cache` se hornean en la imagen
-(ninguno lee entorno: las rutas no usan `env()` y el panel cuelga de un path
-fijo), así que dejan de pagarse en cada arranque. Es ~0,9 s menos por arranque;
-no mueve la aguja de los tres minutos, y decir lo contrario sería mentir sobre
-la medición.
+Aplicado por nuestra parte: **sólo** `view:cache` se hornea en la imagen. Blade
+no lee entorno, así que compilar las plantillas en el build es ahorro limpio en
+cada arranque. Son ~0,6 s menos; no mueve la aguja de los tres minutos, y decir
+lo contrario sería mentir sobre la medición.
+
+**`route:cache` se intentó hornear también, y fue un error que rompió el panel
+en producción durante dos horas** (2026-09-20). El razonamiento era "las rutas no
+leen entorno". Livewire sí: `EndpointResolver::prefix()` construye el prefijo de
+sus endpoints con `sha256(config('app.key').'livewire-endpoint')`. Durante el
+build no existe `APP_KEY`, así que las rutas quedaron cacheadas bajo un hash que
+ninguna página servida vuelve a generar, y tanto `livewire.min.js` como el
+endpoint `/update` —por donde Livewire envía cada interacción— devolvían 404.
+
+El síntoma es cruel: el panel se queda **sin JavaScript pero sin error visible**.
+El formulario de login envía como formulario HTML normal, la dirección pasa a
+`/admin/login?` y nada indica la causa. El sitio público no usa Livewire, así que
+siguió funcionando perfectamente y ninguna comprobación de las que hicimos lo
+detectó. `ContainerDeployTest` vigila ahora que `route:cache` viva en el
+entrypoint, y fija además la dependencia de Livewire con `APP_KEY` que lo
+explica.
 
 Lo que sí la movería está fuera de la aplicación y necesita una decisión. Con
 tres minutos de espera, un visitante que llegue tras un rato de calma se va

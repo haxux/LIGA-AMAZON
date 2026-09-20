@@ -62,13 +62,19 @@ RUN mkdir -p \
         bootstrap/cache \
     && composer dump-autoload --no-dev --classmap-authoritative
 
-# Los dos cacheos que NO dependen del entorno se hornean aqui, para que no se
-# repitan en cada arranque en frio (el host escala a cero y vuelve a arrancar
-# el contenedor entero). Las rutas no usan env() y el panel cuelga de un path
-# fijo; Blade no lee entorno en absoluto. config:cache sigue en el entrypoint,
-# porque ahi si hay valores que solo existen en ejecucion. Ver §5.2 de
+# Solo se hornea el cacheo de VISTAS. Blade no lee entorno en absoluto, asi que
+# compilar las plantillas aqui ahorra ese trabajo en cada arranque en frio.
+#
+# route:cache NO se hornea, y esto no es una omision: Livewire deriva el prefijo
+# de sus endpoints de APP_KEY
+# (EndpointResolver::prefix() -> sha256(config('app.key').'livewire-endpoint')),
+# que durante el build no existe. Cachear las rutas aqui las congela con un hash
+# calculado sobre una clave vacia, mientras que las paginas servidas usan la
+# real: el JavaScript de Livewire y su endpoint /update devuelven 404 y el panel
+# entero se queda sin interactividad, en silencio, porque el sitio publico —que
+# no usa Livewire— sigue funcionando. Ocurrio el 2026-09-20. Ver §5.2 de
 # DESPLIEGUE.md.
-RUN php artisan route:cache && php artisan view:cache
+RUN php artisan view:cache
 
 # ---------------------------------------------------------------------------
 # Imagen final.

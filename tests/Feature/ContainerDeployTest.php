@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Livewire\Mechanisms\HandleRequests\EndpointResolver;
 use Tests\TestCase;
 
 /**
@@ -52,17 +53,46 @@ class ContainerDeployTest extends TestCase
         $this->assertStringNotContainsString('php artisan config:cache', file_get_contents(self::DOCKERFILE));
     }
 
-    public function test_route_and_view_caches_are_baked_into_the_image(): void
+    public function test_only_the_view_cache_is_baked_into_the_image(): void
     {
         $dockerfile = file_get_contents(self::DOCKERFILE);
         $entrypoint = file_get_contents(self::ENTRYPOINT);
 
-        $this->assertStringContainsString('route:cache', $dockerfile);
+        // Blade reads no environment, so compiling the views at build time is
+        // free savings on every cold start.
         $this->assertStringContainsString('view:cache', $dockerfile);
-
-        // Neither reads the environment, so paying for them on every cold
-        // start buys nothing.
-        $this->assertStringNotContainsString('php artisan route:cache', $entrypoint);
         $this->assertStringNotContainsString('php artisan view:cache', $entrypoint);
+    }
+
+    /**
+     * Regression, 2026-09-20: the route cache WAS baked into the image on the
+     * argument that routes read no environment. Livewire's do, through
+     * APP_KEY — EndpointResolver::prefix() hashes it to build the prefix of
+     * livewire.min.js and of the /update endpoint every interaction posts to.
+     * With no APP_KEY at build time the cached routes answer on a hash no
+     * served page ever generates again, so the whole panel loses its
+     * JavaScript while the public site, which uses no Livewire, looks fine.
+     */
+    public function test_routes_are_cached_at_boot_where_the_app_key_exists(): void
+    {
+        $this->assertStringContainsString('php artisan route:cache', file_get_contents(self::ENTRYPOINT));
+        // El Dockerfile lo menciona en un comentario que explica por qué NO se hornea,
+        // así que lo que se comprueba es que no lo EJECUTE.
+        $this->assertStringNotContainsString('artisan route:cache', file_get_contents(self::DOCKERFILE));
+    }
+
+    /**
+     * Pins the dependency this regression rests on: if Livewire ever stops
+     * deriving its endpoints from APP_KEY, the constraint above can be
+     * revisited — and if it keeps doing so, this test says why.
+     */
+    public function test_livewire_endpoints_depend_on_the_app_key(): void
+    {
+        $prefix = EndpointResolver::prefix();
+
+        config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+        $withAnotherKey = EndpointResolver::prefix();
+
+        $this->assertNotSame($prefix, $withAnotherKey);
     }
 }
