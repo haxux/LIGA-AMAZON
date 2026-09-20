@@ -158,10 +158,61 @@ producción: `display_errors = Off`, `opcache.validate_timestamps = 0`.
 `33061` del host. En producción **no puede quedar expuesto**: el servicio `db`
 no debe mapear puertos. También sobra el servicio `node`.
 
-**3.6 Copias de seguridad de la base de datos.** No existe ninguna estrategia.
-Para una liga cuyos datos se cargan a mano durante toda una temporada, esto es
-lo que más duele si falla. Definir frecuencia, destino y — importante —
-**probar una restauración**.
+**3.6 Copias de seguridad de la base de datos.** Hay procedimiento, probado el
+2026-09-20 contra la base real; falta decidir la frecuencia y un destino fuera
+de esta máquina.
+
+Volcado (se guarda en `storage/backups/`, ignorado por git y excluido de la
+imagen — son datos reales, incluidos los hashes de contraseña de los usuarios):
+
+```bash
+stamp=$(date +%Y%m%d-%H%M)
+docker run --rm -v "$PWD:/work" -w /work --user "$(id -u):$(id -g)" mysql:8.0 sh -c "
+set -a; . ./.env.tidb; set +a
+export MYSQL_PWD=\"\$DB_PASSWORD\"
+mysqldump -h \"\$DB_HOST\" -P \"\$DB_PORT\" -u \"\$DB_USERNAME\" \
+  --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/pki/tls/certs/ca-bundle.crt \
+  --default-character-set=utf8mb4 --skip-lock-tables --set-gtid-purged=OFF \
+  --no-tablespaces --column-statistics=0 --hex-blob --complete-insert \
+  liga_amazon | gzip -9 > storage/backups/liga_amazon-$stamp.sql.gz
+"
+```
+
+**Sin `--single-transaction`**, y no por descuido: mysqldump la implementa con
+*savepoints* entre tabla y tabla, TiDB no los admite, y el volcado sale
+**truncado con un error fácil de pasar por alto** (`ROLLBACK TO SAVEPOINT sp:
+SAVEPOINT sp does not exist`). El precio es que el volcado no es una
+instantánea atómica: con esta liga —un solo administrador cargando datos a
+mano— el riesgo es despreciable, pero conviene hacerlo cuando nadie esté
+escribiendo. Si algún día importa de verdad, la herramienta correcta es
+Dumpling, de TiDB.
+
+`--column-statistics=0` también es obligatorio: sin él, el cliente de MySQL 8
+consulta una tabla de `information_schema` que TiDB no tiene.
+
+Restauración y comprobación (la base desechable de `.env.tidb` sirve de
+ensayo; ojo: `./scripts/test-tidb.sh` la borra en cada ejecución):
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work --user "$(id -u):$(id -g)" mysql:8.0 sh -c "
+set -a; . ./.env.tidb; set +a
+export MYSQL_PWD=\"\$DB_PASSWORD\"
+gunzip -c storage/backups/<fichero>.sql.gz | mysql -h \"\$DB_HOST\" -P \"\$DB_PORT\" \
+  -u \"\$DB_USERNAME\" --ssl-mode=VERIFY_IDENTITY \
+  --ssl-ca=/etc/pki/tls/certs/ca-bundle.crt -D liga_amazon_test
+"
+```
+
+Una copia que no se ha restaurado no es una copia: **la comprobación es parte
+del procedimiento**, no un extra. Se comparan los recuentos de cada tabla entre
+`liga_amazon` y `liga_amazon_test`, y unos cuantos valores (nombres de equipos,
+jugadores con dorsal y fecha, partidos). En la prueba del 2026-09-20 las 19
+tablas se restauraron y los 12 equipos, 29 jugadores, 1 partido, 1 noticia, 2
+temporadas, 3 divisiones y 2 usuarios coincidieron uno a uno.
+
+Lo que sigue pendiente: **frecuencia** y **destino fuera de esta máquina**. Un
+volcado que vive en el mismo portátil que lo generó protege de un error en la
+base, no de perder el portátil.
 
 **3.7 SMTP real.** Hoy `MAIL_MAILER=log`. No hay ningún flujo de correo, así
 que no bloquea. Pero si algún día se activa el restablecimiento de contraseña,

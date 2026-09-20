@@ -26,5 +26,6 @@ phpunit.xml
 phpunit.tidb.xml
 scripts
 storage/logs
+storage/backups
 .phpunit.result.cache
 public/hot

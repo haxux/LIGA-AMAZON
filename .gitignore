@@ -27,6 +27,8 @@
 /public/storage
 /storage/*.key
 /storage/pail
+# Volcados de la base de datos: datos reales, jamas en el repositorio.
+/storage/backups
 /vendor
 _ide_helper.php
 Homestead.json
