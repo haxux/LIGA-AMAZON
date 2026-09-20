@@ -40,4 +40,9 @@ class Club extends Model
     {
         return $this->hasOne(Stadium::class);
     }
+
+    public function trophies(): HasMany
+    {
+        return $this->hasMany(Trophy::class);
+    }
 }

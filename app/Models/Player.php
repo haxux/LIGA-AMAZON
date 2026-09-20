@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
-#[Fillable(['club_id', 'name', 'position', 'birth_date'])]
+#[Fillable(['club_id', 'name', 'position', 'specific_position', 'birth_date'])]
 class Player extends Model
 {
     /** @use HasFactory<PlayerFactory> */
@@ -26,6 +27,64 @@ class Player extends Model
      * @var array<int, string>
      */
     public const POSITIONS = [self::POSITION_GOALKEEPER, 'Defender', 'Midfielder', 'Forward'];
+
+    /**
+     * Posiciones específicas por posición general (Fase 10). La general dice a
+     * qué se dedica el jugador; ésta, dónde juega exactamente.
+     *
+     * El reparto importa: agrupar por general es lo que hace la ficha pública,
+     * y una específica que no case con su general —un portero de extremo—
+     * rompería esa agrupación. `booted()` lo impide.
+     *
+     * @var array<string, array<int, string>>
+     */
+    public const SPECIFIC_POSITIONS_BY_POSITION = [
+        self::POSITION_GOALKEEPER => ['POR'],
+        'Defender' => ['DFC', 'DCI', 'DCD', 'LI', 'LD', 'CAI', 'CAD'],
+        'Midfielder' => ['MCD', 'MDI', 'MDD', 'MC', 'MCI', 'MCID', 'MI', 'MD', 'MCO', 'MOI', 'MOD'],
+        'Forward' => ['SD', 'SDI', 'SDD', 'EI', 'ED', 'DC', 'DI', 'DD'],
+    ];
+
+    /**
+     * Las 27, en una sola lista.
+     *
+     * @var array<int, string>
+     */
+    public const SPECIFIC_POSITIONS = [
+        'POR',
+        'DFC', 'DCI', 'DCD', 'LI', 'LD', 'CAI', 'CAD',
+        'MCD', 'MDI', 'MDD', 'MC', 'MCI', 'MCID', 'MI', 'MD', 'MCO', 'MOI', 'MOD',
+        'SD', 'SDI', 'SDD', 'EI', 'ED', 'DC', 'DI', 'DD',
+    ];
+
+    /**
+     * @return array<int, string>
+     */
+    public static function specificPositionsFor(?string $position): array
+    {
+        return self::SPECIFIC_POSITIONS_BY_POSITION[$position] ?? [];
+    }
+
+    /**
+     * Invariante de entidad: la posición específica pertenece a la general.
+     * Misma forma que los guards de `Game`, `Matchday`, `StandingZone` y
+     * `User` — el formulario ya filtra las opciones, pero eso sólo cubre el
+     * camino de la interfaz.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Player $player): void {
+            if ($player->specific_position === null) {
+                return;
+            }
+
+            if (! in_array($player->specific_position, self::specificPositionsFor($player->position), true)) {
+                throw ValidationException::withMessages([
+                    'specific_position' => "La posición {$player->specific_position} no corresponde a un {$player->position}.",
+                ]);
+            }
+        });
+    }
 
     protected function casts(): array
     {
