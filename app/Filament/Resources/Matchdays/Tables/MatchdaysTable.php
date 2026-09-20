@@ -18,11 +18,13 @@ class MatchdaysTable
             ->columns([
                 TextColumn::make('number')->sortable(),
                 TextColumn::make('season.name')->label('Season')->searchable()->sortable(),
+                TextColumn::make('division.name')->label('Division')->badge()->searchable()->sortable(),
                 TextColumn::make('date')->date()->sortable(),
                 TextColumn::make('games_count')->counts('games')->label('Games'),
             ])
             ->filters([
                 SelectFilter::make('season')->relationship('season', 'name'),
+                SelectFilter::make('division')->relationship('division', 'name'),
             ])
             ->recordActions([
                 EditAction::make(),

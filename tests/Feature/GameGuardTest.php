@@ -20,7 +20,8 @@ class GameGuardTest extends TestCase
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
         $teamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Home FC', 'short_name' => 'HOM', 'created_at' => now(), 'updated_at' => now()]);
         $otherTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Away FC', 'short_name' => 'AWY', 'created_at' => now(), 'updated_at' => now()]);
-        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
 
         return [$matchdayId, $teamId, $otherTeamId];
     }

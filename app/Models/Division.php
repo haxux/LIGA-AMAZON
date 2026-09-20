@@ -24,4 +24,9 @@ class Division extends Model
     {
         return $this->hasMany(Team::class);
     }
+
+    public function matchdays(): HasMany
+    {
+        return $this->hasMany(Matchday::class);
+    }
 }

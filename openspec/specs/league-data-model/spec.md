@@ -16,7 +16,7 @@ The system MUST create the following tables (all with `id` and `timestamps()`):
 | teams | season_id (FK→seasons, cascade), division_id (FK→divisions, nullable, restrict), name, short_name, crest_path (nullable), founded_year (nullable) | unique(season_id, name) |
 | players | team_id (FK→teams, cascade), name, position, birth_date (nullable), shirt_number | unique(team_id, shirt_number) |
 | stadiums | team_id (FK→teams, cascade, unique), name, city, capacity (nullable) | 1:1 with team |
-| matchdays | season_id (FK→seasons, cascade), number, date (nullable, nominal) | unique(season_id, number) |
+| matchdays | season_id (FK→seasons, cascade), division_id (FK→divisions, cascade), number, date (nullable, nominal) | unique(season_id, division_id, number) |
 | games | matchday_id (FK→matchdays, cascade), home_team_id/away_team_id (FK→teams, restrict), kickoff_at (nullable), home_score/away_score (nullable) | indexed FKs |
 
 `seasons` MUST have an `is_current` boolean flag (default false) identifying the active season for public display. `teams` are per-season — the system MUST NOT model a cross-season club identity.
@@ -69,7 +69,7 @@ The system MUST reject saving a `Game` where `home_team_id` equals `away_team_id
 
 ### Requirement: Delete strategy protects Game history
 
-For `Team→Season`, `Player→Team`, `Stadium→Team`, `Matchday→Season`, and `Game→Matchday`, the system MUST cascade deletes to dependents. For `Game.home_team_id` and `Game.away_team_id`, the system MUST `restrictOnDelete()`.
+For `Team→Season`, `Player→Team`, `Stadium→Team`, `Matchday→Season`, `Matchday→Division`, and `Game→Matchday`, the system MUST cascade deletes to dependents. For `Game.home_team_id` and `Game.away_team_id`, the system MUST `restrictOnDelete()`.
 
 #### Scenario: Season delete cascades to all dependents
 
@@ -85,7 +85,7 @@ For `Team→Season`, `Player→Team`, `Stadium→Team`, `Matchday→Season`, and
 
 ### Requirement: Eloquent relationships resolve bidirectionally
 
-All FK links above MUST be exposed as Eloquent relationships (e.g. `Season::teams()`, `Team::season()`, `Team::players()`, `Team::stadium()`, `Season::matchdays()`, `Matchday::games()`, `Game::homeTeam()`, `Game::awayTeam()`), configured using the codebase's established attribute-based convention (`#[Fillable]`, `#[Hidden]`, `casts()` — see `app/Models/User.php`), not the classic `protected $fillable`/`protected $casts` properties.
+All FK links above MUST be exposed as Eloquent relationships (e.g. `Season::teams()`, `Team::season()`, `Team::players()`, `Team::stadium()`, `Season::matchdays()`, `Division::matchdays()`, `Matchday::division()`, `Matchday::games()`, `Game::homeTeam()`, `Game::awayTeam()`), configured using the codebase's established attribute-based convention (`#[Fillable]`, `#[Hidden]`, `casts()` — see `app/Models/User.php`), not the classic `protected $fillable`/`protected $casts` properties.
 
 #### Scenario: Relationships traverse in both directions
 

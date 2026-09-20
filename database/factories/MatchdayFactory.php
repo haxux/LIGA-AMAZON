@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Division;
 use App\Models\Matchday;
 use App\Models\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +22,8 @@ class MatchdayFactory extends Factory
     {
         return [
             'season_id' => Season::factory(),
-            'number' => fn (array $attributes) => self::nextNumberForSeason($attributes['season_id']),
+            'division_id' => fn (array $attributes) => self::divisionForSeason($attributes['season_id']),
+            'number' => fn (array $attributes) => self::nextNumberForDivision($attributes['division_id']),
             'date' => fake()->dateTimeBetween('-2 months', '+4 months')->format('Y-m-d'),
         ];
     }
@@ -42,13 +44,29 @@ class MatchdayFactory extends Factory
             $offset = $sequence->index;
 
             return [
-                'number' => fn (array $attributes) => self::nextNumberForSeason($attributes['season_id'], $offset),
+                'number' => fn (array $attributes) => self::nextNumberForDivision($attributes['division_id'], $offset),
             ];
         });
     }
 
-    private static function nextNumberForSeason(int|string $seasonId, int $offset = 0): int
+    /**
+     * Numbering is per division now that each one runs its own calendar, so
+     * Primera and Segunda can both hold a Jornada 1.
+     */
+    private static function nextNumberForDivision(int|string $divisionId, int $offset = 0): int
     {
-        return (int) Matchday::where('season_id', $seasonId)->max('number') + 1 + $offset;
+        return (int) Matchday::where('division_id', $divisionId)->max('number') + 1 + $offset;
+    }
+
+    /**
+     * Reuses the season's first division instead of minting one per matchday:
+     * DivisionFactory draws its name from a two-value unique pool, so a
+     * division per matchday would exhaust it within a single test — and a
+     * season's jornadas belong to a handful of divisions, not one each.
+     */
+    private static function divisionForSeason(int|string $seasonId): int
+    {
+        return Division::query()->where('season_id', $seasonId)->orderBy('id')->value('id')
+            ?? Division::factory()->create(['season_id' => $seasonId])->getKey();
     }
 }

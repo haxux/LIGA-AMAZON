@@ -18,7 +18,8 @@ class DeleteStrategyTest extends TestCase
         $awayTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Away FC', 'short_name' => 'AWY', 'created_at' => now(), 'updated_at' => now()]);
         DB::table('stadiums')->insert(['team_id' => $homeTeamId, 'name' => 'Arena', 'city' => 'City', 'created_at' => now(), 'updated_at' => now()]);
         DB::table('players')->insert(['team_id' => $homeTeamId, 'name' => 'Player A', 'position' => 'GK', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
-        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('games')->insert(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
 
         // teams.division_id (Fase 5) is added to the already-shipped teams table via an
@@ -60,7 +61,8 @@ class DeleteStrategyTest extends TestCase
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
         $homeTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Home FC', 'short_name' => 'HOM', 'created_at' => now(), 'updated_at' => now()]);
         $awayTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Away FC', 'short_name' => 'AWY', 'created_at' => now(), 'updated_at' => now()]);
-        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('games')->insert(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
 
         $this->expectException(QueryException::class);
@@ -75,6 +77,28 @@ class DeleteStrategyTest extends TestCase
         DB::table('seasons')->where('id', $seasonId)->delete();
 
         $this->assertSame(0, DB::table('divisions')->where('id', $divisionId)->count());
+    }
+
+    /**
+     * Divisions cascade to their matchdays rather than restricting on them
+     * (unlike divisions -> teams above). A RESTRICT here would make the
+     * season cascade order-dependent: deleting a season removes BOTH its
+     * divisions and its matchdays, and whichever child the engine processes
+     * first would decide whether the delete succeeds or blows up.
+     */
+    public function test_deleting_a_division_cascades_to_its_matchdays_and_their_games(): void
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        $homeTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Home FC', 'short_name' => 'HOM', 'created_at' => now(), 'updated_at' => now()]);
+        $awayTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Away FC', 'short_name' => 'AWY', 'created_at' => now(), 'updated_at' => now()]);
+        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $gameId = DB::table('games')->insertGetId(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('divisions')->where('id', $divisionId)->delete();
+
+        $this->assertSame(0, DB::table('matchdays')->where('id', $matchdayId)->count());
+        $this->assertSame(0, DB::table('games')->where('id', $gameId)->count());
     }
 
     public function test_deleting_a_division_with_teams_is_restricted(): void
@@ -108,7 +132,8 @@ class DeleteStrategyTest extends TestCase
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
         $homeTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Home FC', 'short_name' => 'HOM', 'created_at' => now(), 'updated_at' => now()]);
         $awayTeamId = DB::table('teams')->insertGetId(['season_id' => $seasonId, 'name' => 'Away FC', 'short_name' => 'AWY', 'created_at' => now(), 'updated_at' => now()]);
-        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        $matchdayId = DB::table('matchdays')->insertGetId(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
         $gameId = DB::table('games')->insertGetId(['matchday_id' => $matchdayId, 'home_team_id' => $homeTeamId, 'away_team_id' => $awayTeamId, 'created_at' => now(), 'updated_at' => now()]);
         $playerId = DB::table('players')->insertGetId(['team_id' => $homeTeamId, 'name' => 'Player A', 'position' => 'GK', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
 

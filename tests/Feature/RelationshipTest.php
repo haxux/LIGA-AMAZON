@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Player;
@@ -49,6 +50,15 @@ class RelationshipTest extends TestCase
 
         $this->assertTrue($season->matchdays->contains($matchday));
         $this->assertTrue($matchday->season->is($season));
+    }
+
+    public function test_division_and_matchday_relationship_resolves_both_directions(): void
+    {
+        $division = Division::factory()->create();
+        $matchday = Matchday::factory()->for($division->season)->for($division)->create();
+
+        $this->assertTrue($division->matchdays->contains($matchday));
+        $this->assertTrue($matchday->division->is($division));
     }
 
     public function test_matchday_and_game_relationship_resolves_both_directions(): void

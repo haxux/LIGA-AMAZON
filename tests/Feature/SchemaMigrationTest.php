@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\News;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +49,7 @@ class SchemaMigrationTest extends TestCase
     public function test_matchdays_table_has_expected_columns(): void
     {
         $this->assertTrue(Schema::hasColumns('matchdays', [
-            'id', 'season_id', 'number', 'date', 'created_at', 'updated_at',
+            'id', 'season_id', 'division_id', 'number', 'date', 'created_at', 'updated_at',
         ]));
     }
 
@@ -89,7 +90,7 @@ class SchemaMigrationTest extends TestCase
 
     public function test_news_model_maps_to_the_news_table(): void
     {
-        $this->assertSame('news', (new \App\Models\News)->getTable());
+        $this->assertSame('news', (new News)->getTable());
     }
 
     public function test_duplicate_news_slug_is_rejected(): void
@@ -133,13 +134,31 @@ class SchemaMigrationTest extends TestCase
         DB::table('players')->insert(['team_id' => $teamId, 'name' => 'Player B', 'position' => 'DF', 'shirt_number' => 1, 'created_at' => now(), 'updated_at' => now()]);
     }
 
-    public function test_duplicate_matchday_number_within_same_season_is_rejected(): void
+    public function test_duplicate_matchday_number_within_same_division_is_rejected(): void
     {
         $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('matchdays')->insert(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        $divisionId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('matchdays')->insert(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
 
         $this->expectException(QueryException::class);
-        DB::table('matchdays')->insert(['season_id' => $seasonId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('matchdays')->insert(['season_id' => $seasonId, 'division_id' => $divisionId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    /**
+     * The unique key widened from (season_id, number) to
+     * (season_id, division_id, number): each division runs its own
+     * calendar, so Primera and Segunda both own a Jornada 1.
+     */
+    public function test_same_matchday_number_in_two_divisions_of_one_season_is_allowed(): void
+    {
+        $seasonId = DB::table('seasons')->insertGetId(['name' => '2025/26', 'created_at' => now(), 'updated_at' => now()]);
+        $primeraId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Primera', 'created_at' => now(), 'updated_at' => now()]);
+        $segundaId = DB::table('divisions')->insertGetId(['season_id' => $seasonId, 'name' => 'Segunda', 'created_at' => now(), 'updated_at' => now()]);
+
+        DB::table('matchdays')->insert(['season_id' => $seasonId, 'division_id' => $primeraId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('matchdays')->insert(['season_id' => $seasonId, 'division_id' => $segundaId, 'number' => 1, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->assertSame(2, DB::table('matchdays')->where('season_id', $seasonId)->where('number', 1)->count());
     }
 
     public function test_duplicate_stadium_for_same_team_is_rejected(): void

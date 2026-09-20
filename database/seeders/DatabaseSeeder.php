@@ -70,6 +70,7 @@ class DatabaseSeeder extends Seeder
 
             $matchday = Matchday::factory()->create([
                 'season_id' => $season->id,
+                'division_id' => $primera->id,
                 'number' => $matchdayNumber,
                 'date' => now()->addWeeks($matchdayIndex),
             ]);

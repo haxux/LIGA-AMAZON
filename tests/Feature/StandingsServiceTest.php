@@ -335,9 +335,11 @@ class StandingsServiceTest extends TestCase
     public function test_for_division_credits_a_cross_division_opponents_game_to_the_in_division_team(): void
     {
         $season = Season::factory()->create();
-        $matchday = Matchday::factory()->for($season)->create();
         $divisionA = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
         $divisionB = Division::factory()->create(['season_id' => $season->id, 'name' => 'Segunda']);
+        // The matchday belongs to division A; the game below still pulls in a
+        // division B team, which is the cross-division case under test.
+        $matchday = Matchday::factory()->for($season)->for($divisionA)->create();
         $teamX = Team::factory()->for($season)->create(['division_id' => $divisionA->id]);
         $teamZ = Team::factory()->for($season)->create(['division_id' => $divisionB->id]);
 
