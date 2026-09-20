@@ -31,29 +31,50 @@ queda el esqueleto de las siguientes para que el orden no se pierda.
 - [ ] 1.8 Probar la migración contra un TiDB desechable (`./scripts/test-tidb.sh`) antes de
       dar la unidad por buena.
 
-## Unidad 2 — Rol y cuentas (TDD)
+## Unidad 2 — Plantillas y estadios al club (TDD)
 
-- [ ] 2.1 RED: un usuario con rol `tecnico` no puede abrir `/admin`; uno con rol `admin` sí.
-- [ ] 2.2 RED: un técnico sin club no se guarda (invariante de modelo, estilo `Game::booted()`).
-- [ ] 2.3 Migración: `users.role`, `users.club_id`, `users.username` (ver O1 de la propuesta).
-      Los usuarios existentes quedan como `admin`.
-- [ ] 2.4 `User::canAccessPanel()` decide por panel: `admin` sólo para el rol admin, `club`
+- [ ] 2.1 RED: test de esquema — `players.club_id` con `unique(club_id, shirt_number)` y
+      `stadiums.club_id` único; ninguna de las dos conserva `team_id`.
+- [ ] 2.2 RED: test de migración de datos — cada jugador y cada estadio quedan apuntando al
+      club del equipo en el que estaban, sin perder ninguna fila.
+- [ ] 2.3 Migración: añadir `club_id` a ambas, rellenar desde `teams.club_id`, rehacer índices
+      y soltar `team_id`.
+      **CONSTRAINT**: mismo orden de índices que en la unidad 1, y `stadiums.team_id` es
+      `unique()`, así que su índice también sostiene la FK.
+- [ ] 2.4 Modelos: `Player::club()` y `Stadium::club()`; `Club::players()` y `Club::stadium()`.
+      `Player::team()` se elimina, no se disfraza — aquí el significado cambia (design D1b).
+- [ ] 2.5 Actualizar los tres puntos que leían `player->team`: `GoalscorersService`, la lista
+      pública de goleadores y la etiqueta del selector en el gestor de eventos.
+- [ ] 2.6 Panel: el gestor de jugadores se mueve de `TeamResource` a `ClubResource`, igual que
+      el de estadio. El selector de jugadores de un partido pasa a filtrar por los clubes de
+      los dos equipos.
+- [ ] 2.7 GREEN: suite entera, con los tests de jugadores y estadios actualizados al club.
+
+## Unidad 3 — Rol y cuentas (TDD)
+
+- [ ] 3.1 RED: un usuario con rol `tecnico` no puede abrir `/admin`; uno con rol `admin` sí.
+- [ ] 3.2 RED: un técnico sin club no se guarda (invariante de modelo, estilo `Game::booted()`).
+- [ ] 3.3 Migración: `users.role` y `users.club_id`. Sin `username`: se entra por correo
+      (decisión del propietario). Los usuarios existentes quedan como `admin`.
+- [ ] 3.4 `User::canAccessPanel()` decide por panel: `admin` sólo para el rol admin, `club`
       sólo para el técnico.
-- [ ] 2.5 Panel: recurso de usuarios en `/admin` para crear técnicos (usuario, contraseña,
-      club), con el club obligatorio cuando el rol es técnico.
+- [ ] 3.5 Panel: recurso de usuarios en `/admin` para crear técnicos (nombre, correo,
+      contraseña y club), con el club obligatorio cuando el rol es técnico. El nombre es el
+      que saldrá en la ficha pública.
 
-## Unidad 3 — Políticas por registro (TDD)
+## Unidad 4 — Políticas por registro (TDD)
 
-- [ ] 3.1 RED: un técnico no puede editar un jugador de otro club, ni por URL directa.
-- [ ] 3.2 Políticas para `Team`, `Player` y cuanto cuelgue del club; el admin pasa siempre.
-- [ ] 3.3 Cerrar el pendiente 4.1 de `DESPLIEGUE.md`: reescribirlo como resuelto, con lo que
+- [ ] 4.1 RED: un técnico no puede editar un jugador de otro club, ni por URL directa.
+- [ ] 4.2 Políticas para `Club`, `Team`, `Player` y cuanto cuelgue del club; el admin pasa
+      siempre.
+- [ ] 4.3 Cerrar el pendiente 4.1 de `DESPLIEGUE.md`: reescribirlo como resuelto, con lo que
       cubre y lo que no.
 
-## Unidad 4 — Panel `/club` y acceso desde la web pública
+## Unidad 5 — Panel `/club` y acceso desde la web pública
 
-- [ ] 4.1 Panel Filament `club`, en español, con el club del técnico fijado por sesión.
-- [ ] 4.2 Acceso desde el sitio público y escudo arriba a la derecha cuando hay sesión.
-- [ ] 4.3 RED: sin sesión, la cabecera pública no muestra ni enlace ni escudo, y ninguna
+- [ ] 5.1 Panel Filament `club`, en español, con el club del técnico fijado por sesión.
+- [ ] 5.2 Acceso desde el sitio público y escudo arriba a la derecha cuando hay sesión.
+- [ ] 5.3 RED: sin sesión, la cabecera pública no muestra ni enlace ni escudo, y ninguna
       página pública cambia respecto de hoy.
 
 ## Fases siguientes (esqueleto)

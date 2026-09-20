@@ -22,6 +22,27 @@ en `clubs` más `unique(season_id, club_id)` en `teams` — un club no puede est
 la misma temporada. Esa segunda restricción es también lo que sostiene el `down()` de la
 migración (ver el plan de reversión de la propuesta).
 
+## D1b — Jugadores y estadios cuelgan del club, no del equipo-temporada
+
+`players.team_id` → `players.club_id`; `stadiums.team_id` → `stadiums.club_id`. La unicidad
+del dorsal se mueve con ellos: `unique(team_id, shirt_number)` pasa a `unique(club_id,
+shirt_number)`, que además es lo que un dorsal significa — es del club, no del año.
+
+Sin esto, cada temporada nueva obligaría a volver a dar de alta la plantilla entera, y la
+Fase 12 no podría contar nada coherente: un fichaje de la temporada pasada apuntaría a un
+jugador que en la actual es otra fila.
+
+La contrapartida, dicha en claro: **la aplicación deja de saber quién estuvo en la plantilla
+en una temporada pasada**. Hoy lo sabe por accidente —una fila por temporada—, pero a cambio
+de rehacerlo todo cada año. La Fase 12 recupera esa historia por el lado correcto, que son los
+traspasos con su fecha y su temporada; si en algún momento hace falta la foto exacta de una
+plantilla antigua, se añade una tabla de pertenencias por temporada sin deshacer nada de esto.
+
+`Player::team()` desaparece como relación y pasa a ser `Player::club()`. Son tres puntos que
+lo leen —`GoalscorersService`, la lista pública de goleadores y la etiqueta del selector de
+jugadores en los eventos— y en los tres lo que se quiere mostrar es el club, así que se
+renombran en lugar de disfrazarse con un accesor: aquí el significado cambia, y en D1 no.
+
 ## D2 — La migración crea un club por nombre distinto, y falla ruidosamente si algo no cuadra
 
 `INSERT INTO clubs SELECT DISTINCT name ...` y después el `club_id` de cada fila de `teams`.
@@ -42,6 +63,11 @@ real lo ponen las políticas por registro.
 `users.club_id` es nulo para el admin y obligatorio para el técnico, con una invariante de
 modelo que lo exige — misma forma que los guards de `Game`, `Season`, `Matchday` y
 `StandingZone`.
+
+El acceso sigue siendo por **correo**, también para los técnicos: el admin les asigna uno al
+crear la cuenta. Se valoró un `username` porque el propietario pidió "usuario y contraseña",
+y se descartó por su decisión — añadirlo obligaría a tocar la autenticación de Filament en
+ambos paneles para no ganar nada funcional.
 
 ## D4 — Dos paneles Filament, no uno con el menú recortado
 

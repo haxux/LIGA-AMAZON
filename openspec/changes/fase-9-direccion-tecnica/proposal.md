@@ -44,13 +44,31 @@ club en una temporada y división. Es la única de las cinco fases que toca lo y
 va primera a propósito: hacerla después obligaría a rehacer trofeos, fichajes y la ficha
 pública.
 
+### El mismo problema, una capa más abajo: plantillas y estadios
+
+`players.team_id` y `stadiums.team_id` apuntan al equipo-temporada, así que **una plantilla
+también es por temporada**: al crear la temporada siguiente habría que volver a dar de alta
+los 29 jugadores y sus estadios, y un fichaje de la temporada pasada no diría nada de la
+plantilla de hoy. El propietario lo zanjó al plantearlo: *"eso se debe corregir también
+entonces ahora en la fase 9 el jugador no debe ser por temporada"*.
+
+Ambos se mueven al club en la misma migración. El estadio no se preguntó, pero es
+exactamente el mismo caso —un club no cambia de estadio al cambiar de año— y hacerlo en dos
+tandas costaría dos migraciones sobre las mismas tablas.
+
+Lo que queda en `teams` después de esto es sólo `season_id`, `division_id` y `club_id`: la
+participación, y nada más. Los partidos siguen enfrentando equipos-temporada, que es lo
+correcto: un partido ocurre en una temporada y una división concretas.
+
 ## Reparto en fases
 
 ### Fase 9 — Entidad Club y rol Director Técnico
 
 - Tabla `clubs` con la identidad permanente (nombre, nombre corto, escudo, año de fundación).
   `teams` conserva temporada y división, gana `club_id` y cede esos cuatro campos al club.
-- Migración de datos: un club por cada nombre distinto de `teams`, con `club_id` rellenado.
+- **Jugadores y estadios pasan a colgar del club**, no del equipo-temporada (ver más abajo).
+- Migración de datos: un club por cada nombre distinto de `teams`, con `club_id` rellenado;
+  cada jugador y cada estadio reapuntados al club de su equipo actual.
 - `users.role` (`admin` | `tecnico`), `users.club_id` para el técnico, y políticas por
   registro: un técnico sólo escribe sobre su club.
 - Acceso desde el sitio público: enlace de entrada, sesión, y el escudo del club arriba a la
@@ -107,7 +125,9 @@ negocia. Una oferta aceptada queda como acordada y le aparece al admin pendiente
 8. **Un técnico por club, un club por técnico.**
 9. **Panel del técnico en español**; `/admin` se queda en inglés.
 10. **Valor de jugador único**, no por temporada.
-11. Formaciones: 4-4-2, 4-3-3, 4-2-3-1, 4-1-4-1, 4-5-1, 3-5-2, 3-4-3, 5-3-2. Valores como
+11. **Acceso por correo**, también para los técnicos; el nombre visible del técnico es el de
+    su cuenta.
+12. Formaciones: 4-4-2, 4-3-3, 4-2-3-1, 4-1-4-1, 4-5-1, 3-5-2, 3-4-3, 5-3-2. Valores como
     entero con separador de miles, sin símbolo de moneda. Chat por sondeo, sin adjuntos, con
     contador de no leídos. El presupuesto no es público y un técnico sólo ve el suyo. Club de
     origen en un fichaje externo: texto libre. Ficha pública con selector de temporada.
@@ -138,12 +158,11 @@ contenedor, así que revertir el código **no** revierte el esquema. El rollback
 
 ## Preguntas abiertas
 
-- **O1 — Identificador de acceso del técnico.** El propietario pidió "usuario y contraseña",
-  pero Laravel y Filament autentican hoy por `email`. La propuesta es añadir `users.username`
-  único y que el panel del técnico entre por usuario, dejando `/admin` con email. Falta
-  confirmarlo.
-- **O2 — Nombre visible del técnico** en la ficha pública: ¿el `name` de su cuenta, o un campo
-  aparte? La propuesta es reutilizar `name`.
-- **O3 — Jugadores y temporadas.** `players` cuelga de `teams`, así que hoy una plantilla
-  también es por temporada. Al crear una temporada nueva habrá que decidir si las plantillas
-  se copian, se heredan o se rehacen a mano. No bloquea las fases 9 a 13, pero llegará.
+Ninguna. Las tres que había se resolvieron el 2026-09-20:
+
+- **O1 — Identificador de acceso.** Resuelta: a los técnicos se les asigna un correo, como a
+  los administradores. No se añade `users.username`; se entra por email y se ahorra el trabajo
+  de tocar la autenticación de Filament.
+- **O2 — Nombre visible del técnico.** Resuelta: el `name` de su cuenta.
+- **O3 — Plantillas por temporada.** Resuelta y **subida a la Fase 9**: jugadores y estadios
+  cuelgan del club.

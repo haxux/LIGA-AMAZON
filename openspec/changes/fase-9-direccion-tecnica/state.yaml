@@ -23,13 +23,15 @@ phases:
       explícitamente), mientras que trofeos, asignación de técnico, historial de
       fichajes y ficha pública lo dan por hecho. De ahí que la entidad Club sea
       la fase 9 y no un detalle posterior. 11 decisiones cerradas con el
-      propietario, 3 preguntas abiertas (O1 identificador de acceso, O2 nombre
-      visible del técnico, O3 plantillas al cambiar de temporada).
+      propietario y CERO preguntas abiertas: las tres que había se cerraron el
+      mismo día — acceso por correo también para los técnicos (sin username),
+      nombre visible del técnico = el de su cuenta, y plantillas/estadios
+      suben a la Fase 9 para dejar de colgar del equipo-temporada.
   design:
     status: done
     artifact: openspec/changes/fase-9-direccion-tecnica/design.md
     note: >
-      14 decisiones. Las de más peso: D1 (Team conserva accesores que delegan en
+      15 decisiones. Las de más peso: D1 (Team conserva accesores que delegan en
       Club, para no tocar las decenas de puntos que leen $team->name), D4 (dos
       paneles Filament en vez de uno con el menú recortado, porque esconder un
       recurso deja la ruta viva), D7 y D8 (el saldo se deriva de un libro de
@@ -37,12 +39,17 @@ phases:
       lados, no dos), D9 (las salidas no borran al jugador: la FK de game_events
       es cascadeOnDelete y borrarlo reescribiría los goleadores históricos) y
       D10 (aceptar una oferta no ejecuta nada, para que exista una única puerta
-      de entrada al dinero y a las plantillas).
+      de entrada al dinero y a las plantillas). D1b se añadió después de que el
+      propietario decidiera que el jugador no puede ser por temporada: players
+      y stadiums pasan al club en la misma migración, y se deja dicho en claro
+      lo que se pierde a cambio — la aplicación deja de saber quién estuvo en
+      una plantilla pasada, historia que la Fase 12 recupera por el lado de los
+      traspasos.
   tasks:
     status: partial
     artifact: openspec/changes/fase-9-direccion-tecnica/tasks.md
     note: >
-      Sólo la fase 9, en cuatro unidades; las siguientes quedan como esqueleto.
+      Sólo la fase 9, en cinco unidades; las siguientes quedan como esqueleto.
       La unidad 1 lleva dos restricciones aprendidas en el cambio anterior: el
       índice único nuevo entra antes de soltar el viejo (errno 1553 en MySQL,
       donde el viejo sostiene la FK de season_id), y la migración se prueba
@@ -57,7 +64,10 @@ decisions_locked:
   - "SALIDAS DE LA LIGA: el jugador se marca como salido y su fila se conserva. Borrarlo arrastraría sus game_events en cascada y reescribiría los goleadores históricos."
   - "PRÉSTAMOS: el plazo (6 meses o 1 año) se anota como dato; no vencen solos, porque no hay tareas programadas en este despliegue."
   - "UN TÉCNICO POR CLUB, UN CLUB POR TÉCNICO."
+  - "ACCESO POR CORREO también para los técnicos: el admin les asigna uno al crear la cuenta. Descartado users.username por decisión del propietario ('se les asignara correo para evitar mas trabajo') — habría obligado a tocar la autenticación de Filament en los dos paneles sin ganar nada funcional."
+  - "EL NOMBRE VISIBLE DEL TÉCNICO en la ficha pública es el name de su cuenta."
+  - "JUGADORES Y ESTADIOS CUELGAN DEL CLUB, no del equipo-temporada, y se mueven en la Fase 9. Decisión del propietario tras plantearle O3. Consecuencia aceptada: se pierde saber quién estuvo en una plantilla de una temporada pasada; la Fase 12 lo recupera por los traspasos."
   - "IDIOMA: /club en español, /admin se queda en inglés. Se resuelve con ->label() por recurso, sin tocar el locale de la aplicación."
   - "VALOR DE JUGADOR ÚNICO, no por temporada. El total de la plantilla se calcula con los valores vigentes."
-  - "SIN fotos de jugadores, SIN correo, SIN websockets (chat por sondeo), SIN tareas programadas, SIN traducir /admin."
+  - "SIN fotos de jugadores, SIN notificaciones por correo, SIN websockets (chat por sondeo), SIN tareas programadas, SIN traducir /admin."
   - "ESTE BLOQUE CIERRA EL PENDIENTE 4.1 DE DESPLIEGUE.md, cuyo disparador anotado era exactamente la llegada del rol técnico."
