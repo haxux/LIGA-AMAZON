@@ -67,8 +67,20 @@ return [
 
         's3' => [
             'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            // R2_* y no AWS_*, con los segundos como respaldo para desarrollo.
+            // Vercel inyecta sus propios AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY
+            // en el contenedor y pisan los del proyecto: llegan vacios, el SDK se
+            // queda sin credenciales y acaba preguntando al servicio de metadatos
+            // de EC2, que en Vercel no existe. El sintoma es un timeout de 1s al
+            // guardar cualquier imagen del panel, sin mencion alguna a las
+            // credenciales. Su documentacion lo reconoce: los runtimes de
+            // contenedor "must use alternative environment variable names".
+            //
+            // Solo estos dos nombres estan afectados. AWS_BUCKET, AWS_ENDPOINT,
+            // AWS_URL y AWS_DEFAULT_REGION no los toca la plataforma y llegan
+            // intactos, asi que se dejan como estan.
+            'key' => env('R2_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
+            'secret' => env('R2_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
             'url' => env('AWS_URL'),

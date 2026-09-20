@@ -79,8 +79,8 @@ class ProductionEnvTemplateTest extends TestCase
             'DB_PASSWORD',
             'DB_USERNAME',
             'MAIL_PASSWORD',
-            'AWS_ACCESS_KEY_ID',
-            'AWS_SECRET_ACCESS_KEY',
+            'R2_ACCESS_KEY_ID',
+            'R2_SECRET_ACCESS_KEY',
         ];
         $lines = file(self::PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 

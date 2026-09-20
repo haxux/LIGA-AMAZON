@@ -31,6 +31,46 @@ cerrada con `#[Fillable]` en los 10 modelos.
 
 ---
 
+## 1 bis. CORS del bucket de objetos
+
+En un host sin disco propio, las subidas **temporales** de Livewire van tambien
+al bucket (`LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=s3`). El motivo no es el disco
+efimero sino que hay varias instancias: Livewire escribe el temporal en una
+peticion y lo lee en la siguiente, que puede caer en otra instancia. Con disco
+local el sintoma es
+
+```
+Unable to retrieve the file_size for file at location: livewire-tmp/....jpeg
+```
+
+Con disco s3 Livewire firma una URL y **el navegador sube directo al bucket**.
+Eso es una peticion entre origenes, asi que el bucket necesita esta regla CORS,
+o el navegador la bloquea antes de enviarla — y entonces no queda ni rastro en
+los logs del servidor, porque el servidor nunca se entera.
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://liga-amazon.vercel.app"],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+`AllowedOrigins` debe coincidir con `APP_URL`. Al cambiar de dominio hay que
+actualizarla, o las subidas dejan de funcionar sin error visible en servidor.
+
+Se aplica con `./scripts/configure-r2-cors.sh`, que **necesita un token de R2
+con Admin Read & Write**: el de `Object Read & Write` sube y borra ficheros pero
+no puede tocar la configuracion del bucket, y devuelve 403. La alternativa es
+pegarla a mano en el panel de Cloudflare: R2 -> el bucket -> Settings -> CORS
+Policy.
+
+---
+
 ## 2. Pasos de despliegue
 
 En orden. Los pasos marcados **⚠** dependen de decisiones de §3.
