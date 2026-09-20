@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Club;
 use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
@@ -68,14 +69,14 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(0, $equalTeamGames);
     }
 
-    public function test_fresh_seed_leaves_all_team_crest_paths_null(): void
+    public function test_fresh_seed_leaves_all_club_crest_paths_null(): void
     {
         $this->seed();
 
-        // Guard against a vacuous pass: this only means something once teams actually exist.
-        $this->assertSame(10, Team::count());
+        // Guard against a vacuous pass: this only means something once clubs actually exist.
+        $this->assertSame(10, Club::count());
 
-        $this->assertSame(0, Team::whereNotNull('crest_path')->count());
+        $this->assertSame(0, Club::whereNotNull('crest_path')->count());
     }
 
     public function test_fresh_seed_marks_exactly_one_season_as_current(): void

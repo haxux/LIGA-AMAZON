@@ -1,35 +1,24 @@
 <?php
 
-namespace App\Filament\Resources\News\Schemas;
+namespace App\Filament\Resources\Clubs\Schemas;
 
-use App\Filament\Support\TeamOptions;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Str;
 
-class NewsForm
+class ClubForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('title')
+                TextInput::make('name')
                     ->required()
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug((string) $state))),
-                TextInput::make('slug')
-                    ->required()
-                    ->unique(ignoreRecord: true),
-                Textarea::make('body')
-                    ->required()
-                    ->rows(10)
-                    ->columnSpanFull(),
-                FileUpload::make('cover_path')
+                    ->unique(ignoreRecord: true)
+                    ->helperText('The club identity, shared by every season it plays.'),
+                TextInput::make('short_name')
+                    ->required(),
+                FileUpload::make('crest_path')
                     ->image()
                     // ->image() sets acceptedFileTypes(['image/*']), which becomes the
                     // rule `mimetypes:image/*` and matches image/svg+xml. On the local
@@ -47,14 +36,10 @@ class NewsForm
                     // an oversized file fails as a readable form error, not a 413.
                     ->maxSize(2048)
                     ->disk(config('filesystems.uploads'))
-                    ->directory('news')
+                    ->directory('crests')
                     ->visibility('public'),
-                DateTimePicker::make('published_at')
-                    ->helperText('Leave empty to keep this a draft. A future date schedules it.'),
-                Select::make('team_id')
-                    ->options(fn (): array => TeamOptions::for())
-                    ->searchable()
-                    ->preload(),
+                TextInput::make('founded_year')
+                    ->numeric(),
             ]);
     }
 }

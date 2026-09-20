@@ -2,9 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Clubs\Pages\CreateClub;
 use App\Filament\Resources\News\Pages\CreateNews;
-use App\Filament\Resources\Teams\Pages\CreateTeam;
-use App\Models\Season;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -93,13 +92,14 @@ class UploadValidationTest extends TestCase
         )->assertHasNoFormErrors();
     }
 
+    /**
+     * El escudo pertenece al club desde la Fase 9, así que la subida se valida
+     * en su formulario y no en el del equipo.
+     */
     private function createTeamWithCrest(UploadedFile $file): Testable
     {
-        $season = Season::factory()->create();
-
-        return Livewire::test(CreateTeam::class)
+        return Livewire::test(CreateClub::class)
             ->fillForm([
-                'season_id' => $season->id,
                 'name' => 'Manaos FC',
                 'short_name' => 'MAN',
                 'crest_path' => $file,

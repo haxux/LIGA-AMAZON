@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Players\Schemas;
 
+use App\Filament\Support\TeamOptions;
 use App\Models\Player;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -22,7 +23,7 @@ class PlayerForm
         return $schema
             ->components([
                 Select::make('team_id')
-                    ->relationship('team', 'name')
+                    ->options(fn (): array => TeamOptions::for())
                     ->required()
                     ->searchable()
                     ->preload(),

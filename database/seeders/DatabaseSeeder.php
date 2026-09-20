@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Club;
 use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
@@ -48,14 +49,22 @@ class DatabaseSeeder extends Seeder
         $primera = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
         Division::factory()->create(['season_id' => $season->id, 'name' => 'Segunda']);
 
+        // Los clubes existen por sí mismos desde la Fase 9; el equipo es su
+        // inscripción en esta temporada y esta división.
         $teams = collect(TeamFactory::CLUBS)
-            ->map(fn (array $club, string $name) => Team::factory()->create([
-                'season_id' => $season->id,
-                'division_id' => $primera->id,
-                'name' => $name,
-                'short_name' => $club['short'],
-                'crest_path' => null,
-            ]))
+            ->map(function (array $club, string $name) use ($season, $primera) {
+                $model = Club::factory()->create([
+                    'name' => $name,
+                    'short_name' => $club['short'],
+                    'crest_path' => null,
+                ]);
+
+                return Team::factory()->create([
+                    'season_id' => $season->id,
+                    'division_id' => $primera->id,
+                    'club_id' => $model->id,
+                ]);
+            })
             ->values();
 
         $teams->each(function (Team $team) {

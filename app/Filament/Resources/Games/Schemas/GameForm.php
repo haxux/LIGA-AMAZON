@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Games\Schemas;
 
+use App\Filament\Support\TeamOptions;
 use App\Models\Matchday;
 use App\Models\Team;
 use Closure;
@@ -52,14 +53,16 @@ class GameForm
     {
         return [
             Select::make('home_team_id')
-                ->relationship('homeTeam', 'name', static::scopeToMatchdayDivision(...))
+                ->label('Home team')
+                ->options(fn (Get $get, $livewire): array => static::teamOptions($get, $livewire))
                 ->required()
                 ->searchable()
                 ->preload()
                 ->live()
                 ->rule(static::divisionRule(...)),
             Select::make('away_team_id')
-                ->relationship('awayTeam', 'name', static::scopeToMatchdayDivision(...))
+                ->label('Away team')
+                ->options(fn (Get $get, $livewire): array => static::teamOptions($get, $livewire))
                 ->required()
                 ->searchable()
                 ->preload()
@@ -85,9 +88,11 @@ class GameForm
      * slip. With no matchday picked yet the division is null and the query
      * matches nothing — the admin picks the matchday first.
      */
-    private static function scopeToMatchdayDivision(Builder $query, Get $get, mixed $livewire): Builder
+    private static function teamOptions(Get $get, mixed $livewire): array
     {
-        return $query->where('division_id', static::divisionId($get, $livewire));
+        $divisionId = static::divisionId($get, $livewire);
+
+        return TeamOptions::for(fn (Builder $query) => $query->where('division_id', $divisionId));
     }
 
     /**

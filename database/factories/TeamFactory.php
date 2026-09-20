@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
 use App\Models\Season;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,6 +19,14 @@ class TeamFactory extends Factory
      *
      * @var array<string, array{short: string, city: string}>
      */
+    /**
+     * Atributos que describen al CLUB y que el llamante puede seguir pasando a
+     * este factory por comodidad, aunque vivan en otra tabla.
+     *
+     * @var array<int, string>
+     */
+    private const CLUB_ATTRIBUTES = ['name', 'short_name', 'crest_path', 'founded_year'];
+
     public const CLUBS = [
         'Manaos FC' => ['short' => 'MAN', 'city' => 'Manaus'],
         'Tapajós SC' => ['short' => 'TAP', 'city' => 'Santarém'],
@@ -34,19 +43,65 @@ class TeamFactory extends Factory
     /**
      * Define the model's default state.
      *
+     * `club_id` se resuelve leyendo los atributos que el llamante haya pasado:
+     * `Team::factory()->create(['name' => 'Manaos FC'])` sigue funcionando y crea
+     * (o reutiliza) ese club, aunque `teams` ya no tenga columna `name`. La
+     * asignación masiva descarta esas claves al construir el modelo, porque
+     * desde la Fase 9 no están en `#[Fillable]` de Team.
+     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
-        $name = fake()->unique()->randomElement(array_keys(self::CLUBS));
-
         return [
             'season_id' => Season::factory(),
             'division_id' => null,
-            'name' => $name,
-            'short_name' => self::CLUBS[$name]['short'],
-            'crest_path' => null,
-            'founded_year' => fake()->numberBetween(1900, 2015),
+            'club_id' => fn (array $attributes) => self::clubFor($attributes),
         ];
+    }
+
+    /**
+     * Los factories construyen el modelo dentro de `Model::unguarded()`
+     * (Factory::makeInstance), así que `#[Fillable]` no filtra nada y los
+     * atributos de identidad llegarían al INSERT de `teams`, que ya no tiene
+     * esas columnas. Se retiran aquí, después de que `definition()` los haya
+     * usado para resolver el club.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Team $team): void {
+            foreach (self::CLUB_ATTRIBUTES as $attribute) {
+                unset($team->{$attribute});
+            }
+        });
+    }
+
+    /**
+     * Reutiliza el club si ya existe con ese nombre — dos temporadas del mismo
+     * club son dos filas de `teams` y UN club, que es justo el invariante que
+     * la Fase 9 introduce.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private static function clubFor(array $attributes): int
+    {
+        $name = $attributes['name'] ?? null;
+
+        if ($name !== null) {
+            $club = Club::query()->where('name', $name)->first();
+
+            if ($club !== null) {
+                return $club->getKey();
+            }
+        }
+
+        $overrides = array_filter([
+            'name' => $name,
+            'short_name' => $attributes['short_name'] ?? ($name !== null ? (self::CLUBS[$name]['short'] ?? mb_strtoupper(mb_substr($name, 0, 3))) : null),
+            'crest_path' => $attributes['crest_path'] ?? null,
+            'founded_year' => $attributes['founded_year'] ?? null,
+        ], fn ($value) => $value !== null);
+
+        return Club::factory()->create($overrides)->getKey();
     }
 }

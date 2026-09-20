@@ -1,28 +1,24 @@
 <?php
 
-namespace App\Filament\Resources\News\Tables;
+namespace App\Filament\Resources\Clubs\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class NewsTable
+class ClubsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->defaultSort('name')
             ->columns([
-                ImageColumn::make('cover_path')->disk(config('filesystems.uploads')),
-                TextColumn::make('title')->searchable()->sortable(),
-                TextColumn::make('team.club.name')->label('Team')->searchable()->sortable(),
-                TextColumn::make('published_at')->dateTime()->sortable(),
-            ])
-            ->defaultSort('published_at', 'desc')
-            ->filters([
-                //
+                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('short_name')->label('Short')->searchable(),
+                TextColumn::make('founded_year')->label('Founded')->sortable(),
+                TextColumn::make('teams_count')->counts('teams')->label('Seasons played'),
             ])
             ->recordActions([
                 EditAction::make(),

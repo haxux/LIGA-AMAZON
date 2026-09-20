@@ -10,17 +10,41 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['season_id', 'division_id', 'name', 'short_name', 'crest_path', 'founded_year'])]
+#[Fillable(['season_id', 'division_id', 'club_id'])]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
     use HasFactory;
 
-    protected function casts(): array
+    /**
+     * La identidad vive en el club desde la Fase 9, pero decenas de puntos
+     * —vistas públicas, tablas del panel, servicios y tests— leen
+     * `$team->name`. Estos accesores los dejan funcionando sin tocarlos: lo que
+     * desaparece es escribir esos campos en `teams`, no leerlos desde el equipo.
+     */
+    public function getNameAttribute(): ?string
     {
-        return [
-            'founded_year' => 'integer',
-        ];
+        return $this->club?->name;
+    }
+
+    public function getShortNameAttribute(): ?string
+    {
+        return $this->club?->short_name;
+    }
+
+    public function getCrestPathAttribute(): ?string
+    {
+        return $this->club?->crest_path;
+    }
+
+    public function getFoundedYearAttribute(): ?int
+    {
+        return $this->club?->founded_year;
+    }
+
+    public function club(): BelongsTo
+    {
+        return $this->belongsTo(Club::class);
     }
 
     public function season(): BelongsTo

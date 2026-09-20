@@ -18,7 +18,7 @@ class TeamsTable
         return $table
             ->columns([
                 ImageColumn::make('crest_path')->disk(config('filesystems.uploads'))->circular(),
-                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('club.name')->label('Club')->searchable()->sortable(),
                 TextColumn::make('short_name')->searchable(),
                 TextColumn::make('season.name')->label('Season')->searchable()->sortable(),
                 TextColumn::make('division.name')->label('Division')->sortable(),

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\Teams\Pages\CreateTeam;
 use App\Filament\Resources\Teams\Pages\EditTeam;
 use App\Filament\Resources\Teams\Pages\ListTeams;
+use App\Models\Club;
 use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
@@ -12,8 +13,6 @@ use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -45,101 +44,91 @@ class TeamResourceTest extends TestCase
         Livewire::test(EditTeam::class, ['record' => $team->getRouteKey()])->assertOk();
     }
 
-    public function test_can_create_a_team_via_the_form(): void
+    /**
+     * Crear un equipo es inscribir un club en una temporada: el nombre, el
+     * escudo y el año de fundación viven en el club desde la Fase 9.
+     */
+    public function test_can_enrol_a_club_in_a_season_via_the_form(): void
     {
         $season = Season::factory()->create();
+        $club = Club::factory()->create(['name' => 'Rio Branco EC']);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([
                 'season_id' => $season->id,
-                'name' => 'Rio Branco EC',
-                'short_name' => 'RBR',
-                'founded_year' => 1998,
+                'club_id' => $club->id,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('teams', [
             'season_id' => $season->id,
-            'name' => 'Rio Branco EC',
+            'club_id' => $club->id,
         ]);
     }
 
-    public function test_can_edit_a_team_via_the_form(): void
+    public function test_can_move_a_team_to_another_club_via_the_form(): void
     {
-        $team = Team::factory()->create(['short_name' => 'OLD']);
+        $team = Team::factory()->create();
+        $other = Club::factory()->create(['name' => 'Rio Branco EC']);
 
         Livewire::test(EditTeam::class, ['record' => $team->getRouteKey()])
             ->fillForm([
-                'short_name' => 'NEW',
+                'club_id' => $other->id,
             ])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('teams', [
             'id' => $team->id,
-            'short_name' => 'NEW',
+            'club_id' => $other->id,
         ]);
+        $this->assertSame('Rio Branco EC', $team->fresh()->name);
     }
 
-    public function test_duplicate_team_name_within_same_season_is_rejected_as_a_form_error(): void
+    public function test_enrolling_one_club_twice_in_a_season_is_rejected_as_a_form_error(): void
     {
         $season = Season::factory()->create();
-        Team::factory()->create(['season_id' => $season->id, 'name' => 'Manaos FC']);
+        $club = Club::factory()->create(['name' => 'Manaos FC']);
+        Team::factory()->create(['season_id' => $season->id, 'club_id' => $club->id]);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([
                 'season_id' => $season->id,
-                'name' => 'Manaos FC',
-                'short_name' => 'MA2',
-                'founded_year' => 2000,
+                'club_id' => $club->id,
             ])
             ->call('create')
-            ->assertHasFormErrors(['name']);
+            ->assertHasFormErrors(['club_id']);
 
-        $this->assertSame(1, Team::where('season_id', $season->id)->where('name', 'Manaos FC')->count());
+        $this->assertSame(1, Team::where('season_id', $season->id)->where('club_id', $club->id)->count());
     }
 
-    public function test_duplicate_team_name_across_different_seasons_is_allowed(): void
+    public function test_one_club_can_play_in_several_seasons(): void
     {
         $seasonA = Season::factory()->create();
         $seasonB = Season::factory()->create();
-        Team::factory()->create(['season_id' => $seasonA->id, 'name' => 'Manaos FC']);
+        $club = Club::factory()->create(['name' => 'Manaos FC']);
+        Team::factory()->create(['season_id' => $seasonA->id, 'club_id' => $club->id]);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([
                 'season_id' => $seasonB->id,
-                'name' => 'Manaos FC',
-                'short_name' => 'MAN',
-                'founded_year' => 2000,
+                'club_id' => $club->id,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $this->assertSame(1, Team::where('season_id', $seasonB->id)->where('name', 'Manaos FC')->count());
+        $this->assertSame(2, Team::where('club_id', $club->id)->count());
     }
 
-    public function test_uploading_a_crest_stores_it_under_crests_on_the_public_disk(): void
+    public function test_a_team_reads_its_identity_from_its_club(): void
     {
-        Storage::fake('public');
-        $season = Season::factory()->create();
-        $file = UploadedFile::fake()->image('crest.png');
+        $club = Club::factory()->create(['name' => 'Belém Athletic', 'short_name' => 'BEL', 'founded_year' => 2001]);
+        $team = Team::factory()->create(['club_id' => $club->id]);
 
-        Livewire::test(CreateTeam::class)
-            ->fillForm([
-                'season_id' => $season->id,
-                'name' => 'Belém Athletic',
-                'short_name' => 'BEL',
-                'founded_year' => 2001,
-                'crest_path' => $file,
-            ])
-            ->call('create')
-            ->assertHasNoFormErrors();
-
-        $team = Team::where('name', 'Belém Athletic')->firstOrFail();
-
-        $this->assertStringStartsWith('crests/', $team->crest_path);
-        Storage::disk('public')->assertExists($team->crest_path);
+        $this->assertSame('Belém Athletic', $team->name);
+        $this->assertSame('BEL', $team->short_name);
+        $this->assertSame(2001, $team->founded_year);
     }
 
     public function test_deleting_a_team_referenced_by_a_game_shows_a_danger_notification_and_keeps_the_team(): void
@@ -202,20 +191,19 @@ class TeamResourceTest extends TestCase
     public function test_team_persists_with_a_null_division(): void
     {
         $season = Season::factory()->create();
+        $club = Club::factory()->create(['name' => 'Sin División FC']);
 
         Livewire::test(CreateTeam::class)
             ->fillForm([
                 'season_id' => $season->id,
-                'name' => 'Sin División FC',
-                'short_name' => 'SDF',
-                'founded_year' => 2000,
+                'club_id' => $club->id,
                 'division_id' => null,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('teams', [
-            'name' => 'Sin División FC',
+            'club_id' => $club->id,
             'division_id' => null,
         ]);
     }
