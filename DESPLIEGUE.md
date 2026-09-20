@@ -229,3 +229,40 @@ Registrado para que no se vuelva a plantear sin saber que ya se decidió.
 | Purgar secretos del historial de git | **No hay nada que purgar** — verificado sobre todo el historial. Reescribirlo cambiaría todos los hashes de commit a cambio de nada. |
 | Row-level security / "public DB key" | Conceptos de Supabase/Firebase. Aquí el navegador nunca habla con MySQL, y MySQL 8 no tiene RLS. El equivalente real es 4.1. |
 | Ocultar API keys | El proyecto no consume ninguna API de terceros. |
+
+---
+
+## 5. Pendiente — operativa del host de contenedores (Vercel)
+
+El hosting ya está decidido (contenedor en Vercel, §2 del `Dockerfile.vercel`).
+Estos dos puntos salieron al desplegar el cambio de jornadas por división el
+2026-09-20 y siguen abiertos.
+
+**5.1 Las migraciones no forman parte del despliegue.** El entrypoint ejecuta
+`config:cache`, `route:cache` y `view:cache`, nada más. Después de cada cambio
+de esquema hay que correr a mano, contra la base gestionada:
+
+```bash
+docker compose exec -T app sh -c 'set -a; . ./.env.tidb; set +a; \
+  DB_DATABASE=liga_amazon php artisan migrate --force'
+```
+
+(`.env.tidb` trae el usuario administrador; su `DB_DATABASE` apunta a la base
+desechable de tests, de ahí que se sobrescriba.)
+
+Mientras no se corra, el código desplegado trabaja contra el esquema viejo.
+Y el fallo es **silencioso**: con `matchdays.division_id` ausente, Eloquent leyó
+la columna como null en cada jornada en vez de reventar, así que `/partidos`
+devolvía 200 sin un solo partido y en los logs no había nada. Una página vacía
+después de desplegar es, hasta que se demuestre lo contrario, una migración sin
+correr.
+
+Decisión pendiente: meterlas en el entrypoint —se aplicarían en cada arranque,
+también en instancias concurrentes— o dejarlas como paso manual deliberado.
+
+**5.2 Arranque en frío por encima del minuto.** La primera petición a una
+instancia dormida se colgó más de 60 s en `/goleadores`, `/noticias` y
+`/partidos?division=…`; la siguiente a esa misma ruta respondió en ~0,6 s. No es
+compilación de vistas: el entrypoint ya las cachea al arrancar. El coste es del
+arranque del contenedor, así que el arreglo es de configuración del host, no de
+la aplicación. Falta medirlo en serio antes de tocar nada.

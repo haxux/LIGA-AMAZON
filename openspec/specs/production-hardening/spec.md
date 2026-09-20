@@ -130,6 +130,36 @@ credentials included — to any visitor who triggers an uncaught exception.
 - AND `APP_KEY` is empty
 - AND no real password, secret or key value appears in it
 
+### Requirement: Container-host operational gaps are recorded as pending
+
+Two gaps were found on the container host (Vercel) while deploying the matchday-division
+change, and MUST be recorded in the deployment document as open items with their reason,
+each with the evidence that identified it:
+
+1. **Schema migrations are not part of the deploy.** The container entrypoint runs
+   `config:cache`, `route:cache` and `view:cache`, and nothing else. `php artisan migrate`
+   MUST therefore be run by hand against the managed database after every schema change.
+   Until it is, the deployed code runs against the old schema: on 2026-09-20 that surfaced
+   as a fixtures page answering 200 with no games at all — Eloquent read the missing
+   `division_id` as null on every matchday instead of failing, so nothing in the logs
+   pointed at the real cause.
+2. **Cold-start latency exceeds a minute.** The first request to an idle instance was
+   observed to hang past 60 s (`/goleadores`, `/noticias`, `/partidos?division=…`), while
+   the next request to the same route answered in ~0.6 s. Compiling views is not the
+   cause — the entrypoint caches them at boot — so the cost belongs to the container start
+   itself, and any fix belongs to the host configuration rather than the application.
+
+Neither is resolved here: the first needs a decision on whether migrations belong in the
+entrypoint (applied on every boot, including concurrent instances) or stay a deliberate
+manual step; the second needs host-level tuning that has not been measured yet.
+
+#### Scenario: Both gaps are traceable from the deployment document
+
+- GIVEN an operator preparing a release that changes the schema
+- WHEN they read the deployment document
+- THEN both the manual migration step and the cold-start behaviour appear there, each with
+  its reason and the evidence behind it
+
 ### Requirement: Deferred host-specific hardening is recorded, not dropped
 
 A deployment document MUST list every hardening item deferred because the hosting target
