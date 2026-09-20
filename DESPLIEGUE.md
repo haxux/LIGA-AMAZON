@@ -328,5 +328,10 @@ antes de ver nada, así que esto **no es cosmético**:
 - Mantener una instancia caliente: configuración de escalado del proyecto en
   Vercel, o un cron externo golpeando el sitio cada pocos minutos. Es la única
   solución real al escalado a cero, y se paga en cómputo permanente.
+
+**Decidido el 2026-09-20: se acepta tal cual.** El sitio lo usa un grupo reducido
+que ya cuenta con ello, así que pagar cómputo permanente no compensa. Esto no es
+un pendiente olvidado; es una decisión tomada con el número delante. Si algún día
+el público deja de ser reducido, lo de arriba es por dónde se retoma.
 - Seguir adelgazando la imagen. El grueso es `vendor` con Filament dentro;
   recortar ahí es trabajo de horas para ganar decenas de MB.

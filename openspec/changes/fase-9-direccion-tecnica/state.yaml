@@ -1,0 +1,63 @@
+change: fase-9-direccion-tecnica
+title: "Fases 9-13 — Dirección Técnica"
+artifact_store: openspec
+last_updated: 2026-09-20
+tasks_phase_completed: false
+apply_phase_completed: false
+verify_phase_completed: false
+archive_phase_completed: false
+
+session_settings:
+  execution_mode: interactive
+  delivery_strategy: auto-chain
+  chain_strategy: stacked-to-main
+
+phases:
+  proposal:
+    status: done
+    artifact: openspec/changes/fase-9-direccion-tecnica/proposal.md
+    note: >
+      Cubre el bloque entero (fases 9 a 13) por decisión del propietario. El
+      hallazgo que ordena el reparto es que un club no existe entre temporadas
+      (teams cuelga de season_id y la spec de league-data-model lo prohíbe
+      explícitamente), mientras que trofeos, asignación de técnico, historial de
+      fichajes y ficha pública lo dan por hecho. De ahí que la entidad Club sea
+      la fase 9 y no un detalle posterior. 11 decisiones cerradas con el
+      propietario, 3 preguntas abiertas (O1 identificador de acceso, O2 nombre
+      visible del técnico, O3 plantillas al cambiar de temporada).
+  design:
+    status: done
+    artifact: openspec/changes/fase-9-direccion-tecnica/design.md
+    note: >
+      14 decisiones. Las de más peso: D1 (Team conserva accesores que delegan en
+      Club, para no tocar las decenas de puntos que leen $team->name), D4 (dos
+      paneles Filament en vez de uno con el menú recortado, porque esconder un
+      recurso deja la ruta viva), D7 y D8 (el saldo se deriva de un libro de
+      movimientos y un traspaso entre clubes es UNA fila leída desde los dos
+      lados, no dos), D9 (las salidas no borran al jugador: la FK de game_events
+      es cascadeOnDelete y borrarlo reescribiría los goleadores históricos) y
+      D10 (aceptar una oferta no ejecuta nada, para que exista una única puerta
+      de entrada al dinero y a las plantillas).
+  tasks:
+    status: partial
+    artifact: openspec/changes/fase-9-direccion-tecnica/tasks.md
+    note: >
+      Sólo la fase 9, en cuatro unidades; las siguientes quedan como esqueleto.
+      La unidad 1 lleva dos restricciones aprendidas en el cambio anterior: el
+      índice único nuevo entra antes de soltar el viejo (errno 1553 en MySQL,
+      donde el viejo sostiene la FK de season_id), y la migración se prueba
+      contra un TiDB desechable antes de acercarse a producción.
+
+decisions_locked:
+  - "PANEL MIXTO: plantilla, trofeos, enfrentamientos y contabilidad en un panel Filament propio (/club); once ideal y chat como pantallas Livewire dentro de ese panel."
+  - "PRESUPUESTO: el técnico propone el movimiento con su razón y el admin lo aprueba; lo propuesto no cuenta en el saldo."
+  - "DINERO AUTOMÁTICO: un traspaso entre clubes de la liga genera el egreso del comprador y el ingreso del vendedor, ya aprobados, y mueve al jugador. Los préstamos no generan movimientos porque no tienen coste."
+  - "OFERTAS: aceptar marca la oferta como acordada y avisa al admin, que ejecuta el traspaso. No toca plantillas ni presupuestos por sí sola."
+  - "IDENTIDAD DE CLUB: se crea la entidad Club y teams pasa a ser su participación en una temporada. Descartado el slug compartido por integridad floja."
+  - "SALIDAS DE LA LIGA: el jugador se marca como salido y su fila se conserva. Borrarlo arrastraría sus game_events en cascada y reescribiría los goleadores históricos."
+  - "PRÉSTAMOS: el plazo (6 meses o 1 año) se anota como dato; no vencen solos, porque no hay tareas programadas en este despliegue."
+  - "UN TÉCNICO POR CLUB, UN CLUB POR TÉCNICO."
+  - "IDIOMA: /club en español, /admin se queda en inglés. Se resuelve con ->label() por recurso, sin tocar el locale de la aplicación."
+  - "VALOR DE JUGADOR ÚNICO, no por temporada. El total de la plantilla se calcula con los valores vigentes."
+  - "SIN fotos de jugadores, SIN correo, SIN websockets (chat por sondeo), SIN tareas programadas, SIN traducir /admin."
+  - "ESTE BLOQUE CIERRA EL PENDIENTE 4.1 DE DESPLIEGUE.md, cuyo disparador anotado era exactamente la llegada del rol técnico."
