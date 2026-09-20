@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\Games\Pages\CreateGame;
 use App\Filament\Resources\Games\Pages\EditGame;
 use App\Filament\Resources\Games\Pages\ListGames;
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Season;
@@ -32,10 +33,65 @@ class GameResourceTest extends TestCase
     {
         $season = Season::factory()->create();
         $matchday = Matchday::factory()->create(['season_id' => $season->id]);
-        $homeTeam = Team::factory()->create(['season_id' => $season->id]);
-        $awayTeam = Team::factory()->create(['season_id' => $season->id]);
+        $homeTeam = Team::factory()->create(['season_id' => $season->id, 'division_id' => $matchday->division_id]);
+        $awayTeam = Team::factory()->create(['season_id' => $season->id, 'division_id' => $matchday->division_id]);
 
         return [$matchday, $homeTeam, $awayTeam];
+    }
+
+    /**
+     * A jornada belongs to one division, so the team Selects offer that
+     * division's clubs and nothing else.
+     */
+    public function test_team_options_are_limited_to_the_matchday_division(): void
+    {
+        [$matchday, $homeTeam] = $this->makeMatchdayAndTeams();
+        $otherDivision = Division::factory()->create(['season_id' => $matchday->season_id]);
+        $foreignTeam = Team::factory()->create(['season_id' => $matchday->season_id, 'division_id' => $otherDivision->id]);
+
+        $component = Livewire::test(CreateGame::class)
+            ->fillForm(['matchday_id' => $matchday->id])
+            ->instance();
+
+        foreach (['home_team_id', 'away_team_id'] as $field) {
+            $options = $component->getSchemaComponent("form.{$field}")->getOptions();
+
+            $this->assertArrayHasKey($homeTeam->id, $options);
+            $this->assertArrayNotHasKey($foreignTeam->id, $options);
+        }
+    }
+
+    public function test_a_team_from_another_division_is_rejected_as_a_form_error(): void
+    {
+        [$matchday, $homeTeam] = $this->makeMatchdayAndTeams();
+        $otherDivision = Division::factory()->create(['season_id' => $matchday->season_id]);
+        $foreignTeam = Team::factory()->create(['season_id' => $matchday->season_id, 'division_id' => $otherDivision->id]);
+
+        Livewire::test(CreateGame::class)
+            ->fillForm([
+                'matchday_id' => $matchday->id,
+                'home_team_id' => $homeTeam->id,
+                'away_team_id' => $foreignTeam->id,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['away_team_id']);
+
+        $this->assertSame(0, Game::count());
+    }
+
+    public function test_changing_the_matchday_clears_both_team_selections(): void
+    {
+        [$matchday, $homeTeam, $awayTeam] = $this->makeMatchdayAndTeams();
+        $otherMatchday = Matchday::factory()->create(['season_id' => $matchday->season_id, 'division_id' => $matchday->division_id]);
+
+        Livewire::test(CreateGame::class)
+            ->fillForm([
+                'matchday_id' => $matchday->id,
+                'home_team_id' => $homeTeam->id,
+                'away_team_id' => $awayTeam->id,
+            ])
+            ->fillForm(['matchday_id' => $otherMatchday->id])
+            ->assertFormSet(['home_team_id' => null, 'away_team_id' => null]);
     }
 
     public function test_list_page_renders_successfully(): void

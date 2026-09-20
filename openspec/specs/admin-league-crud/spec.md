@@ -64,6 +64,30 @@ The system MUST provide `GameResource` for cross-matchday fixture lookup and cor
 - WHEN an operator searches `GameResource`'s list
 - THEN matching games are found regardless of which matchday they belong to
 
+### Requirement: Matchdays and their games are scoped to a division
+
+`MatchdayResource`'s form MUST require a division, offering only the divisions of the season selected on the same form, and MUST clear the selected division when the season changes. Matchday numbers MUST be unique per (season, division), not per season. `MatchdaysTable` MUST show the division and MUST offer a division filter.
+
+Both team Selects on the Game form (in `GameResource` and in the `MatchdayResource` relation manager alike) MUST offer only the teams of the matchday's division, and MUST reject a team from another division as a form error. `GameResource` MUST clear both team selections when the matchday changes. This MUST stay at the form layer: `StandingsService` remains specified for games whose teams sit in different divisions.
+
+#### Scenario: Division options follow the chosen season
+
+- GIVEN two seasons, each with its own divisions
+- WHEN an operator picks one season on the matchday form
+- THEN only that season's divisions are offered, and picking the other season clears the choice
+
+#### Scenario: Two divisions each run a Jornada 1
+
+- GIVEN a season with a Primera and a Segunda division
+- WHEN an operator creates a matchday numbered 1 in each
+- THEN both are accepted, while a second Jornada 1 in the same division is rejected as a form error
+
+#### Scenario: Only the division's clubs can play its jornada
+
+- GIVEN a matchday in the Primera division
+- WHEN an operator opens its games, in either the resource or the relation manager
+- THEN only Primera clubs are offered, and submitting a Segunda club is rejected as a form error
+
 ### Requirement: Team crest upload wires to the Fase 2 public disk
 
 `TeamResource`'s form MUST include a `FileUpload` component bound to the `public` disk, storing new files under `crests/`. Uploading a new crest MUST replace the team's `crest_path`, and the resulting file MUST be retrievable via its public URL.

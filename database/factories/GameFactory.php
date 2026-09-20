@@ -17,7 +17,11 @@ class GameFactory extends Factory
      *
      * home_team_id and away_team_id each resolve via an independent
      * Team::factory() call, so they are distinct teams by construction —
-     * the default state never trips the Game::booted() guard.
+     * the default state never trips the Game::booted() guard. Both are built
+     * inside the matchday's own season AND division, which is what the panel
+     * now enforces (GameForm scopes its team Selects to the matchday's
+     * division): a default-state game has to be a shape the admin could
+     * actually have entered.
      *
      * @return array<string, mixed>
      */
@@ -25,12 +29,22 @@ class GameFactory extends Factory
     {
         return [
             'matchday_id' => Matchday::factory(),
-            'home_team_id' => Team::factory(),
-            'away_team_id' => Team::factory(),
+            'home_team_id' => fn (array $attributes) => self::teamForMatchday($attributes['matchday_id']),
+            'away_team_id' => fn (array $attributes) => self::teamForMatchday($attributes['matchday_id']),
             'kickoff_at' => null,
             'home_score' => null,
             'away_score' => null,
         ];
+    }
+
+    private static function teamForMatchday(int|string $matchdayId): int
+    {
+        $matchday = Matchday::query()->findOrFail($matchdayId);
+
+        return Team::factory()->create([
+            'season_id' => $matchday->season_id,
+            'division_id' => $matchday->division_id,
+        ])->getKey();
     }
 
     /**

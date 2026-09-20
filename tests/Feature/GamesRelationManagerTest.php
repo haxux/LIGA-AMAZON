@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\Matchdays\Pages\EditMatchday;
 use App\Filament\Resources\Matchdays\RelationManagers\GamesRelationManager;
+use App\Models\Division;
 use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Season;
@@ -62,6 +63,53 @@ class GamesRelationManagerTest extends TestCase
             'id' => $game->id,
             'home_score' => 3,
             'away_score' => 0,
+        ]);
+    }
+
+    /**
+     * The modal has no matchday field — the owning record IS the matchday —
+     * so the team Selects have to read the division off the owner record.
+     */
+    public function test_a_team_from_another_division_is_rejected_inside_the_relation_manager_modal(): void
+    {
+        $season = Season::factory()->create();
+        $matchday = Matchday::factory()->create(['season_id' => $season->id]);
+        $ownTeam = Team::factory()->create(['season_id' => $season->id, 'division_id' => $matchday->division_id]);
+        $otherDivision = Division::factory()->create(['season_id' => $season->id]);
+        $foreignTeam = Team::factory()->create(['season_id' => $season->id, 'division_id' => $otherDivision->id]);
+
+        $secondOwnTeam = Team::factory()->create(['season_id' => $season->id, 'division_id' => $matchday->division_id]);
+
+        Livewire::test(GamesRelationManager::class, [
+            'ownerRecord' => $matchday,
+            'pageClass' => EditMatchday::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData([
+                'home_team_id' => $ownTeam->id,
+                'away_team_id' => $foreignTeam->id,
+            ])
+            ->callMountedTableAction()
+            ->assertHasTableActionErrors(['away_team_id']);
+
+        $this->assertSame(0, Game::where('matchday_id', $matchday->id)->count());
+
+        Livewire::test(GamesRelationManager::class, [
+            'ownerRecord' => $matchday,
+            'pageClass' => EditMatchday::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData([
+                'home_team_id' => $ownTeam->id,
+                'away_team_id' => $secondOwnTeam->id,
+            ])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('games', [
+            'matchday_id' => $matchday->id,
+            'home_team_id' => $ownTeam->id,
+            'away_team_id' => $secondOwnTeam->id,
         ]);
     }
 
