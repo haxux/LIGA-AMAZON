@@ -12,8 +12,6 @@ use Illuminate\Database\Eloquent\Factories\Sequence;
  */
 class PlayerFactory extends Factory
 {
-    private const POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
-
     /**
      * Define the model's default state.
      *
@@ -24,7 +22,7 @@ class PlayerFactory extends Factory
         return [
             'team_id' => Team::factory(),
             'name' => fake()->name(),
-            'position' => fake()->randomElement(self::POSITIONS),
+            'position' => fake()->randomElement(Player::POSITIONS),
             'birth_date' => fake()->dateTimeBetween('-38 years', '-16 years')->format('Y-m-d'),
             'shirt_number' => fake()->numberBetween(1, 18),
         ];

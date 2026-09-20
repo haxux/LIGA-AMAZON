@@ -185,7 +185,23 @@ The system MUST provide `DivisionResource`, reachable from panel navigation, off
 
 ### Requirement: GameResource gains a GameEventsRelationManager
 
-The system MUST expose a `GameEventsRelationManager` on `GameResource`'s edit/view page for recording `game_events` (goals/assists), with a player `Select` scoped to the two teams participating in that game (resolved via the relation manager's owner record, since a relation manager's own schema has no `home_team_id`/`away_team_id` field for `GameForm`'s `Get`-based pattern to read).
+The system MUST expose a `GameEventsRelationManager` on `GameResource`'s edit/view page for recording `game_events`, with a player `Select` scoped to the two teams participating in that game (resolved via the relation manager's owner record, since a relation manager's own schema has no `home_team_id`/`away_team_id` field for `GameForm`'s `Get`-based pattern to read).
+
+The recordable types MUST be goal, assist, yellow card, red card and clean sheet. For a clean sheet the player `Select` MUST narrow to goalkeepers, and the minute input MUST be hidden — a clean sheet is the whole game, not a moment in it. Changing the type MUST clear an already-picked player when, and only when, the clean-sheet boundary is crossed, so switching between goal and assist keeps the operator's choice.
+
+`GameEvent` MUST reject a clean sheet recorded for an outfield player and MUST drop any minute submitted with one, at model level: the `Select` covers the UI path only.
+
+#### Scenario: A card is recorded against any player on the pitch
+
+- GIVEN a game between two teams
+- WHEN an operator records a yellow or red card for a player of either team, with a minute
+- THEN a `game_events` row is persisted with that type, player and minute
+
+#### Scenario: A clean sheet only reaches a goalkeeper
+
+- GIVEN a game whose squads hold goalkeepers and outfield players
+- WHEN an operator selects the clean-sheet type
+- THEN only goalkeepers are offered, no minute is asked for, and a submission naming an outfield player is rejected as a form error
 
 #### Scenario: Operator records a goal for a player in the game
 

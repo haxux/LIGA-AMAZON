@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Players\Schemas;
 
+use App\Models\Player;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -13,7 +14,8 @@ use Illuminate\Validation\Rules\Unique;
 
 class PlayerForm
 {
-    public const POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
+    /** @var array<int, string> */
+    public const POSITIONS = Player::POSITIONS;
 
     public static function configure(Schema $schema): Schema
     {

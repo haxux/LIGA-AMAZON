@@ -40,4 +40,31 @@ class GameEventFactory extends Factory
             'type' => GameEvent::TYPE_ASSIST,
         ]);
     }
+
+    public function yellowCard(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => GameEvent::TYPE_YELLOW_CARD,
+        ]);
+    }
+
+    public function redCard(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => GameEvent::TYPE_RED_CARD,
+        ]);
+    }
+
+    /**
+     * Carries its own goalkeeper: the default player_id draws a random
+     * position, which GameEvent's guard would reject outright.
+     */
+    public function cleanSheet(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => GameEvent::TYPE_CLEAN_SHEET,
+            'player_id' => Player::factory()->state(['position' => Player::POSITION_GOALKEEPER]),
+            'minute' => null,
+        ]);
+    }
 }

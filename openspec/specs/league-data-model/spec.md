@@ -138,9 +138,9 @@ The system MUST create a `divisions` table (`name`, `season_id` FK→seasons `ca
 - WHEN the season is deleted
 - THEN its divisions are removed along with it
 
-### Requirement: Game events record per-player goal/assist occurrences
+### Requirement: Game events record per-player occurrences
 
-The system MUST create a `game_events` table (`game_id` FK→games `cascadeOnDelete`, `player_id` FK→players `cascadeOnDelete`, `type` string [PHP-level constants, not a DB enum], `minute` nullable integer).
+The system MUST create a `game_events` table (`game_id` FK→games `cascadeOnDelete`, `player_id` FK→players `cascadeOnDelete`, `type` string [PHP-level constants, not a DB enum], `minute` nullable integer). The vocabulary — goal, assist, yellow card, red card, clean sheet — MUST live on `GameEvent`, and widening it MUST NOT require a migration. `Player::POSITIONS` MUST live on the model for the same reason: the clean-sheet invariant needs the goalkeeper position, and `app/Models` MUST NOT read it from `app/Filament`.
 
 #### Scenario: Game deletion cascades to its events
 

@@ -15,6 +15,18 @@ class Player extends Model
     /** @use HasFactory<PlayerFactory> */
     use HasFactory;
 
+    public const POSITION_GOALKEEPER = 'Goalkeeper';
+
+    /**
+     * Vocabulary on the model rather than in a Filament form class, for the
+     * same reason as GameEvent::TYPES: the clean-sheet guard below needs to
+     * know what a goalkeeper is, and app/Models must not reach into
+     * app/Filament to find out.
+     *
+     * @var array<int, string>
+     */
+    public const POSITIONS = [self::POSITION_GOALKEEPER, 'Defender', 'Midfielder', 'Forward'];
+
     protected function casts(): array
     {
         return [
