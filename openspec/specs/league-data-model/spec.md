@@ -16,7 +16,10 @@ The system MUST create the following tables (all with `id` and `timestamps()`):
 | clubs | name, short_name, crest_path (nullable), founded_year (nullable) | `name` unique |
 | teams | season_id (FK→seasons, cascade), division_id (FK→divisions, nullable, restrict), club_id (FK→clubs, restrict) | unique(season_id, club_id) |
 | squad_memberships | team_id (FK→teams, cascade), player_id (FK→players, cascade), shirt_number, type (owned/loan) | unique(team_id, shirt_number), unique(team_id, player_id) |
-| players | club_id (FK→clubs, cascade), name, position, birth_date (nullable) | — |
+| trophies | club_id (FK→clubs, cascade), season_id (FK→seasons, cascade), name | unique(club_id, season_id, name) |
+| lineups | team_id (FK→teams, cascade, unique), formation | 1:1 with team |
+| lineup_slots | lineup_id (FK→lineups, cascade), player_id (FK→players, cascade), slot | unique(lineup_id, slot), unique(lineup_id, player_id) |
+| players | club_id (FK→clubs, cascade), name, position, specific_position (nullable), birth_date (nullable) | — |
 | stadiums | club_id (FK→clubs, cascade, unique), name, city, capacity (nullable) | 1:1 with club |
 | matchdays | season_id (FK→seasons, cascade), division_id (FK→divisions, cascade), number, date (nullable, nominal) | unique(season_id, division_id, number) |
 | games | matchday_id (FK→matchdays, cascade), home_team_id/away_team_id (FK→teams, restrict), kickoff_at (nullable), home_score/away_score (nullable) | indexed FKs |
@@ -176,6 +179,40 @@ Loans MUST NOT be inherited: a loan ends with its season.
 - GIVEN a club whose previous season had a squad, one of them on loan
 - WHEN the club is enrolled in the following season
 - THEN the owned players are copied with their shirt numbers, and the loan is not
+
+### Requirement: A player's specific position belongs to their general one
+
+The system MUST offer 27 specific positions (POR, DFC, DCI, DCD, LI, LD, CAI, CAD, MCD, MDI,
+MDD, MC, MCI, MCID, MI, MD, MCO, MOI, MOD, SD, SDI, SDD, EI, ED, DC, DI, DD), each belonging
+to exactly one general position, and MUST reject a pairing that crosses them — a goalkeeper
+cannot be a winger. The public team page groups players by the general position, so a
+mismatch would misfile them.
+
+It MUST remain optional: the players already in the league have none, and assigning them is
+the coach's job.
+
+#### Scenario: The options follow the general position
+
+- GIVEN a goalkeeper
+- WHEN a specific position is chosen for them
+- THEN POR is the only option offered, and anything else is rejected on save
+
+### Requirement: A trophy belongs to a club, and a starting eleven to one season's team
+
+Trophies MUST hang off the club, with the season they were won in recorded: a title is won
+once and displayed in every season that follows, which is what the club entity exists for. The
+same club MUST NOT be awarded the same trophy twice in one season.
+
+A starting eleven MUST belong to the team — the club's entry in one season — because an
+eleven describes that season's squad and no other. It MUST store slots, numbered 1 to 11
+across the formation's lines with the goalkeeper first, and never coordinates: pixels would
+tie the record to the pitch as drawn today.
+
+#### Scenario: A trophy outlives the season it was won in
+
+- GIVEN a club that won a cup in a past season
+- WHEN a new season starts
+- THEN the trophy is still listed for that club
 
 ### Requirement: Standings zones band a division's table by position
 

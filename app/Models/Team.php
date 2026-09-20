@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['season_id', 'division_id', 'club_id'])]
 #[ObservedBy(TeamObserver::class)]
@@ -64,6 +65,11 @@ class Team extends Model
      * La plantilla de ESTA temporada: pertenencias, no jugadores sueltos. La
      * identidad de cada uno cuelga del club (Fase 9).
      */
+    public function lineup(): HasOne
+    {
+        return $this->hasOne(Lineup::class);
+    }
+
     public function memberships(): HasMany
     {
         return $this->hasMany(SquadMembership::class);

@@ -108,6 +108,19 @@ band being edited MUST NOT count as overlapping itself.
 - WHEN the operator widens the first band to position 5
 - THEN the form rejects it, naming the band that already holds those positions
 
+### Requirement: Trophies are awarded from the admin panel only
+
+`TrophyResource` MUST let the administrator award a trophy by club, season and name, and
+MUST reject the same award twice for one club and season as a form error. The coach's panel
+MUST show their club's trophies read-only, with no create, edit or delete: a palmarés each
+coach could write would not be one.
+
+#### Scenario: The coach reads what the administrator awarded
+
+- GIVEN a club with trophies and another club with its own
+- WHEN its coach opens their trophies module
+- THEN they see only their club's, and no way to add one
+
 ### Requirement: Team crest upload wires to the Fase 2 public disk
 
 `TeamResource`'s form MUST include a `FileUpload` component bound to the `public` disk, storing new files under `crests/`. Uploading a new crest MUST replace the team's `crest_path`, and the resulting file MUST be retrievable via its public URL.
