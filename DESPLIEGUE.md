@@ -256,6 +256,25 @@ Lo que esto compra: el fallo que motivó el cambio era **silencioso**. Con
 jornada en vez de reventar, así que `/partidos` devolvía 200 sin un solo
 partido y en los logs no había nada.
 
+El paso se reintenta tres veces antes de rendirse. El motivo es el escalado a
+cero: el contenedor arranca muchas veces al día, y sin reintentos un parpadeo
+de la base gestionada durante un arranque en frío no sería una página con
+error, sería el sitio entero caído hasta el siguiente intento. Agotados los
+tres, el contenedor sale con código 1 a propósito.
+
+Verificado con la imagen construida en local, contra el MySQL de desarrollo:
+
+| Caso | Resultado |
+|---|---|
+| Base recién creada, sin tabla `migrations` | Rama sin cerrojo: migra las 16 desde cero y el sitio responde (404, que es lo correcto sin temporadas cargadas) |
+| Base ya migrada | `migrate --force --isolated` toma el cerrojo y no hay nada que aplicar |
+| Base inalcanzable | Tres intentos, mensaje `entrypoint: no se pudieron aplicar las migraciones` y salida con código 1 |
+
+Cada intento contra una base inalcanzable tarda lo que tarde PDO en rendirse
+(~40 s midiendo con un host inexistente), así que el peor caso son un par de
+minutos antes de que el contenedor muera. Con la base caída el sitio está roto
+de todos modos.
+
 Lo que esto cuesta, y conviene tener presente: una migración destructiva se
 aplica sola en cuanto se despliega, y **volver atrás el código no vuelve atrás
 el esquema**. Para una reversión hay que ejecutar el rollback a mano:
@@ -276,6 +295,7 @@ que la primera petición después de un rato paga el arranque entero. Medido:
 | Primera petición en producción a una instancia dormida | 60–90 s (llegó a agotar un `--max-time 90`) |
 | Petición siguiente, misma ruta | ~0,6 s |
 | Contenedor local, imagen ya presente: `docker run` → primer 200 | **4,2 s** |
+| Lo mismo, pero migrando una base vacía desde cero | ~45 s (una sola vez en la vida de la base) |
 | `config:cache` / `route:cache` / `view:cache` / `migrate`, dentro de la imagen | 0,41 / 0,34 / 0,58 / 0,65 s |
 
 La lectura: el arranque del contenedor son ~4 s, de los cuales el trabajo de

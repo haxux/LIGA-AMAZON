@@ -138,9 +138,12 @@ start several at once. The lock store MUST therefore be one every instance can s
 production template pins the cache store to the database for this reason. Only a database
 with no lock table yet MAY be migrated unlocked.
 
-The entrypoint MUST stop the container on failure rather than serve against a schema it could
-not reach: the failure this replaces was silent, a page answering 200 with no data because
-Eloquent read a missing column as null.
+The step MUST be retried a bounded number of times before giving up, because the host scales
+to zero and the container therefore boots many times a day: without retries a momentary blip
+of the managed database during one cold start would take the whole site down rather than one
+page. Once the attempts are spent the entrypoint MUST stop the container rather than serve
+against a schema it could not reach — the failure this replaces was silent, a page answering
+200 with no data because Eloquent read a missing column as null.
 
 A rollback MUST remain a deliberate manual act, and the deployment document MUST carry the
 command: rolling the code back does not roll the schema back.
@@ -150,6 +153,12 @@ command: rolling the code back does not roll the schema back.
 - GIVEN a deploy whose code expects a column the database does not have
 - WHEN the container boots
 - THEN the migration is applied before the first request is served
+
+#### Scenario: An unreachable database stops the container instead of half-serving
+
+- GIVEN a database the container cannot reach
+- WHEN the entrypoint exhausts its attempts
+- THEN it reports the failure and exits non-zero
 
 #### Scenario: Several instances booting together migrate once
 

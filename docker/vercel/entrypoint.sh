@@ -25,13 +25,40 @@ php artisan config:cache
 # instancias: si el host arranca varias a la vez, una migra y las demas siguen
 # sin tocar el esquema.
 #
-# La rama sin cerrojo existe solo para la base recien creada: sin tabla
-# cache_locks no hay cerrojo que tomar, y migrate:status es la forma barata de
-# detectarlo, porque falla cuando ni siquiera existe la tabla migrations.
-if php artisan migrate:status >/dev/null 2>&1; then
-    php artisan migrate --force --isolated
-else
-    php artisan migrate --force
+# Los tres intentos son por el escalado a cero: el contenedor arranca muchas
+# veces al dia, y sin ellos un parpadeo de la base gestionada durante un
+# arranque en frio no seria una pagina con error, seria el sitio entero caido
+# hasta el siguiente intento. Agotados los tres, se sale con error a
+# proposito: servir codigo nuevo contra un esquema viejo falla en silencio.
+#
+# Cada intento va dentro de un `if`: con `set -e`, un `cmd && break` que falla
+# mata el script en el primer intento y no queda reintento ninguno.
+attempt=1
+migrated=0
+while [ "$attempt" -le 3 ]; do
+    if php artisan migrate:status >/dev/null 2>&1; then
+        if php artisan migrate --force --isolated; then
+            migrated=1
+            break
+        fi
+    else
+        # Base recien creada: sin tabla cache_locks no hay cerrojo que tomar.
+        # migrate:status es la forma barata de detectarlo, porque falla cuando
+        # ni siquiera existe la tabla migrations.
+        if php artisan migrate --force; then
+            migrated=1
+            break
+        fi
+    fi
+
+    echo "entrypoint: migraciones fallidas (intento ${attempt}/3)" >&2
+    attempt=$((attempt + 1))
+    sleep 2
+done
+
+if [ "$migrated" -ne 1 ]; then
+    echo "entrypoint: no se pudieron aplicar las migraciones" >&2
+    exit 1
 fi
 
 exec frankenphp run --config /etc/frankenphp/Caddyfile
