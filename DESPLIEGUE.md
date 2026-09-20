@@ -236,23 +236,30 @@ desplegar.** (`composer audit` sí se ejecutó: cero advisories.)
 
 No depende del hosting. Son compromisos adquiridos, con su disparador.
 
-**4.1 Políticas por registro y visibilidad por recurso. ⭐ Máxima prioridad.**
+**4.1 Políticas por registro y visibilidad por recurso. ✅ Resuelto en la Fase 9.**
 
-*Disparador: la llegada del rol `técnico`.*
+*Disparador cumplido: llegó el rol `técnico`.*
 
-Hoy cualquier usuario del panel puede editar cualquier fila, lo cual es
-inofensivo con un único operador. En cuanto entre el técnico, deja de serlo.
-
-Ésta es también la razón por la que `User::canAccessPanel()` devuelve `true` y
-**no** debe convertirse en un `is_admin`: el técnico *necesita* abrir el panel,
-así que cualquier puerta ahí tendría que dejarle pasar igualmente. Su límite
-pertenece a una capa más abajo:
+Hasta la Fase 9, cualquier usuario del panel podía editar cualquier fila —
+inofensivo con un único operador, y no en cuanto entra alguien que sólo debe
+tocar su club. Quedó cerrado con dos cerraduras, no una:
 
 | Capa | Pregunta | Estado |
 |---|---|---|
-| `canAccessPanel()` | ¿puede abrir el panel? | hecho — `true` |
-| Visibilidad de recursos | ¿qué ve en su navegación? | **pendiente** |
-| Policies (`viewAny`, `update`, `delete`…) | ¿puede tocar *este* registro? | **pendiente** |
+| `canAccessPanel()` | ¿qué panel puede abrir? | hecho — decide por panel: `admin` sólo para el rol administrador, `club` sólo para el técnico |
+| Visibilidad de recursos | ¿qué ve en su navegación? | hecho — son **dos paneles distintos**: los recursos del administrador no están registrados en `/club`, así que allí no existen |
+| Policies (`view`, `update`, `delete`…) | ¿puede tocar *este* registro? | hecho — `ClubScopedPolicy` y sus cinco descendientes: el administrador pasa siempre, el técnico sólo sobre lo de su club |
+
+Dos matices que conviene no perder:
+
+- La nota de la Fase 7 decía que `canAccessPanel()` no debía convertirse en un
+  `is_admin`. Sigue siendo cierta y por eso no se hizo: lo que decide ahora no
+  es *si* alguien entra en el panel, sino **en cuál**. El permiso real vive una
+  capa más abajo, donde siempre debió estar.
+- Esconder un recurso dentro de un mismo panel no habría bastado: la ruta
+  seguiría viva y bastaría teclear la URL. Por eso son dos paneles, y las
+  policies cubren lo que aquello no puede — una URL a mano dentro del panel
+  propio del técnico, apuntando al club de otro.
 
 **4.2 Rangos de validación** (`fix(validation)`, aparte). Huecos de integridad
 de datos, ninguno explotable: `founded_year` sin rango, `capacity` de estadio
@@ -284,7 +291,7 @@ Registrado para que no se vuelva a plantear sin saber que ya se decidió.
 
 ---
 
-## 5. Operativa del host de contenedores (Vercel)
+## 6. Operativa del host de contenedores (Vercel)
 
 El hosting ya está decidido (contenedor en Vercel, `Dockerfile.vercel`). Estos
 dos puntos salieron al desplegar el cambio de jornadas por división el

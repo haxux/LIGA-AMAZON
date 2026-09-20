@@ -35,6 +35,17 @@
                         </a>
                     @endforeach
                 </nav>
+
+                {{-- Sólo para el director técnico con sesión abierta: para
+                     cualquier otro visitante la cabecera queda como estaba. --}}
+                @if (auth()->check() && auth()->user()->isCoach() && auth()->user()->club)
+                    <a id="coach-club" href="{{ url('/club') }}"
+                       class="ml-auto flex items-center gap-2 rounded-[4px] border border-white/10 bg-white/[0.06] px-3 py-1.5 hover:bg-white/[0.12]"
+                       title="Ir al panel de {{ auth()->user()->club->name }}">
+                        <x-site.club-crest :club="auth()->user()->club" size="size-[22px]" />
+                        <span class="font-display text-sm font-semibold uppercase tracking-[0.08em] text-white">{{ auth()->user()->club->name }}</span>
+                    </a>
+                @endif
             </div>
         </header>
 
@@ -65,6 +76,9 @@
                     <div class="flex flex-col gap-2">
                         <span class="font-mono text-[9px] tracking-[0.14em] text-brand">SITIO</span>
                         <a href="{{ route('site.news.index') }}" class="text-sm text-white/60 hover:text-brand">Noticias</a>
+                        {{-- La puerta de entrada del técnico. Discreta a propósito:
+                             el visitante no tiene nada que hacer aquí. --}}
+                        <a href="{{ route('filament.club.auth.login') }}" class="text-sm text-white/60 hover:text-brand">Acceso técnicos</a>
                     </div>
                 </div>
             </div>

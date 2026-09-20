@@ -10,8 +10,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -19,33 +17,33 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-class AdminPanelProvider extends PanelProvider
+/**
+ * El panel del director técnico.
+ *
+ * Es un panel aparte y no `/admin` con el menú recortado (design D4): esconder
+ * un recurso deja su ruta viva, y basta teclear la URL. Aquí los recursos del
+ * administrador sencillamente NO están registrados, así que no existen para
+ * quien entra por esta puerta. Las políticas por registro son la segunda
+ * cerradura, la que impide llegar al club de otro.
+ *
+ * En español, a diferencia de `/admin`: lo usan los técnicos (design D13).
+ */
+class ClubPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
-            ->id('admin')
-            ->path('admin')
+            ->id('club')
+            ->path('club')
             ->login()
+            ->brandName('Mi club')
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->navigationGroups([
-                'League',
-                'Competition',
-                'Content',
-                'Access',
-            ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->discoverResources(in: app_path('Filament/Club/Resources'), for: 'App\Filament\Club\Resources')
+            ->discoverPages(in: app_path('Filament/Club/Pages'), for: 'App\Filament\Club\Pages')
             ->pages([
                 Dashboard::class,
-            ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

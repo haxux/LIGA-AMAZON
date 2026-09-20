@@ -148,6 +148,26 @@ A slug-based detail route MUST render a single news item's full content when its
 - WHEN its detail page is requested at that slug
 - THEN the response is HTTP 404
 
+### Requirement: The coach's way in does not change the public site
+
+The public site MUST offer a way for a coach to sign in, and a signed-in coach MUST see their
+club's crest and name in the top right of every public page, linking to their panel.
+
+For everyone else the page MUST be exactly what it was: a visitor with no session, and an
+administrator, MUST see no crest. No public view may require a session to render.
+
+#### Scenario: A visitor sees the site unchanged
+
+- GIVEN no session
+- WHEN any public page is requested
+- THEN no club crest appears, and the sign-in entry is the only addition
+
+#### Scenario: A signed-in coach carries their club
+
+- GIVEN a coach with a session
+- WHEN any public page is requested
+- THEN their club's crest and name appear in the header, linking to their panel
+
 ### Requirement: Team crest images render from uploaded crest_path with fallback
 
 Public pages that display a team identity (standings table rows, game cards) MUST render

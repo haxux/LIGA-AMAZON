@@ -32,8 +32,12 @@ The Filament admin user MUST be created interactively per developer via `php art
 
 `App\Models\User` MUST implement `Filament\Models\Contracts\FilamentUser` and define
 `canAccessPanel()`, so that panel access is decided by the application rather than by
-Filament's environment-dependent fallback. Every row in the `users` table MUST be granted
-access, in any `APP_ENV`.
+Filament's environment-dependent fallback, in any `APP_ENV`.
+
+Since Fase 9 there are two panels and the decision is **which** one a user may open, not
+whether they may open one: `admin` for the administrator role, `club` for the coach, and
+neither for anything else. This is still not the permission check — what a coach may touch
+inside their own panel is decided by record policies (see below).
 
 While `canAccessPanel()` grants access unconditionally, the system MUST NOT expose any path
 that creates a user without administrator action: the admin panel MUST NOT enable Filament
@@ -41,12 +45,39 @@ registration, and no route named `register` MUST exist. This precondition MUST b
 by an automated test, so that enabling either one fails the suite and forces the access
 policy to be revisited first.
 
-This requirement governs **whether a user may open the panel at all**. It deliberately does
-not govern what they may see or do once inside. A `técnico` (coach) role with a reduced,
-mostly additive set of functions is planned for a following phase; such a user must be able
-to open the panel, so restricting them at this layer would be incorrect. Their limits belong
-to per-resource visibility and record policies, which remain outside this capability until
-that phase specifies them.
+This requirement governs **which panel a user may open**. It deliberately does not govern
+what they may see or do once inside.
+
+### Requirement: A coach may only touch their own club
+
+The system MUST restrict the coach role to the records of the club they are assigned to, at
+two independent layers, because either one alone leaves a hole:
+
+1. **Separate panels.** The administrator's resources MUST NOT be registered on the coach's
+   panel. Hiding a resource inside one shared panel would leave its route alive, and typing
+   the URL would reach it.
+2. **Record policies.** Every model that belongs to a club — the club, its season entries,
+   its players, its squad memberships and its stadium — MUST answer `view`, `update` and
+   `delete` by comparing the record's club against the user's. The administrator MUST pass
+   everywhere. This is what covers a URL typed by hand inside the coach's own panel.
+
+A squad membership MUST be governed by the club fielding the player, not the club that owns
+them: on a loan, the squad is built by whoever puts the player on the pitch.
+
+A coach MUST be assigned exactly one club, and a club MUST have at most one coach. A coach
+without a club, or an administrator with one, MUST be rejected when saved.
+
+#### Scenario: A coach cannot reach another club's records
+
+- GIVEN a coach assigned to club A and a player of club B
+- WHEN authorization is checked for updating or deleting that player
+- THEN it is denied, while the same check for a player of club A is granted
+
+#### Scenario: Each role opens its own panel only
+
+- GIVEN a coach and an administrator
+- WHEN each requests the other's panel
+- THEN the response is forbidden, and each reaches their own
 
 (History — Fase 3 specified the inverse: "any authenticated row in the `users` table MUST be
 able to access `/admin`, using Filament v5's **default non-production behavior**. The system

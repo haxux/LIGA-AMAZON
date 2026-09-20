@@ -2,8 +2,8 @@ change: fase-9-direccion-tecnica
 title: "Fases 9-13 — Dirección Técnica"
 artifact_store: openspec
 last_updated: 2026-09-20
-tasks_phase_completed: false
-apply_phase_completed: false
+tasks_phase_completed: true
+apply_phase_completed: true
 verify_phase_completed: false
 archive_phase_completed: false
 
@@ -45,8 +45,23 @@ phases:
       lo que se pierde a cambio — la aplicación deja de saber quién estuvo en
       una plantilla pasada, historia que la Fase 12 recupera por el lado de los
       traspasos.
+  apply:
+    status: done
+    note: >
+      Fase 9 aplicada en la rama fase-9/1-club-y-rol-tecnico, en tres commits
+      (club, plantillas, rol y acceso). Suite de 254 a 299 en verde, Pint
+      limpio, y las TRES migraciones ensayadas ida y vuelta contra una copia
+      restaurada de producción antes de acercarse a la real. Dos hallazgos que
+      obligaron a resolver algo no obvio y quedan comentados en el código: los
+      factories construyen los modelos dentro de Model::unguarded(), así que
+      #[Fillable] no filtra los atributos que dejaron de ser columnas y hay que
+      retirarlos a mano; y el atributo de título de un ->relationship() de
+      Filament tiene que ser una columna real de la tabla consultada, porque
+      hace pluck y filtra por ella, de ahí TeamOptions. Incidente registrado: se
+      corrió migrate:fresh sobre la base de DESARROLLO y se perdió lo que el
+      propietario tenía en local (producción intacta); se repobló con el seed.
   tasks:
-    status: partial
+    status: done
     artifact: openspec/changes/fase-9-direccion-tecnica/tasks.md
     note: >
       Sólo la fase 9, en cinco unidades; las siguientes quedan como esqueleto.

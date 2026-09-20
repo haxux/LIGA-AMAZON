@@ -9,15 +9,69 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\ValidationException;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role', 'club_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_COACH = 'tecnico';
+
+    /**
+     * Vocabulario en PHP, no un enum de base de datos — mismo criterio que
+     * `GameEvent::TYPES` y `SquadMembership::TYPES`.
+     */
+    public const ROLES = [
+        self::ROLE_ADMIN => 'Administrador',
+        self::ROLE_COACH => 'Director técnico',
+    ];
+
+    /**
+     * Invariante de entidad: un técnico dirige un club, y un administrador no
+     * dirige ninguno. Va aquí y no en el esquema porque una restricción de
+     * base de datos no sabe decir "obligatorio sólo si el rol es este" sin
+     * recurrir a un CHECK que MySQL y SQLite tratan distinto (design D2 de la
+     * Fase 2).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user): void {
+            if ($user->role === self::ROLE_COACH && $user->club_id === null) {
+                throw ValidationException::withMessages([
+                    'club_id' => 'Un director técnico tiene que dirigir un club.',
+                ]);
+            }
+
+            if ($user->role === self::ROLE_ADMIN && $user->club_id !== null) {
+                throw ValidationException::withMessages([
+                    'club_id' => 'Un administrador no dirige ningún club.',
+                ]);
+            }
+        });
+    }
+
+    public function club(): BelongsTo
+    {
+        return $this->belongsTo(Club::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isCoach(): bool
+    {
+        return $this->role === self::ROLE_COACH;
+    }
 
     /**
      * Whether this user may open the Filament panel at all (design D1, D9).
@@ -34,15 +88,19 @@ class User extends Authenticatable implements FilamentUser
      * PanelAccessTest::test_no_user_creation_path_exists_outside_administrator_action()
      * asserts that precondition and fails the suite the day it stops holding.
      *
-     * This is deliberately NOT the place to restrict the planned `técnico`
-     * role: a coach who uses panel features must be able to open the panel, so
-     * any gate here would have to return true for them anyway. Their limits
-     * belong to per-resource visibility and record policies — do not "fix"
-     * this into an is_admin check.
+     * Desde la Fase 9 hay dos paneles y la puerta depende de cuál se abre. Esto
+     * sigue sin ser el control de permisos: un técnico entra en `/club` y ahí
+     * dentro lo que puede tocar lo deciden las políticas por registro. Lo que
+     * esta puerta impide es que un rol abra el panel del otro, donde ni
+     * siquiera existen los recursos que le corresponden.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return match ($panel->getId()) {
+            'admin' => $this->isAdmin(),
+            'club' => $this->isCoach(),
+            default => false,
+        };
     }
 
     /**

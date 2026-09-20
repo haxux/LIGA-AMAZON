@@ -13,9 +13,11 @@ The system MUST create the following tables (all with `id` and `timestamps()`):
 | Table | Columns | Constraints |
 |---|---|---|
 | seasons | name, start_date, end_date, is_current (boolean, default false) | `name` unique |
-| teams | season_id (FK→seasons, cascade), division_id (FK→divisions, nullable, restrict), name, short_name, crest_path (nullable), founded_year (nullable) | unique(season_id, name) |
-| players | team_id (FK→teams, cascade), name, position, birth_date (nullable), shirt_number | unique(team_id, shirt_number) |
-| stadiums | team_id (FK→teams, cascade, unique), name, city, capacity (nullable) | 1:1 with team |
+| clubs | name, short_name, crest_path (nullable), founded_year (nullable) | `name` unique |
+| teams | season_id (FK→seasons, cascade), division_id (FK→divisions, nullable, restrict), club_id (FK→clubs, restrict) | unique(season_id, club_id) |
+| squad_memberships | team_id (FK→teams, cascade), player_id (FK→players, cascade), shirt_number, type (owned/loan) | unique(team_id, shirt_number), unique(team_id, player_id) |
+| players | club_id (FK→clubs, cascade), name, position, birth_date (nullable) | — |
+| stadiums | club_id (FK→clubs, cascade, unique), name, city, capacity (nullable) | 1:1 with club |
 | matchdays | season_id (FK→seasons, cascade), division_id (FK→divisions, cascade), number, date (nullable, nominal) | unique(season_id, division_id, number) |
 | games | matchday_id (FK→matchdays, cascade), home_team_id/away_team_id (FK→teams, restrict), kickoff_at (nullable), home_score/away_score (nullable) | indexed FKs |
 | standing_zones | division_id (FK→divisions, cascade), label, color (palette key), from_position, to_position | unique(division_id, label) |
@@ -138,6 +140,42 @@ The system MUST create a `divisions` table (`name`, `season_id` FK→seasons `ca
 - GIVEN a season with one or more divisions
 - WHEN the season is deleted
 - THEN its divisions are removed along with it
+
+### Requirement: A club exists across seasons; a team is its entry in one
+
+The system MUST model the club — name, short name, crest and founding year — as an entity of
+its own, and `teams` MUST be that club's entry in one season and division. A club MUST NOT be
+able to enter the same season twice.
+
+Reading a team's identity MUST keep working through the team (`$team->name` and friends
+delegate to the club), so that the views, services and tests written before this change need
+no edit; writing it MUST happen on the club.
+
+A player MUST belong to a club, and where they play each season — with which shirt number and
+on what terms, owned or loaned — MUST be a separate membership record. The shirt number
+belongs to the membership because it changes from season to season while the club does not. A
+stadium MUST belong to the club for the same reason.
+
+Enrolling a club in a new season MUST inherit its most recent squad, shirt numbers included.
+Loans MUST NOT be inherited: a loan ends with its season.
+
+#### Scenario: One club, two seasons, one identity
+
+- GIVEN a club that played 2025/26 and is enrolled in 2026/27
+- WHEN its name or crest is edited
+- THEN both seasons show the change, because there is one club and two entries
+
+#### Scenario: The same shirt number in two seasons
+
+- GIVEN a squad where a player wore number 9 last season
+- WHEN another player is given number 9 this season
+- THEN both records stand, while two players sharing a number within one squad are rejected
+
+#### Scenario: A new season starts with last season's squad
+
+- GIVEN a club whose previous season had a squad, one of them on loan
+- WHEN the club is enrolled in the following season
+- THEN the owned players are copied with their shirt numbers, and the loan is not
 
 ### Requirement: Standings zones band a division's table by position
 
