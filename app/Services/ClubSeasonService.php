@@ -38,10 +38,12 @@ final class ClubSeasonService
                 ->orWhere('away_team_id', $team->getKey()))
             ->with(['matchday', 'homeTeam.club', 'awayTeam.club'])
             ->get()
-            // Una sola clave compuesta, y no dos criterios: el multiorden de
-            // Collection se desordena cuando el segundo criterio mezcla fechas
-            // con nulos, y aquí la fecha es opcional. Con una tupla, PHP
-            // compara elemento a elemento y el resultado es el esperado.
+            // Una sola clave compuesta, y no dos criterios: en el multiorden de
+            // Collection (`sortBy([...])`) una función no es un extractor de
+            // clave sino un COMPARADOR que recibe los dos elementos y devuelve
+            // un entero (`Collection::sortByMany()`). Pasar extractores ahí
+            // ordenaba por el valor del primer elemento, que no significa nada.
+            // Con una tupla, PHP compara elemento a elemento.
             ->sortBy(fn (Game $game) => [
                 $game->matchday?->number ?? PHP_INT_MAX,
                 $game->kickoff_at?->getTimestamp() ?? PHP_INT_MAX,

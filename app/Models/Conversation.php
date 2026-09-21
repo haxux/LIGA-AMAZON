@@ -84,13 +84,23 @@ class Conversation extends Model
      * El hilo entero —mensajes y ofertas— en el orden en que ocurrió. Una
      * oferta se lee entre los mensajes porque ahí es donde se hizo.
      *
+     * Se ordena con UNA clave compuesta y no con dos criterios. En el multiorden
+     * de `Collection` (`sortBy([...])`) una función no es un extractor de clave
+     * sino un COMPARADOR: recibe los dos elementos y tiene que devolver un
+     * entero —`Collection::sortByMany()`, `$result = $prop($a, $b)`—. Pasarle
+     * `fn ($entry) => $entry->created_at` devolvía un Carbon como resultado de
+     * la comparación y reventaba el hilo entero con "Object of class
+     * Illuminate\Support\Carbon could not be converted to int".
+     *
      * @return Collection<int, Message|Offer>
      */
     public function timeline(): Collection
     {
         return $this->messages()->with('author')->get()
             ->concat($this->offers()->with(['player', 'fromClub', 'mover'])->get())
-            ->sortBy([fn ($entry) => $entry->created_at, fn ($entry) => $entry->getKey()])
+            // El id sólo desempata dentro del mismo segundo, y ahí el orden
+            // entre un mensaje y una oferta da igual: pasaron a la vez.
+            ->sortBy(fn ($entry) => [$entry->created_at?->getTimestamp() ?? 0, $entry->getKey()])
             ->values();
     }
 }

@@ -7,6 +7,7 @@ use App\Filament\Pages\Chat as AdminChat;
 use App\Models\Club;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Offer;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\SquadMembership;
@@ -198,6 +199,72 @@ class ChatTest extends TestCase
         $this->asCoach($this->coachB);
 
         $this->assertSame('2', CoachChat::getNavigationBadge());
+    }
+
+    /**
+     * REGRESIÓN: el hilo se pintaba bien con una entrada y reventaba con dos.
+     * El comparador del multiorden de `Collection` sólo se ejecuta cuando hay
+     * algo que comparar, así que ningún test lo tocaba — y en el navegador
+     * fallaba cada cinco segundos, uno por sondeo.
+     */
+    public function test_a_thread_with_several_entries_renders(): void
+    {
+        $conversation = Conversation::between($this->coachA, $this->coachB);
+
+        foreach (['Primero', 'Segundo', 'Tercero'] as $body) {
+            Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => $this->coachA->id,
+                'body' => $body,
+            ]);
+        }
+
+        $theirs = Player::factory()->create(['club_id' => $this->clubB->id, 'name' => 'Su Delantero']);
+        Offer::create([
+            'conversation_id' => $conversation->id,
+            'player_id' => $theirs->id,
+            'from_club_id' => $this->clubA->id,
+            'amount' => 150_000,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->coachA->id,
+        ]);
+
+        $this->asCoach($this->coachA);
+
+        Livewire::test(CoachChat::class)
+            ->call('open', $conversation->id)
+            ->assertOk()
+            ->assertSeeInOrder(['Primero', 'Segundo', 'Tercero'])
+            ->assertSee('Su Delantero')
+            ->assertSee('150.000');
+    }
+
+    /**
+     * El mismo hilo, desde el panel del administrador: es la misma pantalla y
+     * el fallo se vio ahí.
+     */
+    public function test_a_thread_renders_in_the_admin_panel_too(): void
+    {
+        $admin = User::factory()->create(['name' => 'Presidenta']);
+        $conversation = Conversation::between($admin, $this->coachA);
+
+        // Sin acentos a propósito: la respuesta de Livewire viaja como JSON y
+        // ahí una "é" llega escapada, así que assertSee no la encontraría.
+        foreach (['Hola presidenta', 'Segundo mensaje'] as $body) {
+            Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => $this->coachA->id,
+                'body' => $body,
+            ]);
+        }
+
+        $this->actingAs($admin);
+        Filament::setCurrentPanel('admin');
+
+        Livewire::test(AdminChat::class)
+            ->call('open', $conversation->id)
+            ->assertOk()
+            ->assertSeeInOrder(['Hola presidenta', 'Segundo mensaje']);
     }
 
     /**
