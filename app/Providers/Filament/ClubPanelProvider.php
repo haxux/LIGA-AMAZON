@@ -28,6 +28,13 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
  * cerradura, la que impide llegar al club de otro.
  *
  * En español, a diferencia de `/admin`: lo usan los técnicos (design D13).
+ *
+ * Lo que NO está aquí y podría esperarse: el once ideal, los trofeos, el
+ * calendario y el chat. Todos viven en el sitio público —el once se arma en la
+ * ficha del club, el palmarés y los partidos se leen allí, y el chat tiene en
+ * `/chat` la página entera que una mensajería necesita—, y tenerlos además aquí
+ * sería una segunda pantalla para lo mismo. El escudo de la cabecera pública
+ * lleva del sitio al panel; el camino de vuelta es el propio sitio.
  */
 class ClubPanelProvider extends PanelProvider
 {
@@ -50,6 +57,7 @@ class ClubPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
