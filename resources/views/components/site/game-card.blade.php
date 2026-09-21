@@ -5,7 +5,8 @@
     $number = $matchdayNumber ?? $game->matchday->number;
 @endphp
 
-<div class="rounded-[5px] border-t-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
+<a href="{{ route('site.games.show', $game) }}"
+   class="block rounded-[5px] border-t-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
     <div class="mb-3 font-mono text-[9px] tracking-[0.1em] text-white/40">JORNADA {{ $number }}</div>
 
     <div class="flex items-center justify-between gap-2">
@@ -27,4 +28,4 @@
             {{ $isPlayed ? $game->away_score : '–' }}
         </span>
     </div>
-</div>
+</a>

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Site\ClubProfileController;
 use App\Http\Controllers\Site\ClubsController;
 use App\Http\Controllers\Site\FixturesController;
+use App\Http\Controllers\Site\GameController;
 use App\Http\Controllers\Site\NewsController;
 use App\Http\Controllers\Site\ScorersController;
 use App\Http\Controllers\Site\StandingsController;
@@ -19,7 +20,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/', StandingsController::class)->name('site.standings');
     Route::get('/partidos', FixturesController::class)->name('site.fixtures');
-    Route::get('/goleadores', ScorersController::class)->name('site.scorers');
+    // El detalle de un partido, al que se llega desde cualquier tarjeta.
+    Route::get('/partidos/{game}', GameController::class)->name('site.games.show');
+    Route::get('/estadisticas', ScorersController::class)->name('site.scorers');
     Route::get('/equipos', ClubsController::class)->name('site.clubs.index');
     // La pestaña va en la ruta y no en la query: es una página que se enlaza y
     // se comparte, no un filtro. La temporada sí es un filtro, y viaja en
