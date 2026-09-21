@@ -75,6 +75,20 @@ class Conversation extends Model
             ->count();
     }
 
+    /**
+     * Lo que le falta por leer a alguien en TODOS sus hilos. Vive aquí y no en
+     * la pantalla del chat porque la cabecera del sitio también lo pinta, y dos
+     * cuentas distintas del mismo número acabarían discrepando.
+     */
+    public static function unreadTotalFor(User $user): int
+    {
+        return self::query()
+            ->whereHas('participants', fn ($query) => $query->whereKey($user->getKey()))
+            ->with('participants')
+            ->get()
+            ->sum(fn (self $conversation) => $conversation->unreadFor($user));
+    }
+
     public function markReadBy(User $user): void
     {
         $this->participants()->updateExistingPivot($user->getKey(), ['last_read_at' => now()]);

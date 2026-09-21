@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Site\ClubProfileController;
+use App\Http\Controllers\Site\ChatController;
 use App\Http\Controllers\Site\ClubsController;
 use App\Http\Controllers\Site\FixturesController;
 use App\Http\Controllers\Site\GameController;
@@ -32,6 +33,10 @@ Route::middleware('throttle:60,1')->group(function (): void {
     // se comparte, no un filtro. La temporada sí es un filtro, y viaja en
     // ?temporada como en el resto del sitio.
     Route::get('/equipos/{club}/{tab?}', ClubProfileController::class)->name('site.clubs.show');
+    // La única página del sitio que pide sesión: el chat de técnicos y
+    // presidentes. Estaba dentro de los dos paneles y allí una conversación
+    // competía con el menú lateral por un carril estrecho.
+    Route::get('/chat', ChatController::class)->name('site.chat');
     Route::get('/noticias', [NewsController::class, 'index'])->name('site.news.index');
     Route::get('/noticias/{slug}', [NewsController::class, 'show'])->name('site.news.show');
 });

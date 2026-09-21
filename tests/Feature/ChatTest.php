@@ -2,8 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Club\Pages\Chat as CoachChat;
-use App\Filament\Pages\Chat as AdminChat;
+use App\Livewire\Chat;
 use App\Models\Club;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -13,13 +12,17 @@ use App\Models\Season;
 use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Models\User;
-use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * El chat (Fase 13): uno a uno, por sondeo, con contador de no leídos.
+ * El chat: uno a uno, por sondeo, con contador de no leídos.
+ *
+ * Desde la corrección posterior a la Fase 13 vive en el sitio público y no en
+ * los paneles, así que una misma pantalla sirve a técnicos y presidentes: el
+ * componente resuelve al usuario por los dos guards.
  */
 class ChatTest extends TestCase
 {
@@ -45,13 +48,12 @@ class ChatTest extends TestCase
     }
 
     /**
-     * Por el guard `club`, que es el del panel desde la corrección de la Fase
-     * 13: `Filament::auth()` mira ese y no el `web` del administrador.
+     * Por el guard `club`, que es por donde entra un técnico; el componente
+     * público resuelve al usuario mirando ese y, si no, el del administrador.
      */
     private function asCoach(User $coach): void
     {
         $this->actingAs($coach, 'club');
-        Filament::setCurrentPanel('club');
     }
 
     /**
@@ -71,7 +73,7 @@ class ChatTest extends TestCase
     {
         $this->asCoach($this->coachA);
 
-        Livewire::test(CoachChat::class)
+        Livewire::test(Chat::class)
             ->call('openWith', $this->coachB->id)
             ->set('body', 'Hola, ¿hablamos del delantero?')
             ->call('send')
@@ -99,7 +101,7 @@ class ChatTest extends TestCase
 
         $this->asCoach($this->coachB);
 
-        Livewire::test(CoachChat::class)->call('open', $conversation->id);
+        Livewire::test(Chat::class)->call('open', $conversation->id);
 
         $this->assertSame(0, $conversation->fresh()->load('participants')->unreadFor($this->coachB));
     }
@@ -111,7 +113,7 @@ class ChatTest extends TestCase
 
         $this->asCoach($outsider);
 
-        $page = Livewire::test(CoachChat::class)->call('open', $conversation->id)->instance();
+        $page = Livewire::test(Chat::class)->call('open', $conversation->id)->instance();
 
         $this->assertNull($page->conversation());
     }
@@ -124,10 +126,70 @@ class ChatTest extends TestCase
 
         $this->asCoach($this->coachA);
 
-        $conversations = Livewire::test(CoachChat::class)->instance()->conversations();
+        $conversations = Livewire::test(Chat::class)->instance()->conversations();
 
         $this->assertTrue($conversations->contains(fn (Conversation $conversation) => $conversation->is($mine)));
         $this->assertFalse($conversations->contains(fn (Conversation $conversation) => $conversation->is($theirs)));
+    }
+
+    // ── La página que lo monta ────────────────────────────────────────────
+
+    public function test_the_chat_page_needs_a_session(): void
+    {
+        $this->get(route('site.chat'))->assertRedirect(route('filament.club.auth.login'));
+    }
+
+    public function test_a_coach_and_a_president_both_open_the_page(): void
+    {
+        $this->actingAs($this->coachA, 'club')->get(route('site.chat'))->assertOk()->assertSee('Chats');
+
+        $this->actingAs(User::factory()->create(), 'web')->get(route('site.chat'))->assertOk();
+    }
+
+    public function test_the_panels_no_longer_serve_a_chat(): void
+    {
+        $this->actingAs($this->coachA, 'club')->get('/club/chat')->assertNotFound();
+        $this->actingAs(User::factory()->create(), 'web')->get('/admin/chat')->assertNotFound();
+    }
+
+    /**
+     * El aviso del chat es el contador: no hay correos ni websockets, así que
+     * los no leídos viajan en la cabecera de cualquier página del sitio.
+     */
+    public function test_the_header_carries_the_unread_count(): void
+    {
+        $conversation = Conversation::between($this->coachA, $this->coachB);
+
+        foreach (['Uno', 'Dos'] as $body) {
+            Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => $this->coachA->id,
+                'body' => $body,
+            ]);
+        }
+
+        $this->actingAs($this->coachB, 'club')
+            ->get(route('site.standings'))
+            ->assertOk()
+            ->assertSeeInOrder(['Chat', '2']);
+    }
+
+    /**
+     * El escudo del club hace de avatar del técnico —no hay fotos de personas
+     * en este bloque—, y el presidente, que no dirige ninguno, se queda con sus
+     * iniciales.
+     */
+    public function test_a_coach_is_shown_by_their_clubs_crest(): void
+    {
+        $this->clubB->update(['crest_path' => 'crests/tapajos.png']);
+
+        $this->asCoach($this->coachA);
+
+        $crest = Storage::disk(config('filesystems.uploads'))->url('crests/tapajos.png');
+
+        Livewire::test(Chat::class)
+            ->call('openWith', $this->coachB->id)
+            ->assertSee($crest, escape: false);
     }
 
     /**
@@ -138,7 +200,7 @@ class ChatTest extends TestCase
         $admin = User::factory()->create(['name' => 'Jefa Máxima']);
 
         $this->asCoach($this->coachA);
-        $page = Livewire::test(CoachChat::class)->instance();
+        $page = Livewire::test(Chat::class)->instance();
 
         $this->assertSame('Jefa Máxima · Presidente', $page->displayName($admin));
         $this->assertSame('Técnico B · Tapajós SC', $page->displayName($this->coachB));
@@ -148,9 +210,8 @@ class ChatTest extends TestCase
     {
         $admin = User::factory()->create(['name' => 'Presidenta']);
         $this->actingAs($admin);
-        Filament::setCurrentPanel('admin');
 
-        Livewire::test(AdminChat::class)
+        Livewire::test(Chat::class)
             ->call('openWith', $this->coachA->id)
             ->set('body', 'Enhorabuena por el partido')
             ->call('send');
@@ -168,9 +229,8 @@ class ChatTest extends TestCase
         $admin = User::factory()->create();
         $otherAdmin = User::factory()->create();
         $this->actingAs($admin);
-        Filament::setCurrentPanel('admin');
 
-        $contacts = Livewire::test(AdminChat::class)->instance()->contacts();
+        $contacts = Livewire::test(Chat::class)->instance()->contacts();
 
         $this->assertTrue($contacts->contains(fn (User $user) => $user->is($this->coachA)));
         $this->assertFalse($contacts->contains(fn (User $user) => $user->is($otherAdmin)));
@@ -180,7 +240,7 @@ class ChatTest extends TestCase
     {
         $this->asCoach($this->coachA);
 
-        Livewire::test(CoachChat::class)
+        Livewire::test(Chat::class)
             ->call('openWith', $this->coachB->id)
             ->set('body', '   ')
             ->call('send');
@@ -202,7 +262,7 @@ class ChatTest extends TestCase
 
         $this->asCoach($this->coachB);
 
-        $this->assertSame('2', CoachChat::getNavigationBadge());
+        $this->assertSame('2', (string) Conversation::unreadTotalFor($this->coachB));
     }
 
     /**
@@ -235,7 +295,7 @@ class ChatTest extends TestCase
 
         $this->asCoach($this->coachA);
 
-        Livewire::test(CoachChat::class)
+        Livewire::test(Chat::class)
             ->call('open', $conversation->id)
             ->assertOk()
             ->assertSeeInOrder(['Primero', 'Segundo', 'Tercero'])
@@ -244,10 +304,10 @@ class ChatTest extends TestCase
     }
 
     /**
-     * El mismo hilo, desde el panel del administrador: es la misma pantalla y
-     * el fallo se vio ahí.
+     * El mismo hilo leído por el presidente: es la misma pantalla para los dos,
+     * y el fallo del multiorden se vio precisamente ahí.
      */
-    public function test_a_thread_renders_in_the_admin_panel_too(): void
+    public function test_a_thread_renders_for_a_president_too(): void
     {
         $admin = User::factory()->create(['name' => 'Presidenta']);
         $conversation = Conversation::between($admin, $this->coachA);
@@ -263,9 +323,8 @@ class ChatTest extends TestCase
         }
 
         $this->actingAs($admin);
-        Filament::setCurrentPanel('admin');
 
-        Livewire::test(AdminChat::class)
+        Livewire::test(Chat::class)
             ->call('open', $conversation->id)
             ->assertOk()
             ->assertSeeInOrder(['Hola presidenta', 'Segundo mensaje']);
@@ -288,7 +347,7 @@ class ChatTest extends TestCase
 
         $this->asCoach($this->coachA);
 
-        $options = Livewire::test(CoachChat::class)
+        $options = Livewire::test(Chat::class)
             ->call('openWith', $this->coachB->id)
             ->instance()
             ->offerableOptions();
@@ -303,9 +362,8 @@ class ChatTest extends TestCase
     {
         $admin = User::factory()->create();
         $this->actingAs($admin);
-        Filament::setCurrentPanel('admin');
 
-        $page = Livewire::test(AdminChat::class)->call('openWith', $this->coachA->id)->instance();
+        $page = Livewire::test(Chat::class)->call('openWith', $this->coachA->id)->instance();
 
         $this->assertFalse($page->mayOffer());
         $this->assertSame([], $page->offerableOptions());

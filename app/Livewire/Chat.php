@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Concerns;
+namespace App\Livewire;
 
 use App\Models\Conversation;
 use App\Models\Message;
@@ -9,22 +9,23 @@ use App\Models\Player;
 use App\Models\User;
 use App\Services\OfferService;
 use App\Services\SeasonResolver;
-use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Livewire\Component;
 
 /**
- * El chat, compartido por los dos paneles (Fase 13).
+ * El chat, en el sitio público (corrección posterior a la Fase 13).
  *
- * Es el mismo hilo visto desde `/club` y desde `/admin`, así que la lógica vive
- * aquí y cada panel monta una página de tres líneas. Duplicarla sería garantizar
- * que las dos copias se separen.
+ * Estaba montado dentro de los dos paneles, y allí una conversación compite con
+ * el menú lateral y la cabecera de Filament por un carril estrecho. Aquí tiene
+ * la página entera, que es lo que una mensajería necesita.
  *
- * Se refresca por sondeo (design D11): websockets exigirían un proceso
- * permanente que este despliegue, que escala a cero, no tiene.
+ * Vive en un único sitio, `/chat`, para técnicos y presidentes: dos pantallas
+ * para el mismo hilo acaban separándose, y el contador de no leídos dejaría de
+ * significar una sola cosa.
  */
-trait ChatScreen
+class Chat extends Component
 {
     public ?int $conversationId = null;
 
@@ -38,28 +39,49 @@ trait ChatScreen
 
     public ?int $counteringOfferId = null;
 
+    public ?string $error = null;
+
+    /**
+     * Quien está mirando, venga por donde venga: el técnico entra por el guard
+     * `club` y el presidente por `web`, y esta pantalla es de los dos. Con las
+     * dos sesiones abiertas manda la del técnico, que es la que el sitio usa
+     * para todo lo demás (el escudo de la cabecera, su club, su once).
+     */
+    public function user(): ?User
+    {
+        return auth('club')->user() ?? auth()->user();
+    }
+
     public function conversation(): ?Conversation
     {
-        if ($this->conversationId === null) {
+        $user = $this->user();
+
+        if ($this->conversationId === null || $user === null) {
             return null;
         }
 
         $conversation = Conversation::query()->with('participants')->find($this->conversationId);
 
         // Segunda cerradura: el hilo de otros no se abre ni tecleando su id.
-        return $conversation?->includes($this->user()) ? $conversation : null;
+        return $conversation?->includes($user) ? $conversation : null;
     }
 
     /**
-     * Los hilos abiertos, el más reciente primero, con lo que falta por leer.
+     * Los hilos abiertos, el más reciente primero.
      *
      * @return Collection<int, Conversation>
      */
     public function conversations(): Collection
     {
+        $user = $this->user();
+
+        if ($user === null) {
+            return collect();
+        }
+
         return Conversation::query()
-            ->whereHas('participants', fn (Builder $query) => $query->whereKey($this->user()->getKey()))
-            ->with(['participants', 'messages' => fn ($query) => $query->latest('id')->limit(1)])
+            ->whereHas('participants', fn (Builder $query) => $query->whereKey($user->getKey()))
+            ->with(['participants.club', 'messages' => fn ($query) => $query->latest('id')->limit(1)])
             ->get()
             ->sortByDesc(fn (Conversation $conversation) => $conversation->messages->first()?->created_at ?? $conversation->created_at)
             ->values();
@@ -74,9 +96,15 @@ trait ChatScreen
      */
     public function contacts(): Collection
     {
+        $user = $this->user();
+
+        if ($user === null) {
+            return collect();
+        }
+
         return User::query()
-            ->whereKeyNot($this->user()->getKey())
-            ->when($this->user()->isAdmin(), fn (Builder $query) => $query->where('role', User::ROLE_COACH))
+            ->whereKeyNot($user->getKey())
+            ->when($user->isAdmin(), fn (Builder $query) => $query->where('role', User::ROLE_COACH))
             ->with('club')
             ->orderBy('name')
             ->get();
@@ -97,41 +125,58 @@ trait ChatScreen
             : $user->name.($user->club ? ' · '.$user->club->name : '');
     }
 
+    public function subtitleFor(?User $user): ?string
+    {
+        return $user?->isAdmin() ? 'Presidente' : $user?->club?->name;
+    }
+
     public function openWith(int $userId): void
     {
+        $me = $this->user();
         $other = User::query()->find($userId);
 
-        if ($other === null || $other->is($this->user())) {
+        if ($me === null || $other === null || $other->is($me)) {
             return;
         }
 
-        $this->open(Conversation::between($this->user(), $other)->getKey());
+        $this->open(Conversation::between($me, $other)->getKey());
     }
 
     public function open(int $conversationId): void
     {
         $this->conversationId = $conversationId;
-        $this->reset(['body', 'offerPlayerId', 'offerAmount', 'counterAmount', 'counteringOfferId']);
+        $this->reset(['body', 'offerPlayerId', 'offerAmount', 'counterAmount', 'counteringOfferId', 'error']);
 
-        $this->conversation()?->markReadBy($this->user());
+        $user = $this->user();
+        $conversation = $this->conversation();
+
+        if ($user !== null && $conversation !== null) {
+            $conversation->markReadBy($user);
+        }
+    }
+
+    public function close(): void
+    {
+        $this->conversationId = null;
     }
 
     public function send(): void
     {
+        $user = $this->user();
         $conversation = $this->conversation();
 
-        if ($conversation === null || blank($this->body)) {
+        if ($user === null || $conversation === null || blank($this->body)) {
             return;
         }
 
         Message::create([
             'conversation_id' => $conversation->getKey(),
-            'user_id' => $this->user()->getKey(),
+            'user_id' => $user->getKey(),
             'body' => $this->body,
         ]);
 
         $this->body = '';
-        $conversation->markReadBy($this->user());
+        $conversation->markReadBy($user);
     }
 
     /**
@@ -142,8 +187,7 @@ trait ChatScreen
      */
     public function offerableOptions(): array
     {
-        $conversation = $this->conversation();
-        $otherClub = $conversation?->other($this->user())?->club;
+        $otherClub = $this->conversation()?->other($this->user())?->club;
 
         if (! $this->mayOffer() || $otherClub === null) {
             return [];
@@ -171,18 +215,23 @@ trait ChatScreen
      */
     public function mayOffer(): bool
     {
-        $conversation = $this->conversation();
+        $user = $this->user();
 
-        return $this->user()->isCoach()
-            && $this->user()->club_id !== null
-            && $conversation?->other($this->user())?->isCoach() === true;
+        return $user?->isCoach() === true
+            && $user->club_id !== null
+            && $this->conversation()?->other($user)?->isCoach() === true;
     }
 
     public function sendOffer(): void
     {
+        $user = $this->user();
         $conversation = $this->conversation();
 
-        if ($conversation === null || ! $this->mayOffer() || blank($this->offerPlayerId) || blank($this->offerAmount)) {
+        if ($user === null || $conversation === null || ! $this->mayOffer()) {
+            return;
+        }
+
+        if (blank($this->offerPlayerId) || blank($this->offerAmount)) {
             return;
         }
 
@@ -190,34 +239,28 @@ trait ChatScreen
             Offer::create([
                 'conversation_id' => $conversation->getKey(),
                 'player_id' => (int) $this->offerPlayerId,
-                'from_club_id' => $this->user()->club_id,
+                'from_club_id' => $user->club_id,
                 'amount' => (int) $this->offerAmount,
                 'status' => Offer::STATUS_SENT,
-                'moved_by' => $this->user()->getKey(),
+                'moved_by' => $user->getKey(),
             ]);
         } catch (ValidationException $exception) {
-            Notification::make()->danger()->title($exception->validator->errors()->first())->send();
+            $this->error = $exception->validator->errors()->first();
 
             return;
         }
 
-        $this->reset(['offerPlayerId', 'offerAmount']);
+        $this->reset(['offerPlayerId', 'offerAmount', 'error']);
     }
 
     public function acceptOffer(int $offerId): void
     {
-        $this->answer($offerId, fn (Offer $offer) => app(OfferService::class)->accept($offer, $this->user()));
-
-        Notification::make()
-            ->success()
-            ->title('Oferta aceptada')
-            ->body('El administrador la verá pendiente de ejecutar; el traspaso lo registra él.')
-            ->send();
+        $this->answer($offerId, fn (Offer $offer, User $user) => app(OfferService::class)->accept($offer, $user));
     }
 
     public function rejectOffer(int $offerId): void
     {
-        $this->answer($offerId, fn (Offer $offer) => app(OfferService::class)->reject($offer, $this->user()));
+        $this->answer($offerId, fn (Offer $offer, User $user) => app(OfferService::class)->reject($offer, $user));
     }
 
     public function startCounter(int $offerId): void
@@ -236,7 +279,7 @@ trait ChatScreen
 
         $this->answer(
             $this->counteringOfferId,
-            fn (Offer $offer) => app(OfferService::class)->counter($offer, $this->user(), $amount),
+            fn (Offer $offer, User $user) => app(OfferService::class)->counter($offer, $user, $amount),
         );
 
         $this->reset(['counteringOfferId', 'counterAmount']);
@@ -244,50 +287,37 @@ trait ChatScreen
 
     public function mayAnswer(Offer $offer): bool
     {
-        return app(OfferService::class)->mayAnswer($offer, $this->user());
+        $user = $this->user();
+
+        return $user !== null && app(OfferService::class)->mayAnswer($offer, $user);
     }
 
     public function unreadTotal(): int
     {
-        return static::unreadCount();
+        $user = $this->user();
+
+        return $user === null ? 0 : Conversation::unreadTotalFor($user);
     }
 
-    /**
-     * Para la insignia del menú, que se pinta sin que la página exista todavía:
-     * de ahí que sea estática y no dependa del componente.
-     */
-    public static function unreadCount(): int
+    public function render()
     {
-        $user = auth()->user();
-
-        if ($user === null) {
-            return 0;
-        }
-
-        return Conversation::query()
-            ->whereHas('participants', fn (Builder $query) => $query->whereKey($user->getKey()))
-            ->with('participants')
-            ->get()
-            ->sum(fn (Conversation $conversation) => $conversation->unreadFor($user));
+        return view('livewire.chat');
     }
 
     private function answer(int $offerId, callable $move): void
     {
+        $user = $this->user();
         $offer = Offer::query()->with('conversation.participants')->find($offerId);
 
-        if ($offer === null) {
+        if ($user === null || $offer === null) {
             return;
         }
 
         try {
-            $move($offer);
+            $move($offer, $user);
+            $this->error = null;
         } catch (ValidationException $exception) {
-            Notification::make()->danger()->title($exception->validator->errors()->first())->send();
+            $this->error = $exception->validator->errors()->first();
         }
-    }
-
-    private function user(): User
-    {
-        return auth()->user();
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Club\Pages\Chat as CoachChat;
 use App\Filament\Resources\Offers\OfferResource;
 use App\Filament\Resources\Offers\Pages\ListOffers;
+use App\Livewire\Chat;
 use App\Models\BudgetMovement;
 use App\Models\Club;
 use App\Models\Conversation;
@@ -17,7 +17,6 @@ use App\Models\Transfer;
 use App\Models\User;
 use App\Services\BudgetService;
 use App\Services\OfferService;
-use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -84,9 +83,8 @@ class OfferTest extends TestCase
     public function test_a_coach_offers_for_a_player_of_the_other_club(): void
     {
         $this->actingAs($this->buyer, 'club');
-        Filament::setCurrentPanel('club');
 
-        Livewire::test(CoachChat::class)
+        Livewire::test(Chat::class)
             ->call('open', $this->conversation->id)
             ->set('offerPlayerId', (string) $this->player->id)
             ->set('offerAmount', '250000')
