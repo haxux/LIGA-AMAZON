@@ -3,6 +3,8 @@
 use App\Http\Controllers\Site\ClubProfileController;
 use App\Http\Controllers\Site\ChatController;
 use App\Http\Controllers\Site\ClubsController;
+use App\Http\Controllers\Site\CupController;
+use App\Http\Controllers\Site\CupsController;
 use App\Http\Controllers\Site\FixturesController;
 use App\Http\Controllers\Site\GameController;
 use App\Http\Controllers\Site\NewsController;
@@ -36,6 +38,10 @@ Route::middleware('throttle:60,1')->group(function (): void {
     // La única página del sitio que pide sesión: el chat de técnicos y
     // presidentes. Estaba dentro de los dos paneles y allí una conversación
     // competía con el menú lateral por un carril estrecho.
+    // Las copas, al lado de los equipos: son la otra competición de la
+    // temporada, y no caben en la clasificación porque no tienen tabla.
+    Route::get('/copas', CupsController::class)->name('site.cups.index');
+    Route::get('/copas/{cup}', CupController::class)->name('site.cups.show');
     Route::get('/chat', ChatController::class)->name('site.chat');
     Route::get('/noticias', [NewsController::class, 'index'])->name('site.news.index');
     Route::get('/noticias/{slug}', [NewsController::class, 'show'])->name('site.news.show');

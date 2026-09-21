@@ -83,6 +83,35 @@ class Game extends Model
         return $this->cup_tie_id !== null || $this->cup_group_id !== null;
     }
 
+    /**
+     * Cómo se llama la competición de este partido, dicha para una persona:
+     * «Jornada 7», «Copa Amazonas · Semifinal» o «Copa Amazonas · Grupo A».
+     *
+     * Vive aquí y no en cada vista porque lo pintan tres: el calendario de un
+     * club, el detalle del partido y el cuadro de la copa.
+     */
+    public function competitionLabel(): string
+    {
+        if ($this->cup_tie_id !== null) {
+            $tie = $this->cupTie;
+
+            return trim(($tie?->round?->cup?->name ?? 'Copa').' · '.($tie?->round?->name ?? ''), ' ·');
+        }
+
+        if ($this->cup_group_id !== null) {
+            $group = $this->cupGroup;
+
+            return trim(($group?->cup?->name ?? 'Copa').' · Grupo '.($group?->name ?? ''), ' ·');
+        }
+
+        return $this->matchday === null ? 'Sin jornada' : 'Jornada '.$this->matchday->number;
+    }
+
+    public function cup(): ?Cup
+    {
+        return $this->cupTie?->round?->cup ?? $this->cupGroup?->cup;
+    }
+
     public function cupTie(): BelongsTo
     {
         return $this->belongsTo(CupTie::class, 'cup_tie_id');

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * Una copa: la competición de la temporada que no es una liga.
@@ -53,7 +54,7 @@ class Cup extends Model
      * Los equipos apuntados, que pueden venir de divisiones distintas: es
      * justamente lo que una división no sabe hacer.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough<Team, CupTeam, $this>
+     * @return HasManyThrough<Team, CupTeam, $this>
      */
     public function teams()
     {

@@ -1,13 +1,15 @@
-@props(['game', 'matchdayNumber' => null])
+@props(['game', 'matchdayNumber' => null, 'label' => null])
 
 @php
     $isPlayed = $game->home_score !== null && $game->away_score !== null;
-    $number = $matchdayNumber ?? $game->matchday->number;
+    // Una etiqueta cualquiera —«Jornada 7» o «Copa Amazonas · Semifinal»—, con
+    // el número suelto todavía admitido por las pantallas que lo pasan así.
+    $caption = $label ?? ($matchdayNumber !== null ? 'Jornada '.$matchdayNumber : $game->competitionLabel());
 @endphp
 
 <a href="{{ route('site.games.show', $game) }}"
    class="block rounded-[5px] border-t-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
-    <div class="mb-3 font-mono text-[9px] tracking-[0.1em] text-white/40">JORNADA {{ $number }}</div>
+    <div class="mb-3 truncate font-mono text-[9px] tracking-[0.1em] text-white/40">{{ mb_strtoupper($caption) }}</div>
 
     <div class="flex items-center justify-between gap-2">
         <span class="flex min-w-0 items-center gap-2">

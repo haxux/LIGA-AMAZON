@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\Games\Schemas;
 
 use App\Filament\Support\TeamOptions;
+use App\Models\CupGroup;
+use App\Models\CupTie;
+use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Team;
 use Closure;
@@ -18,14 +21,109 @@ use Illuminate\Database\Eloquent\Builder;
 
 class GameForm
 {
+    /**
+     * Dónde se juega este partido. Desde la Fase 15 hay tres sitios posibles —la
+     * jornada de una liga, el cruce de una copa o el grupo de una copa— y un
+     * partido pertenece exactamente a uno: el guard de `Game` lo exige, así que
+     * elegir aquí limpia los otros dos.
+     *
+     * `competition` no es una columna: es la pregunta que hace falta para saber
+     * cuál de los tres campos enseñar.
+     *
+     * @var array<string, string>
+     */
+    public const COMPETITIONS = [
+        'league' => 'League matchday',
+        'tie' => 'Cup tie',
+        'group' => 'Cup group',
+    ];
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
             ->components([
+                Select::make('competition')
+                    ->label('Competition')
+                    ->options(self::COMPETITIONS)
+                    ->default('league')
+                    ->required()
+                    ->native(false)
+                    ->live()
+                    ->dehydrated(false)
+                    // Al abrir un partido ya guardado, la competición se deduce
+                    // de él: no es una columna, así que nadie la trae puesta.
+                    ->afterStateHydrated(function (Select $component, mixed $state, ?Game $record): void {
+                        if (filled($state)) {
+                            return;
+                        }
+
+                        $component->state(match (true) {
+                            $record?->cup_tie_id !== null => 'tie',
+                            $record?->cup_group_id !== null => 'group',
+                            default => 'league',
+                        });
+                    })
+                    ->afterStateUpdated(function (Set $set): void {
+                        $set('matchday_id', null);
+                        $set('cup_tie_id', null);
+                        $set('cup_group_id', null);
+                        $set('group_matchday', null);
+                        $set('home_team_id', null);
+                        $set('away_team_id', null);
+                    }),
+
+                Select::make('cup_tie_id')
+                    ->label('Tie')
+                    ->options(fn (): array => CupTie::query()
+                        ->with(['round.cup', 'homeTeam.club', 'awayTeam.club'])
+                        ->get()
+                        ->mapWithKeys(fn (CupTie $tie) => [$tie->id => sprintf(
+                            '%s · %s · %s vs %s',
+                            $tie->round?->cup?->name,
+                            $tie->round?->name,
+                            $tie->homeTeam?->name,
+                            $tie->awayTeam?->name,
+                        )])
+                        ->all())
+                    ->visible(fn (Get $get): bool => $get('competition') === 'tie')
+                    ->required(fn (Get $get): bool => $get('competition') === 'tie')
+                    ->searchable()
+                    ->live()
+                    // Los dos equipos del cruce vienen puestos: en una ida y
+                    // vuelta se le da la vuelta a mano, que es el único caso.
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        $tie = CupTie::query()->find($state);
+                        $set('home_team_id', $tie?->home_team_id);
+                        $set('away_team_id', $tie?->away_team_id);
+                    }),
+
+                Select::make('cup_group_id')
+                    ->label('Group')
+                    ->options(fn (): array => CupGroup::query()
+                        ->with('cup')
+                        ->get()
+                        ->mapWithKeys(fn (CupGroup $group) => [$group->id => "{$group->cup?->name} · {$group->name}"])
+                        ->all())
+                    ->visible(fn (Get $get): bool => $get('competition') === 'group')
+                    ->required(fn (Get $get): bool => $get('competition') === 'group')
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(function (Set $set): void {
+                        $set('home_team_id', null);
+                        $set('away_team_id', null);
+                    }),
+
+                TextInput::make('group_matchday')
+                    ->label('Group matchday')
+                    ->numeric()
+                    ->minValue(1)
+                    ->visible(fn (Get $get): bool => $get('competition') === 'group'),
+
                 Select::make('matchday_id')
+                    ->visible(fn (Get $get): bool => ($get('competition') ?? 'league') === 'league')
+                    ->required(fn (Get $get): bool => ($get('competition') ?? 'league') === 'league')
                     ->relationship('matchday', 'number')
                     ->getOptionLabelFromRecordUsing(fn (Matchday $record): string => "{$record->season->name} · {$record->division->name} · MD {$record->number}")
-                    ->required()
                     ->searchable()
                     ->preload()
                     // The team Selects below are scoped to this matchday's
@@ -90,6 +188,23 @@ class GameForm
      */
     private static function teamOptions(Get $get, mixed $livewire): array
     {
+        // En un cruce juegan los dos de siempre; en un grupo, los apuntados a
+        // él; en una jornada, los de su división.
+        if (filled($get('cup_tie_id'))) {
+            $tie = CupTie::query()->with(['homeTeam.club', 'awayTeam.club'])->find($get('cup_tie_id'));
+
+            return TeamOptions::for(fn (Builder $query) => $query->whereIn('id', array_filter([
+                $tie?->home_team_id,
+                $tie?->away_team_id,
+            ])));
+        }
+
+        if (filled($get('cup_group_id'))) {
+            $group = CupGroup::query()->with('participants')->find($get('cup_group_id'));
+
+            return TeamOptions::for(fn (Builder $query) => $query->whereIn('id', $group?->participants->pluck('team_id') ?? []));
+        }
+
         $divisionId = static::divisionId($get, $livewire);
 
         return TeamOptions::for(fn (Builder $query) => $query->where('division_id', $divisionId));
@@ -105,6 +220,12 @@ class GameForm
      */
     private static function divisionRule(Get $get, mixed $livewire): Closure
     {
+        // Un partido de copa no tiene división que respetar: es de otra
+        // competición, y cruzar divisiones es justamente lo que hace.
+        if (filled($get('cup_tie_id')) || filled($get('cup_group_id'))) {
+            return static function (): void {};
+        }
+
         $divisionId = static::divisionId($get, $livewire);
 
         return static function (string $attribute, mixed $value, Closure $fail) use ($divisionId): void {

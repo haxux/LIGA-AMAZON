@@ -24,11 +24,19 @@
 @endphp
 
 <x-layouts.site :title="$game->homeTeam?->name.' – '.$game->awayTeam?->name.' — Liga Amazon'">
+    @php($cup = $game->cup())
+
     <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/50">
-        <a href="{{ route('site.fixtures', ['temporada' => $matchday?->season_id]) }}" class="hover:text-ink">PARTIDOS</a>
-        @if ($matchday?->division) · {{ mb_strtoupper($matchday->division->name) }} @endif
-        @if ($matchday) · JORNADA {{ $matchday->number }} @endif
-        @if ($matchday?->season) · {{ mb_strtoupper($matchday->season->name) }} @endif
+        @if ($cup)
+            <a href="{{ route('site.cups.show', $cup) }}" class="hover:text-ink">{{ mb_strtoupper($cup->name) }}</a>
+            · {{ mb_strtoupper($game->competitionLabel()) }}
+            @if ($cup->season) · {{ mb_strtoupper($cup->season->name) }} @endif
+        @else
+            <a href="{{ route('site.fixtures', ['temporada' => $matchday?->season_id]) }}" class="hover:text-ink">PARTIDOS</a>
+            @if ($matchday?->division) · {{ mb_strtoupper($matchday->division->name) }} @endif
+            @if ($matchday) · JORNADA {{ $matchday->number }} @endif
+            @if ($matchday?->season) · {{ mb_strtoupper($matchday->season->name) }} @endif
+        @endif
     </div>
 
     {{-- El marcador, que es lo que se viene a ver. --}}
