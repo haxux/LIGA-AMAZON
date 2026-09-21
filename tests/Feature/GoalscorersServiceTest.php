@@ -64,6 +64,27 @@ class GoalscorersServiceTest extends TestCase
         $this->assertSame(3, $row->count);
     }
 
+    /**
+     * El filtro por equipo es lo que la ficha pública de un club necesita
+     * (Fase 11): el mismo cómputo, acotado a su plantilla de esa temporada.
+     */
+    public function test_a_team_filter_narrows_the_board_to_that_squad(): void
+    {
+        $season = Season::factory()->create();
+        $game = $this->makeGame($season);
+        $ours = Player::factory()->create(['team_id' => $game->home_team_id]);
+        $theirs = Player::factory()->create(['team_id' => $game->away_team_id]);
+
+        GameEvent::factory()->for($game)->for($ours)->goal()->create();
+        GameEvent::factory()->for($game)->for($theirs)->goal()->create();
+        GameEvent::factory()->for($game)->for($theirs)->goal()->create();
+
+        $rows = (new GoalscorersService)->topScorers($season, 10, $game->homeTeam);
+
+        $this->assertCount(1, $rows);
+        $this->assertTrue($rows->first()->player->is($ours));
+    }
+
     public function test_events_from_another_season_are_excluded(): void
     {
         $season = Season::factory()->create();

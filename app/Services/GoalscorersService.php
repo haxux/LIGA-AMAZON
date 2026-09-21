@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\GameEvent;
 use App\Models\Player;
 use App\Models\Season;
+use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -16,29 +17,40 @@ use Illuminate\Support\Facades\DB;
 final class GoalscorersService
 {
     /**
+     * @param  ?Team  $team  narrows the board to one club's season squad
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topScorers(Season $season, ?int $limit = 10): Collection
+    public function topScorers(Season $season, ?int $limit = 10, ?Team $team = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_GOAL, $limit);
+        return $this->leaderboard($season, GameEvent::TYPE_GOAL, $limit, $team);
     }
 
     /**
+     * @param  ?Team  $team  narrows the board to one club's season squad
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topAssisters(Season $season, ?int $limit = 10): Collection
+    public function topAssisters(Season $season, ?int $limit = 10, ?Team $team = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_ASSIST, $limit);
+        return $this->leaderboard($season, GameEvent::TYPE_ASSIST, $limit, $team);
     }
 
     /**
+     * El filtro por equipo es un parámetro y no un servicio aparte (design
+     * D12): la ficha de un club necesita el mismo cómputo, acotado a quienes
+     * estuvieron en su plantilla esa temporada. La pertenencia es el puente,
+     * porque los eventos cuelgan del jugador y un cedido jugó en dos clubes.
+     *
      * @return Collection<int, ScorerRow>
      */
-    private function leaderboard(Season $season, string $type, ?int $limit): Collection
+    private function leaderboard(Season $season, string $type, ?int $limit, ?Team $team = null): Collection
     {
         $counts = GameEvent::query()
             ->where('type', $type)
             ->whereHas('game.matchday', fn (Builder $query) => $query->where('season_id', $season->getKey()))
+            ->when($team, fn (Builder $query, Team $team) => $query->whereHas(
+                'player.memberships',
+                fn (Builder $memberships) => $memberships->where('team_id', $team->getKey()),
+            ))
             ->groupBy('player_id')
             ->pluck(DB::raw('COUNT(*)'), 'player_id');
 

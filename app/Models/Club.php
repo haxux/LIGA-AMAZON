@@ -41,6 +41,16 @@ class Club extends Model
         return $this->hasOne(Stadium::class);
     }
 
+    /**
+     * El director técnico del club, si tiene uno. Es una relación de uno a uno
+     * por decisión cerrada —un técnico por club, un club por técnico— y el
+     * invariante lo sostiene `User::booted()`, no el esquema.
+     */
+    public function coach(): HasOne
+    {
+        return $this->hasOne(User::class)->where('role', User::ROLE_COACH);
+    }
+
     public function trophies(): HasMany
     {
         return $this->hasMany(Trophy::class);

@@ -42,6 +42,44 @@ class Lineup extends Model
 
     public const SLOTS = 11;
 
+    /**
+     * Las líneas de una formación, cada una con los números de hueco que le
+     * tocan, empezando por el portero. Vive aquí y no en la página del panel
+     * porque la ficha pública dibuja el mismo campo: dos copias de este
+     * reparto se separarían en cuanto una formación cambiara.
+     *
+     * @return array<int, array<int, int>>
+     */
+    public static function rowsFor(string $formation): array
+    {
+        $rows = [];
+        $slot = 1;
+
+        foreach ([1, ...(self::FORMATIONS[$formation] ?? [])] as $count) {
+            $row = [];
+
+            for ($i = 0; $i < $count; $i++) {
+                $row[] = $slot++;
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Las líneas de ESTA alineación: [[1], [2,3,4,5], [6,7,8], [9,10,11]] para
+     * un 4-3-3. Sustituye a la versión que devolvía sólo el tamaño de cada
+     * línea, que no usaba nadie y obligaba a rehacer la numeración en la vista.
+     *
+     * @return array<int, array<int, int>>
+     */
+    public function rows(): array
+    {
+        return self::rowsFor($this->formation);
+    }
+
     protected static function booted(): void
     {
         static::saving(function (Lineup $lineup): void {
@@ -61,16 +99,5 @@ class Lineup extends Model
     public function slots(): HasMany
     {
         return $this->hasMany(LineupSlot::class)->orderBy('slot');
-    }
-
-    /**
-     * Las líneas de la formación, con el portero delante: [1, 4, 4, 2] para un
-     * 4-4-2. Los huecos se numeran 1..11 recorriéndolas en ese orden.
-     *
-     * @return array<int, int>
-     */
-    public function rows(): array
-    {
-        return [1, ...self::FORMATIONS[$this->formation]];
     }
 }

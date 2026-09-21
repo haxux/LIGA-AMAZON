@@ -93,20 +93,7 @@ class StartingXi extends Page
      */
     public function rows(): array
     {
-        $rows = [];
-        $slot = 1;
-
-        foreach ([1, ...Lineup::FORMATIONS[$this->formation]] as $count) {
-            $row = [];
-
-            for ($i = 0; $i < $count; $i++) {
-                $row[] = $slot++;
-            }
-
-            $rows[] = $row;
-        }
-
-        return $rows;
+        return Lineup::rowsFor($this->formation);
     }
 
     /**
