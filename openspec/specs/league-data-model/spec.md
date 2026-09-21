@@ -208,6 +208,11 @@ eleven describes that season's squad and no other. It MUST store slots, numbered
 across the formation's lines with the goalkeeper first, and never coordinates: pixels would
 tie the record to the pitch as drawn today.
 
+The formation MUST come from a closed list of eight — 4-4-2, 4-3-3, 4-2-3-1, 4-1-4-1, 4-5-1,
+3-5-2, 3-4-3 and 5-3-2 — each declared as its outfield lines, which is what lets the pitch be
+drawn from the stored slot alone. A formation outside the list MUST be rejected on save, by
+the model and not only by the form, as with every other vocabulary here.
+
 #### Scenario: A trophy outlives the season it was won in
 
 - GIVEN a club that won a cup in a past season

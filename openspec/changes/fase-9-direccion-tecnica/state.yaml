@@ -1,7 +1,7 @@
 change: fase-9-direccion-tecnica
 title: "Fases 9-13 — Dirección Técnica"
 artifact_store: openspec
-last_updated: 2026-09-20
+last_updated: 2026-09-21
 tasks_phase_completed: true
 apply_phase_completed: true
 verify_phase_completed: false
@@ -60,12 +60,27 @@ phases:
       hace pluck y filtra por ella, de ahí TeamOptions. Incidente registrado: se
       corrió migrate:fresh sobre la base de DESARROLLO y se perdió lo que el
       propietario tenía en local (producción intacta); se repobló con el seed.
+
+      Fase 10 aplicada en la rama fase-10/1-plantilla-trofeos, en tres commits
+      (plantilla, trofeos y enfrentamientos; once ideal; y el cierre con lo que
+      faltaba). Suite de 299 a 340. Tres migraciones, todas aditivas, así que
+      esta fase no tiene el riesgo de la 9 y no hizo falta ensayo contra una
+      copia de producción. Dos hallazgos anotados en el código: Livewire
+      reserva $slots en un componente y una propiedad pública con ese nombre
+      revienta el render con "Call to a member function getName() on int" (de
+      ahí $picks); y un SelectFilter ->relationship('matchday', 'number')
+      ofrece una fila por jornada de CADA división y temporada, varias "1"
+      indistinguibles, así que la jornada se filtra por número. NOTA: ni la
+      Fase 9 ni la 10 están subidas todavía — el propietario decidió el
+      2026-09-21 construir primero y subir después.
   tasks:
     status: done
     artifact: openspec/changes/fase-9-direccion-tecnica/tasks.md
     note: >
-      Sólo la fase 9, en cinco unidades; las siguientes quedan como esqueleto.
-      La unidad 1 lleva dos restricciones aprendidas en el cambio anterior: el
+      Fases 9 y 10 detalladas, una debajo de la otra en el mismo artefacto; las
+      11 a 13 siguen como esqueleto al final.
+      De la 9, la unidad 1 lleva dos restricciones aprendidas en el cambio
+      anterior: el
       índice único nuevo entra antes de soltar el viejo (errno 1553 en MySQL,
       donde el viejo sostiene la FK de season_id), y la migración se prueba
       contra un TiDB desechable antes de acercarse a producción.

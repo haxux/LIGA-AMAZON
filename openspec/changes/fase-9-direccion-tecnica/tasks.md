@@ -3,8 +3,8 @@
 **Estado: aplicada.** 299 tests en verde (línea base 254), Pint limpio, y las tres
 migraciones ensayadas —ida y vuelta— contra una copia restaurada de producción.
 
-Las fases 10 a 13 recibirán sus tareas cuando les toque; aquí sólo se detalla la 9, y al final
-queda el esqueleto de las siguientes para que el orden no se pierda.
+Cada fase del bloque recibe sus tareas cuando le toca y se queda aquí debajo, en orden; las
+que aún no han empezado siguen como esqueleto al final. La 10 está a continuación.
 
 **Rama**: `fase-9/1-club-y-rol-tecnico`
 
@@ -90,9 +90,80 @@ queda el esqueleto de las siguientes para que el orden no se pierda.
 - [x] 5.3 RED: sin sesión, la cabecera pública no muestra ni enlace ni escudo, y ninguna
       página pública cambia respecto de hoy.
 
+---
+
+# Tasks: Fase 10 — Plantilla, Trofeos, Mis Enfrentamientos y Once ideal
+
+**Estado: aplicada.** 340 tests en verde (línea base 299, la que dejó la Fase 9), Pint limpio
+sobre lo tocado. Sin migraciones de datos: las tres de esta fase sólo añaden
+(`players.specific_position`, `trophies`, `lineups` + `lineup_slots`), así que revertirla es
+revertir los commits y soltar esas tablas.
+
+**Rama**: `fase-10/1-plantilla-trofeos`
+
+## Unidad 1 — La posición específica (TDD)
+
+- [x] 1.1 RED: `players.specific_position` existe, es opcional, y una específica que no
+      pertenece a la general se rechaza al guardar.
+- [x] 1.2 Migración aditiva: `specific_position` (4 caracteres, nullable) después de
+      `position`. Opcional a propósito: los 29 jugadores que ya están en la liga no tienen
+      ninguna, y ponérsela es trabajo del técnico.
+- [x] 1.3 Modelo: las 27 posiciones repartidas por posición general en `Player`, y un guard
+      en `booted()` que rechaza el cruce. En el modelo y no sólo en el formulario, porque la
+      ficha pública agrupa por la general y un portero de extremo la descolocaría.
+
+## Unidad 2 — Plantilla, Trofeos y Mis Enfrentamientos en `/club` (TDD)
+
+- [x] 2.1 RED: cada módulo lista sólo lo del club del técnico, y una URL de otro club da 404
+      pasando por el kernel (no con `Livewire::test()`, que se salta el middleware).
+- [x] 2.2 `SquadResource`: el técnico ajusta posición general y específica; el nombre queda
+      deshabilitado y no hay alta ni baja —eso es del admin, y en la Fase 12 serán fichajes.
+      El dorsal se lee de la pertenencia de la temporada vigente.
+- [x] 2.3 `TrophyResource` en `/admin` (club, temporada y nombre, sin repetir el mismo trofeo
+      dos veces en una temporada) y su gemelo de sólo lectura en `/club`.
+- [x] 2.4 `FixtureResource`: los partidos del club, jugados y por jugar. La consulta compara
+      por **club** y no por equipo, para que un partido de una temporada anterior siga siendo
+      suyo.
+
+## Unidad 3 — Once ideal (TDD)
+
+- [x] 3.1 RED: sólo se elige entre la plantilla de la temporada vigente; cambiar de formación
+      conserva a quien sigue cabiendo; un once a medias se guarda; el mismo jugador dos veces
+      se rechaza.
+- [x] 3.2 Migración aditiva: `lineups` (uno por equipo-temporada) y `lineup_slots` con el
+      hueco 1..11. **CONSTRAINT**: se guarda el hueco, nunca coordenadas (design D6).
+- [x] 3.3 Página Livewire dentro del panel, no un recurso (design D5).
+      **CONSTRAINT**: Livewire reserva `$slots` en un componente; una propiedad pública con
+      ese nombre revienta el render con *"Call to a member function getName() on int"*. Las
+      elecciones viven en `$picks`.
+
+## Unidad 4 — Los dos cabos sueltos (TDD)
+
+- [x] 4.1 RED: el administrador asigna la posición específica desde `/admin`, las opciones
+      siguen a la general y cambiar la general suelta la anterior. La propuesta la quería
+      *"editable por el técnico y por el admin"* y sólo estaba hecha la mitad.
+- [x] 4.2 Los campos se añaden al `PlayerForm` compartido, así que valen igual en
+      `PlayerResource` y en el gestor de jugadores de `ClubResource`. Columna en ambas tablas.
+- [x] 4.3 RED + verde: el filtro de jornada de Mis Enfrentamientos filtra por **número** y
+      sólo ofrece los números que el club juega. Con `->relationship('matchday', 'number')`
+      ofrecía una fila por jornada de cada división y temporada: varias "1" indistinguibles,
+      y elegir la equivocada dejaba la tabla vacía.
+- [x] 4.4 De paso, dos tests con nombre de temporada al azar: `SeasonFactory` lo saca de un
+      año entre 2000 y 2099, así que uno de cada cien choca contra el unique de
+      `seasons.name`. Se vio fallar en una corrida completa y se fijaron los nombres.
+
+## Verificación
+
+- [x] V.1 `php artisan test`: 340/340.
+- [x] V.2 Pint limpio sobre `app/` y `tests/`. **Nota**: `database/factories/DivisionFactory.php`
+      y `NewsFactory.php` fallan `fully_qualified_strict_types` desde antes de esta fase; no
+      se tocan aquí para no mezclarlo con lo de la fase.
+- [ ] V.3 Probar en el navegador los cuatro módulos con una cuenta de técnico real.
+- [ ] V.4 Desplegar. Las tres migraciones son aditivas y el arranque del contenedor las aplica
+      solo (`DESPLIEGUE.md` §5.1).
+
 ## Fases siguientes (esqueleto)
 
-- **Fase 10** — Plantilla (posición específica, once ideal), Trofeos, Mis Enfrentamientos.
 - **Fase 11** — Equipos en la parte pública: listado y ficha con sus seis pestañas.
 - **Fase 12** — Contabilidad: valores, presupuesto, fichajes, ventas y préstamos.
 - **Fase 13** — Chat y ofertas.
