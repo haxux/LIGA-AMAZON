@@ -39,6 +39,25 @@ class CoachPublicAccessTest extends TestCase
     }
 
     /**
+     * El escudo de la liga, en las tres formas que un navegador busca: el .ico
+     * para quien pide /favicon.ico a secas, el png grande para la pestaña y el
+     * de Apple para quien lo guarda en la pantalla de inicio.
+     */
+    public function test_every_page_carries_the_leagues_favicon(): void
+    {
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('rel="icon"', false)
+            ->assertSee(asset('favicon.ico'), false)
+            ->assertSee(asset('favicon.png'), false)
+            ->assertSee(asset('apple-touch-icon.png'), false);
+
+        foreach (['favicon.ico', 'favicon.png', 'apple-touch-icon.png'] as $file) {
+            $this->assertFileExists(public_path($file), "falta {$file} en public/");
+        }
+    }
+
+    /**
      * Por el guard `club`, que es el de su panel: `auth()` a secas es el del
      * administrador, y con él la cabecera no reconocería a ningún técnico.
      */

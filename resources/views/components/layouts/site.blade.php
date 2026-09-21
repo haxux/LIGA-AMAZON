@@ -6,6 +6,12 @@
 
         <title>{{ $title ?? config('app.name', 'Liga Amazon') }}</title>
 
+        {{-- El escudo de la liga. El .ico va primero porque es lo que pide un
+             navegador que busca /favicon.ico a secas, y los marcadores. --}}
+        <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
+        <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png" sizes="512x512">
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])

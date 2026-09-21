@@ -50,6 +50,8 @@ class ClubPanelProvider extends PanelProvider
             // llegue siquiera al formulario de acceso.
             ->authGuard('club')
             ->login()
+            // El mismo escudo que el sitio: el panel es la misma casa.
+            ->favicon(asset('favicon.png'))
             ->brandName('Mi club')
             ->colors([
                 'primary' => Color::Amber,
