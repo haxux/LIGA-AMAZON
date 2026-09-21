@@ -38,16 +38,58 @@ class CoachPublicAccessTest extends TestCase
             ->assertSee('Acceso técnicos');
     }
 
+    /**
+     * Por el guard `club`, que es el de su panel: `auth()` a secas es el del
+     * administrador, y con él la cabecera no reconocería a ningún técnico.
+     */
     public function test_a_logged_in_coach_sees_their_club_crest_in_the_header(): void
     {
         $club = Club::factory()->create(['name' => 'Manaos FC']);
         $coach = User::factory()->coachOf($club)->create();
 
-        $response = $this->actingAs($coach)->get(route('site.standings'))->assertOk();
+        $response = $this->actingAs($coach, 'club')->get(route('site.standings'))->assertOk();
 
         $response->assertSee('id="coach-club"', false);
         $response->assertSee('Manaos FC');
         $response->assertSee(url('/club'), false);
+    }
+
+    /**
+     * Su club y su chat, a un clic desde cualquier página del sitio.
+     */
+    public function test_a_logged_in_coach_gets_my_team_and_chat_in_the_nav(): void
+    {
+        $season = Season::query()->where('is_current', true)->first();
+        $club = Club::factory()->create(['name' => 'Manaos FC']);
+        $coach = User::factory()->coachOf($club)->create();
+
+        $this->actingAs($coach, 'club')->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('Mi equipo')
+            ->assertSee(route('site.clubs.show', ['club' => $club->id, 'temporada' => $season->id]), false)
+            ->assertSee('Chat')
+            ->assertSee(route('site.chat'), false);
+    }
+
+    public function test_a_visitor_without_a_session_gets_neither(): void
+    {
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertDontSee('Mi equipo')
+            ->assertDontSee(route('site.chat'), false);
+    }
+
+    /**
+     * El chat cuelga de la sesión y no del rol: el presidente entra por la misma
+     * puerta, aunque no dirija ningún club.
+     */
+    public function test_an_administrator_also_gets_the_chat_link(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('Chat')
+            ->assertSee(route('site.chat'), false);
     }
 
     /**
@@ -59,6 +101,7 @@ class CoachPublicAccessTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('site.standings'))
             ->assertOk()
-            ->assertDontSee('id="coach-club"', false);
+            ->assertDontSee('id="coach-club"', false)
+            ->assertDontSee('Mi equipo');
     }
 }

@@ -12,39 +12,113 @@
     </head>
     <body class="min-h-screen bg-brand-weave font-sans text-ink">
         @php
+            // El técnico se lee del guard `club`, el de su panel, que vive en la
+            // misma sesión que el sitio: `auth()` a secas devuelve el guard del
+            // administrador y aquí no diría nada.
+            $coach = auth('club')->user();
+            $coachClub = $coach?->isCoach() ? $coach->club : null;
+            $coachSeason = app(App\Services\SeasonResolver::class)->active();
+
+            // El chat es de técnicos Y presidentes, así que aquí valen las dos
+            // puertas. Con las dos sesiones abiertas manda la del técnico, que
+            // es la que el sitio usa para todo lo demás.
+            $chatUser = $coach ?? auth()->user();
+            $chatUnread = $chatUser ? App\Models\Conversation::unreadTotalFor($chatUser) : 0;
+
+            $boundClub = request()->route('club');
+            $boundClubId = is_object($boundClub) ? $boundClub->getKey() : $boundClub;
+
+            // Estar en la ficha del club propio marca "Mi equipo" y no también
+            // "Equipos": dos subrayados a la vez sólo emborronan dónde estás.
+            $onOwnClub = $coachClub !== null
+                && request()->routeIs('site.clubs.show')
+                && (int) $boundClubId === (int) $coachClub->getKey();
+
             $nav = [
-                ['label' => 'Clasificación', 'route' => 'site.standings', 'pattern' => 'site.standings'],
-                ['label' => 'Partidos', 'route' => 'site.fixtures', 'pattern' => 'site.fixtures'],
-                ['label' => 'Goleadores', 'route' => 'site.scorers', 'pattern' => 'site.scorers'],
-                ['label' => 'Equipos', 'route' => 'site.clubs.index', 'pattern' => 'site.clubs.*'],
-                ['label' => 'Noticias', 'route' => 'site.news.index', 'pattern' => 'site.news.*'],
+                ['label' => 'Clasificación', 'url' => route('site.standings'), 'active' => request()->routeIs('site.standings')],
+                ['label' => 'Partidos', 'url' => route('site.fixtures'), 'active' => request()->routeIs('site.fixtures')],
+                ['label' => 'Estadísticas', 'url' => route('site.scorers'), 'active' => request()->routeIs('site.scorers')],
+                ['label' => 'Equipos', 'url' => route('site.clubs.index'), 'active' => request()->routeIs('site.clubs.*') && ! $onOwnClub],
+                ['label' => 'Noticias', 'url' => route('site.news.index'), 'active' => request()->routeIs('site.news.*')],
             ];
+
+            // Sólo para el técnico: su club y su chat, a un clic desde
+            // cualquier página del sitio. Para el resto de visitantes la
+            // cabecera es exactamente la de siempre (design D14).
+            if ($coachClub) {
+                $nav[] = [
+                    'coach' => true,
+                    'label' => 'Mi equipo',
+                    'url' => route('site.clubs.show', array_filter([
+                        'club' => $coachClub->getKey(),
+                        'temporada' => $coachSeason?->getKey(),
+                    ])),
+                    'active' => $onOwnClub,
+                ];
+
+            }
+
+            // El chat cuelga de la sesión, no del rol: también el presidente
+            // entra por aquí.
+            if ($chatUser) {
+                $nav[] = [
+                    'coach' => true,
+                    'label' => 'Chat',
+                    'url' => route('site.chat'),
+                    'active' => request()->routeIs('site.chat'),
+                    'badge' => $chatUnread,
+                ];
+            }
         @endphp
 
         <header class="sticky top-0 z-40 bg-ink text-white">
-            <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-8 px-6 py-3">
-                <a href="{{ route('site.standings') }}" class="flex items-baseline gap-2 font-display text-[27px] leading-none">
+            {{-- Tres zonas: marca, navegación y el club del técnico. La del
+                 medio es la que cede —`min-w-0 flex-1`, y envuelve dentro de sí
+                 misma— para que al entrar los enlaces del técnico el escudo no
+                 salte a una segunda línea. --}}
+            <div class="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3 lg:gap-6">
+                <a href="{{ route('site.standings') }}" class="flex shrink-0 items-baseline gap-2 font-display text-[22px] leading-none lg:text-[26px]">
                     <span class="font-extrabold text-brand">AMAZON</span>
                     <span class="font-semibold tracking-[0.14em] text-white">TOERNOOIEN</span>
                 </a>
 
-                <nav class="flex flex-wrap items-center gap-7 font-display text-base font-semibold uppercase tracking-[0.12em]">
+                <nav class="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 font-display text-sm font-semibold uppercase tracking-[0.08em] lg:gap-x-5 lg:text-[15px]">
                     @foreach ($nav as $item)
-                        <a href="{{ route($item['route']) }}"
-                           class="border-b-[3px] py-1.5 {{ request()->routeIs($item['pattern']) ? 'border-brand text-white' : 'border-transparent text-white/72' }}">
+                        @if (! empty($item['coach']) && ($nav[$loop->index - 1]['coach'] ?? false) === false)
+                            {{-- Lo del técnico, separado de lo que ve todo el
+                                 mundo: se entiende de un vistazo que es suyo. --}}
+                            <span class="hidden h-4 w-px shrink-0 bg-white/20 lg:block" aria-hidden="true"></span>
+                        @endif
+
+                        <a href="{{ $item['url'] }}"
+                           class="flex items-center gap-1.5 whitespace-nowrap border-b-[3px] py-1.5 {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
                             {{ $item['label'] }}
+
+                            @if (($item['badge'] ?? 0) > 0)
+                                {{-- Los no leídos, visibles desde cualquier
+                                     página: es el aviso que el chat tiene, ya
+                                     que no hay correos ni websockets. --}}
+                                <span class="flex min-w-[1.15rem] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold leading-[1.15rem] text-ink">
+                                    {{ $item['badge'] > 9 ? '9+' : $item['badge'] }}
+                                </span>
+                            @endif
                         </a>
                     @endforeach
                 </nav>
 
                 {{-- Sólo para el director técnico con sesión abierta: para
                      cualquier otro visitante la cabecera queda como estaba. --}}
-                @if (auth()->check() && auth()->user()->isCoach() && auth()->user()->club)
+                @if ($coachClub)
                     <a id="coach-club" href="{{ url('/club') }}"
-                       class="ml-auto flex items-center gap-2 rounded-[4px] border border-white/10 bg-white/[0.06] px-3 py-1.5 hover:bg-white/[0.12]"
-                       title="Ir al panel de {{ auth()->user()->club->name }}">
-                        <x-site.club-crest :club="auth()->user()->club" size="size-[22px]" />
-                        <span class="font-display text-sm font-semibold uppercase tracking-[0.08em] text-white">{{ auth()->user()->club->name }}</span>
+                       class="flex shrink-0 items-center gap-2 rounded-[4px] border border-white/10 bg-white/[0.06] px-2.5 py-1.5 hover:bg-white/[0.12]"
+                       title="Ir al panel de {{ $coachClub->name }}">
+                        <x-site.club-crest :club="$coachClub" size="size-[20px]" />
+                        {{-- El nombre se recorta en vez de empujar: en una
+                             cabecera manda el encuadre, y el escudo ya
+                             identifica al club. --}}
+                        <span class="hidden max-w-[9rem] truncate font-display text-xs font-semibold uppercase tracking-[0.08em] text-white lg:block">
+                            {{ $coachClub->short_name ?: $coachClub->name }}
+                        </span>
                     </a>
                 @endif
             </div>
@@ -73,7 +147,7 @@
                     <div class="flex flex-col gap-2">
                         <span class="font-mono text-[9px] tracking-[0.14em] text-brand">CLUBES</span>
                         <a href="{{ route('site.clubs.index') }}" class="text-sm text-white/60 hover:text-brand">Equipos</a>
-                        <a href="{{ route('site.scorers') }}" class="text-sm text-white/60 hover:text-brand">Goleadores</a>
+                        <a href="{{ route('site.scorers') }}" class="text-sm text-white/60 hover:text-brand">Estadísticas</a>
                     </div>
                     <div class="flex flex-col gap-2">
                         <span class="font-mono text-[9px] tracking-[0.14em] text-brand">SITIO</span>
