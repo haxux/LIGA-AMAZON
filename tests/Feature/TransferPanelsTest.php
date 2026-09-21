@@ -158,12 +158,19 @@ class TransferPanelsTest extends TestCase
             ->assertTableColumnStateSet('contraparte', 'Tapajós SC', $transfer);
     }
 
-    public function test_the_coach_cannot_record_a_transfer(): void
+    /**
+     * El técnico propone —y para eso su panel le deja crear—, pero lo que nace
+     * de su mano es una propuesta; ejecutar sigue siendo del administrador, y su
+     * recurso no existe en el panel del técnico (ver TransferProposalTest).
+     */
+    public function test_the_coach_proposes_but_does_not_execute(): void
     {
         $coach = User::factory()->coachOf($this->selling)->create();
+        $this->actingAs($coach, 'club');
 
-        $this->assertFalse(TransferHistoryResource::canCreate());
-        $this->assertFalse(Gate::forUser($coach)->allows('create', Transfer::class));
-        $this->assertTrue(Gate::forUser(User::factory()->create())->allows('create', Transfer::class));
+        $this->assertTrue(TransferHistoryResource::canCreate());
+        $this->assertTrue(Gate::forUser($coach)->allows('create', Transfer::class));
+
+        $this->get('/admin/transfers/create')->assertRedirect();
     }
 }

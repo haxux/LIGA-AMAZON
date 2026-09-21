@@ -26,9 +26,14 @@ class TransferPolicy
         return in_array($user->club_id, [$transfer->from_club_id, $transfer->to_club_id], true);
     }
 
+    /**
+     * El técnico también crea, pero lo que crea es una PROPUESTA: la página de
+     * su panel fija el estado, y el recurso del administrador —el único que
+     * registra traspasos ya ejecutados— no existe en su panel.
+     */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isCoach();
     }
 
     public function update(User $user, Transfer $transfer): bool

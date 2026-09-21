@@ -313,6 +313,9 @@ class TransferProposalTest extends TestCase
 
         $this->assertFalse(BudgetResource::canCreate());
         $this->get('/club/contabilidad/create')->assertNotFound();
-        $this->assertTrue(Gate::forUser($this->coach)->denies('create', Transfer::class));
+
+        // Lo que sí puede crear es una propuesta de fichaje, que es adonde se ha
+        // mudado lo de proponer.
+        $this->assertTrue(Gate::forUser($this->coach)->allows('create', Transfer::class));
     }
 }
