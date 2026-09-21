@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\UseClubGuard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -35,6 +36,10 @@ class ClubPanelProvider extends PanelProvider
         return $panel
             ->id('club')
             ->path('club')
+            // Guard propio, no el `web` de /admin: ver config/auth.php. Sin
+            // esto, un administrador con sesión abierta impide que un técnico
+            // llegue siquiera al formulario de acceso.
+            ->authGuard('club')
             ->login()
             ->brandName('Mi club')
             ->colors([
@@ -49,6 +54,8 @@ class ClubPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                // Antes de AuthenticateSession, que mira el guard por defecto.
+                UseClubGuard::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,

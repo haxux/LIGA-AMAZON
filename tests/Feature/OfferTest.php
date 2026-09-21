@@ -83,7 +83,7 @@ class OfferTest extends TestCase
 
     public function test_a_coach_offers_for_a_player_of_the_other_club(): void
     {
-        $this->actingAs($this->buyer);
+        $this->actingAs($this->buyer, 'club');
         Filament::setCurrentPanel('club');
 
         Livewire::test(CoachChat::class)

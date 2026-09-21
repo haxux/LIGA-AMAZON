@@ -44,9 +44,13 @@ class ChatTest extends TestCase
         $this->coachB = User::factory()->coachOf($this->clubB)->create(['name' => 'Técnico B']);
     }
 
+    /**
+     * Por el guard `club`, que es el del panel desde la corrección de la Fase
+     * 13: `Filament::auth()` mira ese y no el `web` del administrador.
+     */
     private function asCoach(User $coach): void
     {
-        $this->actingAs($coach);
+        $this->actingAs($coach, 'club');
         Filament::setCurrentPanel('club');
     }
 

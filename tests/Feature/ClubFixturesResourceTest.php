@@ -32,7 +32,7 @@ class ClubFixturesResourceTest extends TestCase
 
         $this->club = Club::factory()->create();
         $this->season = Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
-        $this->actingAs(User::factory()->coachOf($this->club)->create());
+        $this->actingAs(User::factory()->coachOf($this->club)->create(), 'club');
         Filament::setCurrentPanel('club');
     }
 

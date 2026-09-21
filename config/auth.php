@@ -42,6 +42,29 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        /*
+         * El panel del técnico entra por su propia puerta, con el mismo
+         * proveedor de usuarios (Fase 13, corrección).
+         *
+         * Compartir el guard `web` con /admin tenía dos consecuencias, y las dos
+         * se veían al probar: un administrador con sesión abierta que iba a
+         * /club/login era redirigido al panel —`Login::mount()` ve la sesión
+         * como buena porque es el mismo guard— y ahí `canAccessPanel` le
+         * devolvía un 403, de modo que el técnico NUNCA llegaba a ver el
+         * formulario; y entrar como técnico echaba al administrador, porque una
+         * sesión sólo guarda un usuario por guard.
+         *
+         * Con dos guards, Laravel guarda un usuario por cada uno en la MISMA
+         * sesión: se puede tener /admin abierto en una pestaña y /club en otra.
+         * Dentro del panel, `Filament\Http\Middleware\Authenticate` hace
+         * `shouldUse()` del guard del panel, así que `auth()->user()` sigue
+         * devolviendo a quien toca en cada uno.
+         */
+        'club' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

@@ -38,7 +38,7 @@ class BudgetPanelsTest extends TestCase
     private function asCoach(): User
     {
         $coach = User::factory()->coachOf($this->club)->create();
-        $this->actingAs($coach);
+        $this->actingAs($coach, 'club');
         Filament::setCurrentPanel('club');
 
         return $coach;

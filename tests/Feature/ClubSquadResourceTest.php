@@ -32,7 +32,9 @@ class ClubSquadResourceTest extends TestCase
 
         $this->club = Club::factory()->create();
         $this->coach = User::factory()->coachOf($this->club)->create();
-        $this->actingAs($this->coach);
+        // El panel del técnico tiene guard propio desde la corrección de la
+        // Fase 13; entrar por `web` dejaría las peticiones HTTP sin sesión.
+        $this->actingAs($this->coach, 'club');
         Filament::setCurrentPanel('club');
     }
 

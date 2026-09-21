@@ -113,7 +113,7 @@ class TransferPanelsTest extends TestCase
     public function test_the_coach_sees_both_sides_of_their_own_club(): void
     {
         $coach = User::factory()->coachOf($this->selling)->create();
-        $this->actingAs($coach);
+        $this->actingAs($coach, 'club');
         Filament::setCurrentPanel('club');
 
         $out = Transfer::factory()->create([
@@ -143,7 +143,7 @@ class TransferPanelsTest extends TestCase
     public function test_the_history_names_the_operation_from_the_clubs_side(): void
     {
         $coach = User::factory()->coachOf($this->selling)->create();
-        $this->actingAs($coach);
+        $this->actingAs($coach, 'club');
         Filament::setCurrentPanel('club');
 
         $transfer = Transfer::factory()->create([

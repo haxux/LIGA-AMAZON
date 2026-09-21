@@ -36,7 +36,7 @@ class StartingXiTest extends TestCase
         $season = Season::factory()->create(['is_current' => true]);
         $this->club = Club::factory()->create();
         $this->team = Team::factory()->create(['club_id' => $this->club->id, 'season_id' => $season->id]);
-        $this->actingAs(User::factory()->coachOf($this->club)->create());
+        $this->actingAs(User::factory()->coachOf($this->club)->create(), 'club');
         Filament::setCurrentPanel('club');
     }
 

@@ -62,7 +62,7 @@ class PlayerValueTest extends TestCase
     public function test_the_coach_sees_the_value_but_cannot_set_it(): void
     {
         $club = Club::factory()->create();
-        $this->actingAs(User::factory()->coachOf($club)->create());
+        $this->actingAs(User::factory()->coachOf($club)->create(), 'club');
         Filament::setCurrentPanel('club');
 
         $player = Player::factory()->create(['club_id' => $club->id, 'market_value' => 90000]);

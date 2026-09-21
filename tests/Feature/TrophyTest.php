@@ -91,7 +91,7 @@ class TrophyTest extends TestCase
         $own = Trophy::factory()->create(['club_id' => $club->id]);
         $foreign = Trophy::factory()->create();
 
-        $this->actingAs($coach);
+        $this->actingAs($coach, 'club');
         Filament::setCurrentPanel('club');
 
         Livewire::test(ListTrophies::class)

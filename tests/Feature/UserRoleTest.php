@@ -78,7 +78,9 @@ class UserRoleTest extends TestCase
     {
         $coach = User::factory()->coachOf(Club::factory()->create())->create();
 
-        $this->actingAs($coach)->get('/club')->assertSuccessful();
-        $this->actingAs(User::factory()->create())->get('/club')->assertForbidden();
+        $this->actingAs($coach, 'club')->get('/club')->assertSuccessful();
+        // Un administrador con sesión en el guard del técnico —que es lo único
+        // que este panel mira— sigue sin pasar de la puerta.
+        $this->actingAs(User::factory()->create(), 'club')->get('/club')->assertForbidden();
     }
 }
