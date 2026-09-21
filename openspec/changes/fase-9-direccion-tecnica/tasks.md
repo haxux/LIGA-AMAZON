@@ -393,10 +393,22 @@ tablas nuevas, todo aditivo.
 - [x] 4.2 Suite en verde y Pint limpio.
 - [x] 4.3 Marcar tareas, anotar estado y cerrar el bloque de las fases 9 a 13.
 
+## Corregido después, probando en el navegador
+
+- [x] C.1 El hilo con DOS entradas o más reventaba con *"Object of class Carbon could not be
+      converted to int"*, una vez cada cinco segundos por el sondeo. El multiorden de
+      `Collection` no acepta extractores de clave: una función es un COMPARADOR que recibe
+      los dos elementos (`sortByMany()` hace `$prop($a, $b)`). Se ordena con una clave
+      compuesta, y el mismo error de concepto quedaba mal explicado en un comentario de la
+      Fase 11, ahora corregido.
+- [x] C.2 El hueco que lo dejó pasar: un comparador sólo se ejecuta cuando hay dos cosas que
+      comparar, y ningún test pintaba un hilo con más de una entrada. Ahora lo hacen dos, uno
+      por panel.
+
 ## Lo que queda por hacer a mano
 
-- [ ] V.1 Probar el chat en el navegador entre dos cuentas reales, incluido el sondeo: es la
-      única pantalla del bloque que no se puede juzgar del todo con tests.
+- [ ] V.1 Seguir probando el chat en el navegador entre dos cuentas reales: es la única
+      pantalla del bloque que no se puede juzgar del todo con tests.
 - [ ] V.2 Recorrer el circuito entero: oferta, contraoferta, aceptación y firma, y comprobar
       que los dos saldos y la plantilla quedan como deben.
 - [ ] V.3 Desplegar. Las cuatro migraciones son aditivas.
