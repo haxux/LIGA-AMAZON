@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CupTies;
 
 use App\Filament\Resources\CupTies\Pages\ListCupTies;
 use App\Filament\Resources\CupTies\RelationManagers\TieGamesRelationManager;
+use App\Filament\Support\TeamName;
 use App\Filament\Support\TeamOptions;
 use App\Models\CupRound;
 use App\Models\CupTie;
@@ -101,8 +102,8 @@ class CupTieResource extends Resource
             ->columns([
                 TextColumn::make('round.cup.name')->label('Cup')->sortable(),
                 TextColumn::make('round.name')->label('Round')->sortable(),
-                TextColumn::make('homeTeam.name')->label('Home')->searchable(),
-                TextColumn::make('awayTeam.name')->label('Away')->searchable(),
+                TextColumn::make('homeTeam.name')->label('Home')->searchable(query: TeamName::search('homeTeam')),
+                TextColumn::make('awayTeam.name')->label('Away')->searchable(query: TeamName::search('awayTeam')),
                 TextColumn::make('aggregate')
                     ->label('Aggregate')
                     ->state(function (CupTie $record): string {

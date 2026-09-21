@@ -10,6 +10,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class TeamsTable
 {
@@ -19,7 +20,12 @@ class TeamsTable
             ->columns([
                 ImageColumn::make('crest_path')->disk(config('filesystems.uploads'))->circular(),
                 TextColumn::make('club.name')->label('Club')->searchable()->sortable(),
-                TextColumn::make('short_name')->searchable(),
+                // El nombre corto también es del club (Fase 9): buscarlo en
+                // `teams` no encontraría la columna.
+                TextColumn::make('short_name')->searchable(query: fn (Builder $query, string $search): Builder => $query->whereHas(
+                    'club',
+                    fn (Builder $club) => $club->where('short_name', 'like', "%{$search}%"),
+                )),
                 TextColumn::make('season.name')->label('Season')->searchable()->sortable(),
                 TextColumn::make('division.name')->label('Division')->sortable(),
                 TextColumn::make('players_count')->counts('players')->label('Players'),

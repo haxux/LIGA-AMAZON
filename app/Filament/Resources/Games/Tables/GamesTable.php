@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Games\Tables;
 
+use App\Filament\Support\TeamName;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,10 +19,17 @@ class GamesTable
             ->defaultPaginationPageOption(25)
             ->columns([
                 TextColumn::make('matchday.number')->label('Matchday')->sortable(),
-                TextColumn::make('homeTeam.name')->label('Home')->searchable()->sortable(),
+                TextColumn::make('homeTeam.name')
+                    ->label('Home')
+                    // Por el club: `teams` no tiene nombre desde la Fase 9.
+                    ->searchable(query: TeamName::search('homeTeam'))
+                    ->sortable(query: TeamName::sort('home_team_id')),
                 TextColumn::make('home_score')->label('H')->alignCenter(),
                 TextColumn::make('away_score')->label('A')->alignCenter(),
-                TextColumn::make('awayTeam.name')->label('Away')->searchable()->sortable(),
+                TextColumn::make('awayTeam.name')
+                    ->label('Away')
+                    ->searchable(query: TeamName::search('awayTeam'))
+                    ->sortable(query: TeamName::sort('away_team_id')),
                 TextColumn::make('kickoff_at')->dateTime()->sortable(),
             ])
             ->filters([

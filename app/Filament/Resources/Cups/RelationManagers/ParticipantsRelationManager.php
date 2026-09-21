@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Cups\RelationManagers;
 
+use App\Filament\Support\TeamName;
 use App\Filament\Support\TeamOptions;
 use App\Models\Cup;
 use Filament\Actions\CreateAction;
@@ -56,7 +57,10 @@ class ParticipantsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('team_id')
             ->columns([
-                TextColumn::make('team.name')->label('Team')->searchable()->sortable(),
+                TextColumn::make('team.name')
+                    ->label('Team')
+                    ->searchable(query: TeamName::search('team'))
+                    ->sortable(query: TeamName::sort('team_id')),
                 TextColumn::make('team.division.name')->label('Division')->placeholder('—'),
                 TextColumn::make('group.name')->label('Group')->placeholder('—'),
             ])

@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Site\ClubProfileController;
 use App\Http\Controllers\Site\ChatController;
+use App\Http\Controllers\Site\ClubProfileController;
 use App\Http\Controllers\Site\ClubsController;
 use App\Http\Controllers\Site\CupController;
 use App\Http\Controllers\Site\CupsController;
