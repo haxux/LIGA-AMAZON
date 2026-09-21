@@ -84,12 +84,23 @@ phases:
       criterio mezcla fechas con nulos (los partidos se ordenan por una clave
       compuesta), y Lineup ya tenía un rows() que nadie usaba y devolvía el
       tamaño de cada línea en vez de sus huecos.
+
+      Fase 12 aplicada en la rama fase-12/1-contabilidad, en dos commits (valor
+      y libro de movimientos; traspasos). Suite de 369 a 408. Tres migraciones
+      aditivas. Cuatro decisiones que la propuesta no traía: una venta entre
+      clubes de la liga se registra como el fichaje del comprador y el modelo
+      rechaza lo contrario (D8 pedía UNA fila leída desde los dos lados), el
+      saldo es acumulado y no por temporada, se añade el estado rechazado a los
+      dos que nombraba D7 —el admin necesita decir que no sin borrar el rastro—
+      y un traspaso no se edita, porque se ejecuta al crearse. Hallazgo: un
+      SELECT que no trae `status` deja el saldo clavado en el inicial, porque
+      la columna ausente llega como null.
   tasks:
     status: done
     artifact: openspec/changes/fase-9-direccion-tecnica/tasks.md
     note: >
-      Fases 9, 10 y 11 detalladas, una debajo de la otra en el mismo
-      artefacto; la 12 y la 13 siguen como esqueleto al final.
+      Fases 9 a 12 detalladas, una debajo de la otra en el mismo artefacto; la
+      13 sigue como esqueleto al final.
       De la 9, la unidad 1 lleva dos restricciones aprendidas en el cambio
       anterior: el
       índice único nuevo entra antes de soltar el viejo (errno 1553 en MySQL,

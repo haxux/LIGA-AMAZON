@@ -249,7 +249,89 @@ una sección nueva del sitio, sin migraciones. Revertirla es revertir sus dos co
 - [ ] V.3 Pendiente anotado, no defecto: la URL de un club lleva su id. Un slug pide columna,
       unicidad y relleno hacia atrás, y encaja mejor en una fase que ya toque el esquema.
 
+---
+
+# Tasks: Fase 12 — Contabilidad
+
+**Estado: aplicada.** 408 tests en verde (línea base 369), Pint limpio sobre lo tocado. Tres
+migraciones, todas aditivas.
+
+**Rama**: `fase-12/1-contabilidad`
+
+## Decisiones de esta fase (no estaban en la propuesta, se toman aquí)
+
+- **Un traspaso dentro de la liga es UNA fila y se registra como fichaje del comprador**
+  (design D8: *una fila leída desde los dos lados*). Registrarlo además como venta del
+  vendedor sería la segunda fila que D8 descarta, y el dinero se contaría dos veces. La ficha
+  del vendedor lo muestra como salida, que es cómo se lee desde su lado.
+- **`venta` es, por tanto, el tipo de una salida FUERA de la liga**, y el modelo lo exige.
+- **El saldo es acumulado, no por temporada**: el dinero de un club no se reinicia en agosto.
+  Los movimientos llevan temporada y la lista se filtra por ella, que es lo que pedía la
+  propuesta.
+- **Estado `rechazado`, además de propuesto y aprobado.** D7 nombraba dos; el admin necesita
+  decir que no, y la alternativa —borrar la propuesta— destruye el rastro que el libro de
+  movimientos existe para conservar. El saldo sigue contando sólo los aprobados.
+- **Un traspaso no se edita.** Se ejecuta al crearse, así que editarlo después movería
+  plantillas y dinero por segunda vez o no los movería en absoluto. Borrarlo se lleva sus
+  movimientos por la FK; la plantilla NO vuelve sola, y la confirmación lo dice.
+
+## Unidad 1 — El valor de un jugador (TDD)
+
+- [x] 1.1 RED: `players.market_value` existe, es opcional, y no admite negativos.
+- [x] 1.2 Migración aditiva y campo en el formulario de identidad de `/admin`. Valor único,
+      no por temporada (decisión cerrada).
+- [x] 1.3 El técnico lo VE en su plantilla y no lo toca: lo fija el administrador.
+- [x] 1.4 Ficha pública: valor por jugador y total de la plantilla de esa temporada. Entero
+      con separador de miles y sin símbolo de moneda (decisión cerrada).
+
+## Unidad 2 — El presupuesto como libro de movimientos (TDD)
+
+- [x] 2.1 RED: el saldo es `clubs.initial_balance` más los ingresos aprobados menos los
+      egresos aprobados; lo propuesto no cuenta.
+- [x] 2.2 Migración: `clubs.initial_balance` y `budget_movements` (club, temporada, tipo,
+      importe, razón, estado, quién lo creó).
+- [x] 2.3 `BudgetService`: el saldo se deriva, no se guarda (design D7, como la clasificación).
+      **HALLAZGO**: el `SELECT` del saldo tiene que traer `status` aunque el `WHERE` ya lo
+      acote — una columna no seleccionada llega como null, que aquí significaba "no aprobado"
+      y dejaba todos los saldos clavados en el inicial. Lo cazaron los tests.
+- [x] 2.4 `/admin`: alta directa ya aprobada, y aprobar o rechazar lo que propone un técnico.
+- [x] 2.5 `/club`: el técnico propone con su razón, ve su saldo y su libro, y no puede
+      aprobar ni tocar lo aprobado.
+
+## Unidad 3 — Traspasos (TDD)
+
+- [x] 3.1 RED: un fichaje entre clubes de la liga genera DOS movimientos ya aprobados —egreso
+      del comprador, ingreso del vendedor— y mueve al jugador de plantilla.
+- [x] 3.2 RED: un préstamo mueve al jugador y NO genera dinero (decisión cerrada), y la
+      pertenencia nueva es de tipo cesión, sin cambiar el club propietario.
+- [x] 3.3 RED: una venta fuera de la liga genera el ingreso, saca al jugador de la plantilla
+      y lo marca como salido conservando su ficha (design D9: sus goles y tarjetas cuelgan de
+      él con borrado en cascada).
+- [x] 3.4 Migración: `transfers`, `budget_movements.transfer_id` y `players.left_at`/`left_to`.
+- [x] 3.5 `TransferService` + observador de `Transfer::created`, mudo bajo
+      `WithoutModelEvents` como los guards que ya existen.
+      **DECISIÓN**: el dorsal de la pertenencia nueva es el primero libre. La columna es
+      obligatoria y única por equipo, y un traspaso no es el momento de elegir dorsal: se
+      retoca desde la plantilla de la temporada, que es donde vive.
+- [x] 3.6 `/admin`: registro con filtro por temporada, club y tipo. `/club`: sólo lectura.
+
+## Unidad 4 — Especificación y cierre
+
+- [x] 4.1 Deltas en `league-data-model` (las dos tablas nuevas y sus reglas), `admin-league-crud`
+      y `coach-panel`; el valor de jugador, en `public-views`.
+- [x] 4.2 Suite en verde (408) y Pint limpio sobre lo tocado.
+- [x] 4.3 Marcar tareas y anotar estado.
+
+## Lo que queda por hacer a mano
+
+- [ ] V.1 Probar en el navegador el circuito entero con cuentas reales: el técnico propone, el
+      administrador aprueba, y un fichaje entre dos clubes deja los dos saldos cuadrados.
+- [ ] V.2 Fijar los saldos iniciales de los clubes de producción, que nacen en 0.
+- [ ] V.3 Desplegar. Las tres migraciones son aditivas y el contenedor las aplica al arrancar.
+- [ ] V.4 Pendiente anotado, no defecto: un préstamo no vuelve solo al vencer el plazo. Es
+      decisión cerrada —no hay tareas programadas en este despliegue— y el regreso lo registra
+      el administrador.
+
 ## Fases siguientes (esqueleto)
 
-- **Fase 12** — Contabilidad: valores, presupuesto, fichajes, ventas y préstamos.
 - **Fase 13** — Chat y ofertas.

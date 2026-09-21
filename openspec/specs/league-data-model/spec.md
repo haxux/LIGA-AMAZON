@@ -19,7 +19,9 @@ The system MUST create the following tables (all with `id` and `timestamps()`):
 | trophies | club_id (FK→clubs, cascade), season_id (FK→seasons, cascade), name | unique(club_id, season_id, name) |
 | lineups | team_id (FK→teams, cascade, unique), formation | 1:1 with team |
 | lineup_slots | lineup_id (FK→lineups, cascade), player_id (FK→players, cascade), slot | unique(lineup_id, slot), unique(lineup_id, player_id) |
-| players | club_id (FK→clubs, cascade), name, position, specific_position (nullable), birth_date (nullable) | — |
+| players | club_id (FK→clubs, cascade), name, position, specific_position (nullable), market_value (nullable), left_at/left_to (nullable), birth_date (nullable) | — |
+| budget_movements | club_id (FK→clubs, cascade), season_id (FK→seasons, cascade), transfer_id (FK→transfers, nullable, cascade), type (ingreso/egreso), amount, reason, status, created_by (FK→users, nullable) | indexed (club_id, status) |
+| transfers | player_id (FK→players, cascade), season_id (FK→seasons, cascade), type, scope, from_club_id/to_club_id (FK→clubs, nullable), external_club (nullable), fee, loan_term (nullable) | indexed (season_id, type) |
 | stadiums | club_id (FK→clubs, cascade, unique), name, city, capacity (nullable) | 1:1 with club |
 | matchdays | season_id (FK→seasons, cascade), division_id (FK→divisions, cascade), number, date (nullable, nominal) | unique(season_id, division_id, number) |
 | games | matchday_id (FK→matchdays, cascade), home_team_id/away_team_id (FK→teams, restrict), kickoff_at (nullable), home_score/away_score (nullable) | indexed FKs |
@@ -218,6 +220,80 @@ the model and not only by the form, as with every other vocabulary here.
 - GIVEN a club that won a cup in a past season
 - WHEN a new season starts
 - THEN the trophy is still listed for that club
+
+### Requirement: A club's balance is derived from its ledger, never stored
+
+The system MUST hold a club's money as a book of movements — club, season, type, amount,
+reason, status and who created it — and MUST derive the balance as the club's initial balance
+plus approved income minus approved expense. It MUST NOT store a balance: the reason is the
+one that already governs the league table (ARQUITECTURA.md §3), that a stored total silently
+disagrees with its source the first time a row is corrected or rejected.
+
+An amount MUST be positive, and the type MUST carry the direction: an expense stored as a
+negative number would give two ways to say the same thing, and the first mistaken sum would
+go unnoticed.
+
+A movement MUST count towards the balance only once approved. A coach creates proposals and
+an administrator approves or rejects them; what is proposed or rejected MUST be kept and MUST
+NOT move the balance.
+
+The balance MUST carry across seasons — a club's money does not reset in August. The season on
+each movement is what the ledger is filtered by.
+
+#### Scenario: A proposal moves nothing until it is approved
+
+- GIVEN a club whose balance is its initial figure
+- WHEN its coach proposes an expense
+- THEN the balance is unchanged, and it drops only once an administrator approves it
+
+### Requirement: A transfer is one row, executed as it is saved
+
+A transfer MUST record the player, the season, its type (fichaje, venta, préstamo), its scope
+(inside or outside the league), the club at each end and, when one end is outside, that club's
+name as free text. Saving it MUST execute it, in one transaction:
+
+1. **Money.** A fee MUST generate the expense in the buying club and the income in the selling
+   club, both already approved — this money is not proposed by anyone, it happens. A loan MUST
+   generate none: a loan has no cost.
+2. **Squad.** The player MUST leave the selling club's squad for that season and join the
+   buying club's, taking the first free shirt number. A signing MUST change the owning club; a
+   loan MUST NOT, and its membership MUST be a loan.
+3. **Leaving the league.** A sale outside the league MUST mark the player as gone, with the
+   date and the club's name, and MUST NOT delete them: their `game_events` cascade from that
+   row, and deleting it would rewrite past seasons' scorers and cards.
+
+A transfer between two league clubs MUST be recorded once, as the buyer's signing, and a sale
+between league clubs MUST be refused as such: two rows is how a club ends up having sold a
+player nobody bought. The same row MUST read as a signing from one side and a sale from the
+other.
+
+A loan's term MUST be recorded as data and MUST NOT expire on its own: this deployment runs no
+scheduled tasks.
+
+#### Scenario: One signing, two budgets
+
+- GIVEN two league clubs and a player in the first one's squad
+- WHEN a signing is recorded with a fee
+- THEN the buyer is charged, the seller is credited, both movements are approved, and the
+  player is in the buyer's squad and owned by them
+
+#### Scenario: A loan costs nothing
+
+- GIVEN a loan between two league clubs
+- WHEN it is recorded
+- THEN no movement is created, the player joins as a loan and keeps their owning club
+
+### Requirement: A player carries one value, not one per season
+
+`players.market_value` MUST be optional and MUST NOT be negative. It MUST be a single value
+rather than one per season, so that a squad's total is what the squad is worth now and not
+what it cost. Only an administrator sets it.
+
+#### Scenario: A squad total follows today's values
+
+- GIVEN a squad whose players carry values
+- WHEN the club page is opened
+- THEN the total is the sum of their current values
 
 ### Requirement: Standings zones band a division's table by position
 

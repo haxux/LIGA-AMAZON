@@ -18,8 +18,8 @@ The panel MUST register only the coach's own modules, and MUST NOT register any
 administrator resource, for the reason given in `admin-panel`: hiding a resource inside a
 shared panel leaves its route alive.
 
-As of Fase 10 the modules are **Plantilla**, **Trofeos**, **Mis enfrentamientos** and
-**Once ideal**. Contabilidad (Fase 12) and the chat (Fase 13) join them later.
+As of Fase 12 the modules are **Plantilla**, **Trofeos**, **Mis enfrentamientos**, **Once
+ideal**, **Contabilidad** and **Fichajes**. The chat (Fase 13) joins them later.
 
 Every module MUST scope its own query to the coach's club, independently of the record
 policies. The policies are the second lock, not the first: a resource that forgets to scope
@@ -42,6 +42,9 @@ departures are the administrator's, and become transfers in Fase 12.
 Changing the general position MUST clear the specific one in the form, because a specific
 position that belonged to the old general one is not merely stale, it is invalid: the model
 guard in `league-data-model` rejects it on save.
+
+The player's value MUST be shown in the squad and MUST NOT be editable there: it is the
+administrator who sets it.
 
 The shirt number MUST be shown from the squad membership of the **current** season, not from
 the player, because since Fase 9 the number lives in the membership and changes from one
@@ -113,6 +116,40 @@ specified in `admin-league-crud`.
 - GIVEN a coach with their club's palmarés open
 - WHEN they look for a way to add one
 - THEN there is none
+
+### Requirement: The coach proposes money and never approves it
+
+The Contabilidad module MUST show the club's ledger and its balance, and MUST let the coach
+create a movement with its type, amount and reason. What they create MUST be born proposed, on
+their own club and in the current season — none of those three is theirs to choose — and MUST
+NOT move the balance until an administrator approves it.
+
+The coach MUST NOT approve, reject, edit or delete a movement, their own included: what they
+proposed is already said, and answering it belongs to the administrator.
+
+A club's budget MUST NOT be public, and a coach MUST see only their own.
+
+#### Scenario: A proposal names its author and waits
+
+- GIVEN a coach with a balance of 500.000
+- WHEN they propose an expense of 120.000
+- THEN the movement is stored as proposed, on their club and the current season, and the
+  balance still reads 500.000
+
+### Requirement: The coach reads their transfer history, both directions
+
+The Fichajes module MUST list the transfers where the coach's club is at either end, filterable
+by season, and MUST be read-only: recording a transfer executes it, and executing it is the
+administrator's.
+
+Each row MUST be labelled from this club's side — a signing for the club receiving the player,
+a sale for the one letting them go — since the same row is both.
+
+#### Scenario: One row, two readings
+
+- GIVEN a transfer from club A to club B
+- WHEN A's coach opens their history
+- THEN the row reads as a sale, naming B as the other side
 
 ### Requirement: The starting eleven is a page, not a CRUD
 

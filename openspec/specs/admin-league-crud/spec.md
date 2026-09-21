@@ -121,6 +121,29 @@ coach could write would not be one.
 - WHEN its coach opens their trophies module
 - THEN they see only their club's, and no way to add one
 
+### Requirement: The administrator answers proposals and records transfers
+
+`BudgetMovementResource` MUST list every club's ledger, let the administrator record a movement
+of their own — which is born approved, since they have nobody to ask — and answer a coach's
+proposal by approving or rejecting it. Approving and rejecting MUST be actions rather than an
+edit of the status field: what the administrator decides about a proposal is an act, not
+another form field. The number of proposals awaiting an answer MUST be visible on the
+navigation entry, which is the administrator's tray.
+
+`TransferResource` MUST record transfers and MUST NOT offer editing one, because saving a
+transfer executes it and editing it afterwards would move the money twice or not at all.
+Deleting one MUST remove the budget movements it created, and the confirmation MUST say that
+the player is not moved back.
+
+A club's initial balance MUST be set from `ClubResource`, and a player's value from the
+player's identity form.
+
+#### Scenario: Rejecting keeps the record
+
+- GIVEN a movement proposed by a coach
+- WHEN the administrator rejects it
+- THEN it is kept in the ledger as rejected and the balance does not move
+
 ### Requirement: Team crest upload wires to the Fase 2 public disk
 
 `TeamResource`'s form MUST include a `FileUpload` component bound to the `public` disk, storing new files under `crests/`. Uploading a new crest MUST replace the team's `crest_path`, and the resulting file MUST be retrievable via its public URL.

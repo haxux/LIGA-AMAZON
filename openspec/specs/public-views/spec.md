@@ -189,7 +189,9 @@ The tabs MUST hold:
    and the starting eleven drawn on a pitch.
 2. **Partidos** — every game of the club that season, played and unplayed, by matchday.
 3. **Jugadores** — that season's squad, grouped by general position, with shirt number,
-   specific position, age, and loans marked.
+   specific position, age, value and loans marked, plus the squad's total value. Values are
+   plain figures with thousands separators and no currency symbol: the league fixes no
+   currency. A club's budget, unlike its players' values, MUST NOT be public.
 4. **Trofeos** — the **whole** palmarés, not the selected season's: a title is won once and
    displayed ever after.
 5. **Stats** — played, won, drawn, lost, goals for and against, goal difference, points,
