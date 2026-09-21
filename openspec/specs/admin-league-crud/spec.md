@@ -297,3 +297,55 @@ The recordable types MUST be goal, assist, yellow card, red card and clean sheet
 - GIVEN a Game between Team A and Team B
 - WHEN the operator opens the player `Select` in the Game Events relation manager
 - THEN only players belonging to Team A or Team B are selectable
+
+### Requirement: Cups are built round by round from the admin panel
+
+`CupResource` MUST let the administrator create a cup with its season, its name and whether it
+has a group stage, and manage from it three lists: its **participants** (any team of that
+season, from any division, with their group when the cup has one), its **groups**, and its
+**rounds**, each with its name, its order and how many legs its ties are played over.
+
+The bracket MUST be built **round by round by the administrator**, not drawn automatically:
+this is a league run by hand, and who plays whom in the next round is the administrator's to
+decide (owner's decision).
+
+`CupTieResource` MUST show each tie with its aggregate and who went through, and MUST offer a
+**decide** action for a tie that finished level, asking for the team and for the reason. That
+action MUST be the administrator's alone.
+
+A tie's games MUST be loaded exactly as league games are, with their events: a goal in a cup
+is a goal.
+
+The game form MUST ask which competition a game belongs to — matchday, tie or group — and MUST
+narrow the team options accordingly: the two teams of the tie, the participants of the group,
+or the teams of the matchday's division. Offering the whole season's teams is how a game ends
+up between two clubs that are not in that tie.
+
+#### Scenario: The administrator resolves a level tie
+
+- GIVEN a tie whose aggregate is level
+- WHEN the administrator uses the decide action, names a team and gives a reason
+- THEN the bracket shows that team through, with the reason
+
+#### Scenario: A tie's game only offers its two teams
+
+- GIVEN a tie between A and B
+- WHEN a game is added to it
+- THEN only A and B are offered as home and away
+
+### Requirement: A team is searched and sorted by the club's name
+
+Since Fase 9 `teams` has no `name` or `short_name` column: the accessors read them from the
+club. Accessors serve reads, not queries, so every table that searches or sorts by a team's
+name MUST go through the club — `whereHas` on the relation for the search, a subquery on the
+club for the ordering. Naming the column directly fails with `Unknown column 'name'` the
+moment someone types in the search box.
+
+This MUST live in one place rather than in each table, so that the day the name moves again
+there is a single thing to change.
+
+#### Scenario: Searching games by a team's name
+
+- GIVEN the games table
+- WHEN a club's name is typed into the search box
+- THEN its games are listed, with no SQL error

@@ -18,29 +18,32 @@ final class GoalscorersService
 {
     /**
      * @param  ?Team  $team  narrows the board to one club's season squad
+     * @param  ?Competition  $competition  liga, una copa o todo (por omisión, todo)
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topScorers(Season $season, ?int $limit = 10, ?Team $team = null): Collection
+    public function topScorers(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_GOAL, $limit, $team);
+        return $this->leaderboard($season, GameEvent::TYPE_GOAL, $limit, $team, $competition);
     }
 
     /**
      * @param  ?Team  $team  narrows the board to one club's season squad
+     * @param  ?Competition  $competition  liga, una copa o todo (por omisión, todo)
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topAssisters(Season $season, ?int $limit = 10, ?Team $team = null): Collection
+    public function topAssisters(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_ASSIST, $limit, $team);
+        return $this->leaderboard($season, GameEvent::TYPE_ASSIST, $limit, $team, $competition);
     }
 
     /**
      * @param  ?Team  $team  narrows the board to one club's season squad
+     * @param  ?Competition  $competition  liga, una copa o todo (por omisión, todo)
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topCleanSheets(Season $season, ?int $limit = 10, ?Team $team = null): Collection
+    public function topCleanSheets(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_CLEAN_SHEET, $limit, $team);
+        return $this->leaderboard($season, GameEvent::TYPE_CLEAN_SHEET, $limit, $team, $competition);
     }
 
     /**
@@ -49,13 +52,21 @@ final class GoalscorersService
      * estuvieron en su plantilla esa temporada. La pertenencia es el puente,
      * porque los eventos cuelgan del jugador y un cedido jugó en dos clubes.
      *
+     * La competición es otro parámetro por lo mismo, desde la Fase 15: un
+     * goleador de la liga y uno de la copa son dos cifras distintas, y sumarlas
+     * sin decirlo es lo que el propietario pidió no hacer.
+     *
      * @return Collection<int, ScorerRow>
      */
-    private function leaderboard(Season $season, string $type, ?int $limit, ?Team $team = null): Collection
+    private function leaderboard(Season $season, string $type, ?int $limit, ?Team $team = null, ?Competition $competition = null): Collection
     {
+        $competition ??= Competition::all();
+
         $counts = GameEvent::query()
             ->where('type', $type)
-            ->whereHas('game.matchday', fn (Builder $query) => $query->where('season_id', $season->getKey()))
+            // Por el partido y no por su jornada: uno de copa no tiene jornada,
+            // y preguntando por ahí la copa entera se quedaba fuera.
+            ->whereHas('game', fn (Builder $query) => $competition->applyTo($query->inSeason($season)))
             ->when($team, fn (Builder $query, Team $team) => $query->whereHas(
                 'player.memberships',
                 fn (Builder $memberships) => $memberships->where('team_id', $team->getKey()),

@@ -66,7 +66,7 @@
         </div>
 
         @if ($seasons->isNotEmpty())
-            <form method="GET" action="{{ route('site.players.show', $player) }}" class="ml-auto">
+            <form method="GET" action="{{ route('site.players.show', $player) }}" class="ml-auto flex flex-wrap items-end">
                 <label>
                     <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/50">TEMPORADA</span>
                     <select name="temporada" onchange="this.form.submit()"
@@ -76,6 +76,20 @@
                         @endforeach
                     </select>
                 </label>
+
+                {{-- En el mismo formulario que la temporada: así cambiar de una
+                     no pierde la otra, y la URL sigue diciendo las dos. --}}
+                @if (count($competitionOptions) > 2)
+                    <label class="ml-3">
+                        <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/50">COMPETICIÓN</span>
+                        <select name="competicion" onchange="this.form.submit()"
+                                class="rounded-[4px] border border-white/10 bg-surface px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white">
+                            @foreach ($competitionOptions as $value => $text)
+                                <option value="{{ $value }}" @selected($value === $competition->key)>{{ $text }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                @endif
 
                 <noscript>
                     <button type="submit" class="mt-2 rounded-[4px] bg-brand px-4 py-2 font-display text-base font-bold uppercase tracking-[0.08em] text-ink">Ver</button>
@@ -87,6 +101,7 @@
     <section class="mb-6">
         <h2 class="mb-3 font-mono text-[10px] tracking-[0.14em] text-brand">
             {{ $selectedSeason ? 'EN '.mb_strtoupper($selectedSeason->name) : 'ESTADÍSTICAS' }}
+            @unless ($competition->isAll()) · {{ mb_strtoupper($competition->label) }} @endunless
         </h2>
 
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -156,7 +171,7 @@
                     </span>
                     <span class="block font-mono text-[10px] tracking-[0.1em] text-white/45">
                         {{ $eventLabels[$event->type] ?? $event->type }}
-                        @if ($event->game?->matchday) · JORNADA {{ $event->game->matchday->number }} @endif
+                        @if ($event->game) · {{ mb_strtoupper($event->game->competitionLabel()) }} @endif
                     </span>
                 </span>
             </a>

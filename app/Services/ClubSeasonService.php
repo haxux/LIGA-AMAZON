@@ -36,7 +36,7 @@ final class ClubSeasonService
             ->where(fn (Builder $query) => $query
                 ->where('home_team_id', $team->getKey())
                 ->orWhere('away_team_id', $team->getKey()))
-            ->with(['matchday', 'homeTeam.club', 'awayTeam.club'])
+            ->with(['matchday', 'cupTie.round.cup', 'cupGroup.cup', 'homeTeam.club', 'awayTeam.club'])
             ->get()
             // Una sola clave compuesta, y no dos criterios: en el multiorden de
             // Collection (`sortBy([...])`) una función no es un extractor de
@@ -107,9 +107,18 @@ final class ClubSeasonService
         return $index === false ? null : $index + 1;
     }
 
-    public function stats(Team $team): ClubSeasonStats
+    /**
+     * Las cifras del club, opcionalmente acotadas a una competición: la liga o
+     * una copa (Fase 15). Sin acotar son todas juntas, que es como estaban —y
+     * mal, porque los goles de copa ya sumaban aquí mientras las tarjetas de
+     * copa no, al contarse éstas por la jornada que un partido de copa no tiene.
+     */
+    public function stats(Team $team, ?Competition $competition = null): ClubSeasonStats
     {
-        $played = $this->games($team)->filter(fn (Game $game) => $this->isPlayed($game));
+        $competition ??= Competition::all();
+
+        $played = $this->games($team)
+            ->filter(fn (Game $game) => $competition->matches($game) && $this->isPlayed($game));
 
         $counters = ['won' => 0, 'drawn' => 0, 'lost' => 0, 'goals_for' => 0, 'goals_against' => 0];
 
@@ -123,7 +132,7 @@ final class ClubSeasonService
             $counters[$for > $against ? 'won' : ($for < $against ? 'lost' : 'drawn')]++;
         }
 
-        $events = $this->eventCounts($team);
+        $events = $this->eventCounts($team, $competition);
 
         return new ClubSeasonStats(
             ...$counters + [
@@ -153,10 +162,10 @@ final class ClubSeasonService
      *
      * @return array<string, int>
      */
-    private function eventCounts(Team $team): array
+    private function eventCounts(Team $team, Competition $competition): array
     {
         return GameEvent::query()
-            ->whereHas('game.matchday', fn (Builder $query) => $query->where('season_id', $team->season_id))
+            ->whereHas('game', fn (Builder $query) => $competition->applyTo($query->inSeason($team->season_id)))
             ->whereHas('player.memberships', fn (Builder $query) => $query->where('team_id', $team->getKey()))
             ->selectRaw('type, COUNT(*) as total')
             ->groupBy('type')

@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Site;
 
 use App\Models\Player;
-use App\Models\Season;
+use App\Models\Team;
+use App\Services\Competition;
 use App\Services\PlayerStatsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -12,7 +13,9 @@ use Illuminate\Http\Request;
  * La ficha de un jugador: quién es y lo que lleva hecho.
  *
  * Las temporadas que se ofrecen son las que jugó, igual que en la ficha de un
- * club: ofrecer las demás daría una página vacía por elegir bien.
+ * club: ofrecer las demás daría una página vacía por elegir bien. Con las
+ * competiciones vale lo mismo desde la Fase 15 — sólo las que disputó su equipo
+ * de esa temporada.
  */
 class PlayerController extends SiteController
 {
@@ -26,6 +29,10 @@ class PlayerController extends SiteController
             ?? $seasons->first();
 
         $season = $selected['season'] ?? null;
+        $team = $selected['team'] ?? null;
+
+        $competitions = $team instanceof Team ? Competition::forTeam($team) : Competition::forSeason($season);
+        $competition = Competition::resolve($competitions, $request->string('competicion')->toString());
 
         return view('site.players.show', [
             'player' => $player,
@@ -33,21 +40,15 @@ class PlayerController extends SiteController
             'selectedSeason' => $season,
             'club' => $selected['club'] ?? $player->club,
             'shirtNumber' => $selected['shirt_number'] ?? null,
-            'seasonTotals' => $selected['totals'] ?? $this->emptyTotals($stats, $player, $season),
+            // No se toman los totales ya calculados por `bySeason()`: aquéllos
+            // son los de la temporada entera, y aquí manda la competición
+            // elegida. La tabla de abajo sí usa los de la temporada entera,
+            // porque es el resumen de una carrera.
+            'seasonTotals' => $stats->totals($player, $season, $competition),
             'careerTotals' => $stats->totals($player),
-            'events' => $stats->events($player, $season),
+            'events' => $stats->events($player, $season, 20, $competition),
+            'competition' => $competition,
+            'competitionOptions' => Competition::asSelectOptions($competitions),
         ]);
-    }
-
-    /**
-     * Un jugador sin ninguna pertenencia —fichado y aún sin inscribir, o salido
-     * de la liga hace temporadas— no tiene fila de temporada de la que sacar
-     * sus totales, pero sigue teniendo ficha.
-     *
-     * @return array<string, int>
-     */
-    private function emptyTotals(PlayerStatsService $stats, Player $player, ?Season $season): array
-    {
-        return $stats->totals($player, $season);
     }
 }

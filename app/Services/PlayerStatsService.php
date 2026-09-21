@@ -7,6 +7,7 @@ use App\Models\GameEvent;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\SquadMembership;
+use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -26,15 +27,23 @@ final class PlayerStatsService
     /**
      * Los totales de una temporada, o de toda la carrera si no se pasa ninguna.
      *
+     * Con una competición se acotan a ella —la liga o una copa—; sin ella, es
+     * todo junto. Sólo tiene sentido junto a una temporada, porque una copa
+     * pertenece a una.
+     *
      * @return array<string, int>
      */
-    public function totals(Player $player, ?Season $season = null): array
+    public function totals(Player $player, ?Season $season = null, ?Competition $competition = null): array
     {
+        $competition ??= Competition::all();
+
         $counts = GameEvent::query()
             ->where('player_id', $player->getKey())
+            // Por el partido y no por su jornada: uno de copa no tiene jornada
+            // (Fase 15), y así sus goles no contaban en ningún sitio.
             ->when($season, fn (Builder $query, Season $season) => $query->whereHas(
-                'game.matchday',
-                fn (Builder $matchday) => $matchday->where('season_id', $season->getKey()),
+                'game',
+                fn (Builder $game) => $competition->applyTo($game->inSeason($season)),
             ))
             ->selectRaw('type, COUNT(*) as total')
             ->groupBy('type')
@@ -58,7 +67,7 @@ final class PlayerStatsService
      * que estuvo en una plantilla sin marcar ni ver una tarjeta también jugó esa
      * temporada, y su fila debe estar, en blanco.
      *
-     * @return Collection<int, array{season: Season, club: ?Club, shirt_number: ?int, totals: array<string, int>}>
+     * @return Collection<int, array{season: Season, team: ?Team, club: ?Club, shirt_number: ?int, totals: array<string, int>}>
      */
     public function bySeason(Player $player): Collection
     {
@@ -73,6 +82,8 @@ final class PlayerStatsService
             ])
             ->map(fn (SquadMembership $membership) => [
                 'season' => $membership->team->season,
+                // El equipo, además del club: es lo que sabe en qué copas jugó.
+                'team' => $membership->team,
                 'club' => $membership->team->club,
                 'shirt_number' => $membership->shirt_number,
                 'totals' => $this->totals($player, $membership->team->season),
@@ -86,17 +97,23 @@ final class PlayerStatsService
      *
      * @return Collection<int, GameEvent>
      */
-    public function events(Player $player, ?Season $season = null, int $limit = 20): Collection
+    public function events(Player $player, ?Season $season = null, int $limit = 20, ?Competition $competition = null): Collection
     {
+        $competition ??= Competition::all();
+
         return GameEvent::query()
             ->where('player_id', $player->getKey())
             ->when($season, fn (Builder $query, Season $season) => $query->whereHas(
-                'game.matchday',
-                fn (Builder $matchday) => $matchday->where('season_id', $season->getKey()),
+                'game',
+                fn (Builder $game) => $competition->applyTo($game->inSeason($season)),
             ))
-            ->with(['game.matchday', 'game.homeTeam.club', 'game.awayTeam.club'])
+            ->with(['game.matchday', 'game.cupTie.round.cup', 'game.cupGroup.cup', 'game.homeTeam.club', 'game.awayTeam.club'])
             ->get()
+            // La fecha primero y la jornada después: un partido de copa no
+            // tiene jornada, y ordenando sólo por ella los goles de una final
+            // caían al fondo de la lista para no volver a asomar.
             ->sortByDesc(fn (GameEvent $event) => [
+                $event->game?->kickoff_at?->getTimestamp() ?? 0,
                 $event->game?->matchday?->number ?? 0,
                 $event->getKey(),
             ])

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -81,6 +82,48 @@ class Game extends Model
     public function isCupGame(): bool
     {
         return $this->cup_tie_id !== null || $this->cup_group_id !== null;
+    }
+
+    /**
+     * Los partidos de una temporada, por los DOS caminos que llevan a ella: la
+     * jornada, si es de liga, y la copa del cruce o del grupo, si es de copa.
+     *
+     * Antes de la Fase 15 la temporada de un partido era la de su jornada y ya;
+     * quien siga preguntando sólo por ahí —las estadísticas lo hacían— deja
+     * fuera la copa entera sin enterarse, porque un partido de copa no tiene
+     * jornada ninguna.
+     */
+    public function scopeInSeason(Builder $query, Season|int $season): Builder
+    {
+        $id = $season instanceof Season ? $season->getKey() : $season;
+
+        return $query->where(fn (Builder $game) => $game
+            ->whereHas('matchday', fn (Builder $matchday) => $matchday->where('season_id', $id))
+            ->orWhereHas('cupTie.round.cup', fn (Builder $cup) => $cup->where('season_id', $id))
+            ->orWhereHas('cupGroup.cup', fn (Builder $cup) => $cup->where('season_id', $id)));
+    }
+
+    /**
+     * Sólo los de liga. Tener jornada es exactamente lo que distingue a uno de
+     * liga, por el invariante de arriba: un partido pertenece a una sola
+     * competición.
+     */
+    public function scopeInLeague(Builder $query): Builder
+    {
+        return $query->whereNotNull('matchday_id');
+    }
+
+    /**
+     * Los de UNA copa, que le llegan por sus dos puertas: el cruce, a través de
+     * la ronda, y el grupo.
+     */
+    public function scopeInCup(Builder $query, Cup|int $cup): Builder
+    {
+        $id = $cup instanceof Cup ? $cup->getKey() : $cup;
+
+        return $query->where(fn (Builder $game) => $game
+            ->whereHas('cupTie.round', fn (Builder $round) => $round->where('cup_id', $id))
+            ->orWhereHas('cupGroup', fn (Builder $group) => $group->where('cup_id', $id)));
     }
 
     /**

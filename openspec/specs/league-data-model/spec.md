@@ -405,3 +405,85 @@ The system MUST create a `news` table (`title`, `slug` unique, `body` text, `pub
 - WHEN `php artisan migrate:fresh --seed` runs
 - THEN "Primera" exists with all seeded teams assigned via `division_id`
 - AND "Segunda" exists with zero teams assigned to it
+
+### Requirement: A cup is a competition that is not a division
+
+The system MUST model a **cup** as a competition of a season that is not a division: it MUST
+be able to pair teams from different divisions, it MUST be played in rounds rather than in
+numbered matchdays, and it MUST end in a bracket rather than in a table. Stretching
+`divisions` until it served both would have broken what a division means — one table, one set
+of numbered matchdays, one set of teams.
+
+A cup MUST carry whether it has a **group stage**, chosen per cup by the administrator. Its
+participants MUST be teams of its own season, each entered at most once, with their group when
+the cup has one. A **round** MUST carry its own order — the administrator sets it, it is not
+inferred from the name — and how many **legs** its ties are played over, which MUST be one or
+two and nothing else: a final over a single game with two-legged semi-finals is the ordinary
+shape.
+
+#### Scenario: Teams from two divisions meet
+
+- GIVEN a cup in a season with two divisions
+- WHEN a team of each is entered and paired
+- THEN the tie stands, which is what a division cannot express
+
+#### Scenario: A tie is not played over three games
+
+- GIVEN a round
+- WHEN it is saved with three legs
+- THEN it is rejected
+
+### Requirement: A game belongs to exactly one competition
+
+A game MUST belong to a league matchday, to a cup tie, or to a cup group, and to exactly one
+of the three. Belonging to none would leave it out of every table and every bracket, invisible;
+belonging to two is how the same goal would be counted twice.
+
+`games.matchday_id` MUST therefore become nullable, and a rollback of that migration MUST
+delete the cup games before making the column required again, rather than failing halfway.
+
+A game MUST be able to say which competition it belongs to in words — "Jornada 7", "Copa
+Amazonas · Semifinal", "Copa Amazonas · Grupo A" — because three screens print it.
+
+A game MUST also be able to be found **by season through either route**: the matchday's season
+for a league game, and the cup's season for a cup game. Asking only through the matchday, as
+everything did before cups existed, silently drops the whole cup.
+
+#### Scenario: A game with no competition is refused
+
+- GIVEN a game with no matchday, no tie and no group
+- WHEN it is saved
+- THEN it is rejected
+
+#### Scenario: A cup game is in its season
+
+- GIVEN a cup game, which has no matchday at all
+- WHEN the season's games are queried
+- THEN it is among them
+
+### Requirement: A tie's aggregate is derived, and a level tie is decided by hand
+
+The result of a tie MUST be summed from its games, each team's side of each leg, and MUST NOT
+be stored: same rule as the standings (ARQUITECTURA.md §3). Whoever scores more MUST go
+through.
+
+A tie whose aggregate is level MUST stay **pending** and MUST NOT send anyone through on its
+own: this deployment records no away goals, no extra time and no penalties. The administrator
+MUST resolve it by naming who goes through **and why**, and the reason MUST be required — a
+bracket that advances a team with no stated reason is a bracket nobody can argue with.
+
+The team sent through MUST be one of the two that played the tie.
+
+A cup **group** MUST be classified with the same code as a division, from its own games.
+
+#### Scenario: A level tie waits
+
+- GIVEN a two-legged tie that finishes 2-2 on aggregate
+- WHEN the bracket is read
+- THEN the tie reads as pending and nobody has gone through
+
+#### Scenario: The administrator says who goes through, and why
+
+- GIVEN a level tie
+- WHEN the administrator names one of the two teams with a reason
+- THEN that team goes through and the reason is stored beside it

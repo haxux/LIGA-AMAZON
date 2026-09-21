@@ -292,3 +292,73 @@ render a generic fallback placeholder — not a broken image or an empty element
 - GIVEN a team has `crest_path` null
 - WHEN that team appears in a standings table row or a game card
 - THEN a generic fallback placeholder renders in place of the crest image
+
+### Requirement: A cup has its own page, with its groups and its bracket
+
+The site MUST list the season's cups at `/copas` and MUST give each one a page at
+`/copas/{cup}` showing, when it has a group stage, each group's table, and then the bracket
+round by round: every tie with the result of each leg, the aggregate, and who went through —
+with the administrator's reason when the tie was decided by hand rather than on the pitch.
+
+The cups MUST be reachable from the site's navigation. A competition that exists only in the
+admin panel is a competition nobody can follow.
+
+Cup games MUST appear wherever games are already read: the Partidos page and the club's
+Partidos tab, grouped under the competition they belong to rather than under a matchday number
+they do not have. A game's detail page MUST name its competition.
+
+#### Scenario: The bracket says who went through and why
+
+- GIVEN a tie the administrator decided after it finished level
+- WHEN the cup's page is read
+- THEN the tie shows the aggregate, the team that went through and the stated reason
+
+#### Scenario: A club's calendar includes its cup games
+
+- GIVEN a club playing both a league and a cup
+- WHEN its Partidos tab is read
+- THEN the cup games are there, under the name of their round
+
+### Requirement: Statistics are readable per competition
+
+Goalscorers, assisters and clean sheets, a club's season figures and a player's totals MUST be
+readable **separated by competition** — the league on its own, each cup on its own, and
+everything together (owner's decision). A goal in the league and a goal in a cup are not the
+same figure, and adding them up without saying so hides which is which.
+
+The competition MUST travel in the URL (`?competicion=todo|liga|copa:{id}`), so that a
+filtered view is a shareable address. A key that names no competition of that season MUST fall
+back to everything, like a mistyped tab falls back to General: public URLs get typed by hand.
+
+The choice MUST be offered only where there is something to choose. A season with no cup, or a
+club that plays in none, MUST see the page exactly as it was, with no selector — and MUST keep
+its points column, since with no cups "everything" and "the league" are the same screen.
+
+There MUST NOT be an "all cups" option: whoever reads a cup reads one, and the sum is already
+"Todo".
+
+**Points MUST be shown only for the league.** A knock-out cup awards none, and "everything"
+would add up games that award none: a points figure in either place is a table that does not
+exist.
+
+Because a cup game has no matchday, every one of these figures MUST reach its season through
+the game's own competition. Asking through the matchday — which is what they all did before
+cups existed — left every cup goal, card and clean sheet out of every statistic on the site.
+
+#### Scenario: A cup goal is not lost
+
+- GIVEN a player who scored only in a cup final
+- WHEN the season's goalscorers are read with no filter
+- THEN the goal is counted
+
+#### Scenario: The league board excludes the cup
+
+- GIVEN a player with three league goals and one cup goal
+- WHEN the board is read filtered to the league
+- THEN they show three
+
+#### Scenario: A club with no cup sees no selector
+
+- GIVEN a club entered in no cup
+- WHEN its Stats tab is read
+- THEN there is no competition selector and the points column is still there

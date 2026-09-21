@@ -8,6 +8,7 @@ use App\Models\Season;
 use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Services\ClubSeasonService;
+use App\Services\Competition;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -62,7 +63,7 @@ class ClubProfileController extends SiteController
             'team' => $team,
             'tab' => $tab,
             'tabs' => self::TABS,
-        ] + $this->dataFor($tab, $club, $team, $clubSeason));
+        ] + $this->dataFor($tab, $club, $team, $clubSeason, $request));
     }
 
     /**
@@ -86,7 +87,7 @@ class ClubProfileController extends SiteController
      *
      * @return array<string, mixed>
      */
-    private function dataFor(string $tab, Club $club, ?Team $team, ClubSeasonService $clubSeason): array
+    private function dataFor(string $tab, Club $club, ?Team $team, ClubSeasonService $clubSeason, Request $request): array
     {
         if ($tab === 'trofeos') {
             // El palmarés ENTERO, no el de la temporada elegida: un título se
@@ -116,9 +117,34 @@ class ClubProfileController extends SiteController
             ],
             'partidos' => ['games' => $clubSeason->games($team)],
             'jugadores' => ['squad' => $this->squad($team)],
-            'stats' => ['stats' => $clubSeason->stats($team)],
+            'stats' => $this->statsTab($team, $clubSeason, $request),
             default => [],
         };
+    }
+
+    /**
+     * Las cifras del club, separadas por competición desde la Fase 15: la liga,
+     * cada copa que DISPUTA y la suma de todo. Un club que no juega ninguna copa
+     * no tiene nada que elegir, y su pestaña queda como estaba.
+     *
+     * @return array<string, mixed>
+     */
+    private function statsTab(Team $team, ClubSeasonService $clubSeason, Request $request): array
+    {
+        $competitions = Competition::forTeam($team);
+
+        // Sin copas, «Todo» y «Liga» son la misma pantalla, y entonces manda la
+        // liga: es la única que tiene puntos, y un club que no juega copa no
+        // debería perder su casilla de puntos por un filtro que no usa.
+        $competition = $competitions->count() > 2
+            ? Competition::resolve($competitions, $request->string('competicion')->toString())
+            : Competition::league();
+
+        return [
+            'stats' => $clubSeason->stats($team, $competition),
+            'competition' => $competition,
+            'competitionOptions' => Competition::asSelectOptions($competitions),
+        ];
     }
 
     /**
