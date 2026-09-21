@@ -233,6 +233,14 @@ final class TransferService
             return; // el club de destino no está inscrito en esa temporada
         }
 
+        if ($shirtNumber !== null && $this->shirtIsTaken($team, $shirtNumber)) {
+            // Antes de insertar y no después: el unique(team_id, shirt_number)
+            // lo impediría igual, pero con un error de base de datos en la cara.
+            throw ValidationException::withMessages([
+                'shirt_number' => "El dorsal {$shirtNumber} ya está ocupado en esa plantilla.",
+            ]);
+        }
+
         SquadMembership::firstOrCreate(
             ['team_id' => $team->getKey(), 'player_id' => $player->getKey()],
             [
@@ -274,7 +282,24 @@ final class TransferService
      * temporada, que es donde vive—, y porque la pertenencia lo exige: la
      * columna es obligatoria y única por equipo.
      */
-    private function firstFreeShirtNumber(Team $team): int
+    public function shirtIsTaken(Team $team, int $number): bool
+    {
+        return SquadMembership::query()
+            ->where('team_id', $team->getKey())
+            ->where('shirt_number', $number)
+            ->exists();
+    }
+
+    /**
+     * El equipo que recibe al jugador en la temporada del traspaso, que es
+     * donde el dorsal tiene que estar libre.
+     */
+    public function receivingTeam(Transfer $transfer): ?Team
+    {
+        return $this->teamOf($transfer->isIncoming() ? $transfer->toClub : $transfer->fromClub, $transfer);
+    }
+
+    public function firstFreeShirtNumber(Team $team): int
     {
         $taken = SquadMembership::query()
             ->where('team_id', $team->getKey())

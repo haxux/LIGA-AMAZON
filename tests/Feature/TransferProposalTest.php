@@ -280,6 +280,65 @@ class TransferProposalTest extends TestCase
         $this->assertSame(Transfer::TERM_SIX_MONTHS, $proposal->fresh()->loan_term);
     }
 
+    /**
+     * REGRESIÓN: el formulario dejaba poner un dorsal ya ocupado y el guardado
+     * reventaba con el unique de `squad_memberships` en la cara del
+     * administrador. Ahora falla como error del formulario, y la operación
+     * entera se queda sin hacer.
+     */
+    public function test_a_taken_shirt_number_is_refused_and_nothing_moves(): void
+    {
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SIGNING,
+            'external_player' => 'Rivaldo Nunes',
+            'external_club' => 'Palmeiras',
+            'fee' => 300_000,
+        ]);
+
+        try {
+            app(TransferService::class)->approve($proposal, $this->admin, [
+                'player_name' => 'Rivaldo Nunes',
+                'position' => 'Forward',
+                'external_club' => 'Palmeiras',
+                'fee' => 300_000,
+                // El 4 es el de El Mío, que ya está en esa plantilla.
+                'shirt_number' => 4,
+            ]);
+            $this->fail('un dorsal ocupado no debería aceptarse');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('4', $exception->validator->errors()->first());
+        }
+
+        $this->assertNull(Player::query()->where('name', 'Rivaldo Nunes')->first(), 'la ficha no debe quedarse creada');
+        $this->assertSame(Transfer::STATUS_PROPOSED, $proposal->fresh()->status);
+        $this->assertSame(0, BudgetMovement::query()->count());
+        $this->assertSame(1_000_000, $this->balance());
+    }
+
+    public function test_without_a_number_the_first_free_one_is_used(): void
+    {
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SIGNING,
+            'external_player' => 'Rivaldo Nunes',
+            'external_club' => 'Palmeiras',
+            'fee' => 100,
+        ]);
+
+        app(TransferService::class)->approve($proposal, $this->admin, [
+            'player_name' => 'Rivaldo Nunes',
+            'position' => 'Forward',
+            'external_club' => 'Palmeiras',
+            'fee' => 100,
+        ]);
+
+        // El 4 está cogido por El Mío, así que le toca el 1.
+        $this->assertDatabaseHas('squad_memberships', [
+            'team_id' => $this->team->id,
+            'player_id' => Player::query()->where('name', 'Rivaldo Nunes')->value('id'),
+            'shirt_number' => 1,
+        ]);
+    }
+
     // ── Lo que el técnico lee después ─────────────────────────────────────
 
     /**

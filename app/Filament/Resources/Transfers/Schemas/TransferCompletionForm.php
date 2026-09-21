@@ -3,10 +3,13 @@
 namespace App\Filament\Resources\Transfers\Schemas;
 
 use App\Models\Player;
+use App\Models\Team;
 use App\Models\Transfer;
+use App\Services\TransferService;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 
@@ -18,7 +21,7 @@ use Filament\Schemas\Components\Utilities\Set;
  * llega, que hasta ahora era sólo un nombre—. Al guardar, se mueve todo de una
  * vez: ficha, plantilla y los dos presupuestos.
  *
- * @return array<int, \Filament\Schemas\Components\Component>
+ * @return array<int, Component>
  */
 class TransferCompletionForm
 {
@@ -67,8 +70,44 @@ class TransferCompletionForm
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(99)
-                ->helperText('Leave it empty and the first free number is used.'),
+                // Ya puesto en el primero libre: el caso corriente no necesita
+                // pensarlo, y el que quiera otro lo cambia.
+                ->default(fn (): ?int => self::firstFree($transfer))
+                ->helperText(fn (): string => self::taken($transfer) === ''
+                    ? 'Empty means the first free number.'
+                    : 'Taken in that squad: '.self::taken($transfer))
+                ->rules([
+                    fn (): callable => function (string $attribute, $value, callable $fail) use ($transfer): void {
+                        $team = app(TransferService::class)->receivingTeam($transfer);
+
+                        if ($team !== null && filled($value) && app(TransferService::class)->shirtIsTaken($team, (int) $value)) {
+                            $fail("Shirt {$value} is already taken in that squad.");
+                        }
+                    },
+                ]),
         ];
+    }
+
+    private static function firstFree(Transfer $transfer): ?int
+    {
+        $team = app(TransferService::class)->receivingTeam($transfer);
+
+        return $team === null ? null : app(TransferService::class)->firstFreeShirtNumber($team);
+    }
+
+    /**
+     * Los dorsales ya cogidos, dichos de corrido: es más rápido leerlos que
+     * probar de uno en uno.
+     */
+    private static function taken(Transfer $transfer): string
+    {
+        $team = app(TransferService::class)->receivingTeam($transfer);
+
+        if (! $team instanceof Team) {
+            return '';
+        }
+
+        return $team->memberships()->orderBy('shirt_number')->pluck('shirt_number')->implode(', ');
     }
 
     /**
