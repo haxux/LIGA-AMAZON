@@ -10,7 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
-#[Fillable(['matchday_id', 'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score'])]
+#[Fillable([
+    'matchday_id', 'cup_tie_id', 'cup_group_id', 'group_matchday',
+    'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score',
+])]
 class Game extends Model
 {
     /** @use HasFactory<GameFactory> */
@@ -43,7 +46,51 @@ class Game extends Model
                     'away_team_id' => 'A team cannot play against itself.',
                 ]);
             }
+
+            // Un partido pertenece a UNA competición: la jornada de una liga, el
+            // cruce de una copa o el grupo de una copa. Ni a ninguna —quedaría
+            // fuera de toda clasificación y de todo cuadro, invisible— ni a dos,
+            // que es como el mismo gol acabaría contando dos veces.
+            $keys = $game->competitionKeys();
+
+            if (count($keys) !== 1) {
+                throw ValidationException::withMessages([
+                    'matchday_id' => $keys === []
+                        ? 'Un partido tiene que pertenecer a una jornada, a un cruce de copa o a un grupo de copa.'
+                        : 'Un partido pertenece a una sola competición, y este apunta a '.count($keys).'.',
+                ]);
+            }
         });
+    }
+
+    /**
+     * A qué competición pertenece este partido: una jornada de liga, un cruce
+     * de copa o un grupo de copa.
+     *
+     * @return array<int, string>
+     */
+    public function competitionKeys(): array
+    {
+        return array_keys(array_filter([
+            'matchday_id' => $this->matchday_id,
+            'cup_tie_id' => $this->cup_tie_id,
+            'cup_group_id' => $this->cup_group_id,
+        ]));
+    }
+
+    public function isCupGame(): bool
+    {
+        return $this->cup_tie_id !== null || $this->cup_group_id !== null;
+    }
+
+    public function cupTie(): BelongsTo
+    {
+        return $this->belongsTo(CupTie::class, 'cup_tie_id');
+    }
+
+    public function cupGroup(): BelongsTo
+    {
+        return $this->belongsTo(CupGroup::class, 'cup_group_id');
     }
 
     public function matchday(): BelongsTo

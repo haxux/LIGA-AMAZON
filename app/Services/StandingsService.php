@@ -48,6 +48,22 @@ final class StandingsService
      *
      * @return Collection<int, StandingRow> ordered points desc, goal_difference desc, goals_for desc
      */
+    /**
+     * La misma tabla, pero a partir de un conjunto de partidos dado en vez de
+     * los de una temporada entera. Es lo que necesita un grupo de copa, que es
+     * una liga pequeña con sus propios partidos (Fase 15).
+     *
+     * @param  Collection<int, Team>  $teams
+     * @param  Collection<int, Game>  $games
+     * @return Collection<int, StandingRow> ordered points desc, goal_difference desc, goals_for desc
+     */
+    public function fromGames(Collection $teams, Collection $games): Collection
+    {
+        return $this->accumulateInto($teams, $games->filter(
+            fn (Game $game) => $game->home_score !== null && $game->away_score !== null,
+        ));
+    }
+
     private function buildTable(Collection $teams, int $seasonId): Collection
     {
         $rows = $teams
@@ -62,12 +78,46 @@ final class StandingsService
             ]])
             ->all();
 
+        // Sólo los de liga: desde la Fase 15 un partido puede ser de copa, y
+        // ésos no cuentan para la tabla de una división.
         $games = Game::query()
             ->whereNotNull('home_score')
             ->whereNotNull('away_score')
             ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $seasonId))
             ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score']);
 
+        return $this->fold($rows, $games);
+    }
+
+    /**
+     * @param  Collection<int, Team>  $teams
+     * @param  Collection<int, Game>  $games
+     * @return Collection<int, StandingRow>
+     */
+    private function accumulateInto(Collection $teams, Collection $games): Collection
+    {
+        $rows = $teams
+            ->mapWithKeys(fn (Team $team) => [$team->getKey() => [
+                'team' => $team,
+                'played' => 0,
+                'won' => 0,
+                'drawn' => 0,
+                'lost' => 0,
+                'goals_for' => 0,
+                'goals_against' => 0,
+            ]])
+            ->all();
+
+        return $this->fold($rows, $games);
+    }
+
+    /**
+     * @param  array<int, array{team: Team, played: int, won: int, drawn: int, lost: int, goals_for: int, goals_against: int}>  $rows
+     * @param  Collection<int, Game>  $games
+     * @return Collection<int, StandingRow>
+     */
+    private function fold(array $rows, Collection $games): Collection
+    {
         foreach ($games as $game) {
             $this->accumulate($rows, $game->home_team_id, $game->home_score, $game->away_score);
             $this->accumulate($rows, $game->away_team_id, $game->away_score, $game->home_score);
