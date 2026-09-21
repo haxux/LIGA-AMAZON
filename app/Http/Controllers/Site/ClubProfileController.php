@@ -112,12 +112,32 @@ class ClubProfileController extends SiteController
                 'topScorer' => $clubSeason->topScorer($team),
                 'topAssister' => $clubSeason->topAssister($team),
                 'lineup' => $team->lineup,
+                'canEditLineup' => $this->coachMayEditLineup($team),
             ],
             'partidos' => ['games' => $clubSeason->games($team)],
             'jugadores' => ['squad' => $this->squad($team)],
             'stats' => ['stats' => $clubSeason->stats($team)],
             default => [],
         };
+    }
+
+    /**
+     * El once se arma desde aquí, y sólo lo arma el técnico de ESTE club en la
+     * temporada vigente: la de un año cerrado es historia, no un borrador.
+     *
+     * El técnico se reconoce por el guard `club`, el del panel, que vive en la
+     * misma sesión que el sitio público. Para todos los demás —visitante
+     * anónimo, otro técnico, el propio técnico mirando otra temporada— esta
+     * página sigue siendo exactamente la de siempre.
+     */
+    private function coachMayEditLineup(Team $team): bool
+    {
+        $user = auth('club')->user();
+
+        return $user !== null
+            && $user->isCoach()
+            && (int) $user->club_id === (int) $team->club_id
+            && (int) $team->season_id === (int) $this->seasons->active()?->getKey();
     }
 
     /**

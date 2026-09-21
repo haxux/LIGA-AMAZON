@@ -63,7 +63,13 @@
 <section class="mt-4 rounded-[6px] bg-surface-alt p-4">
     <h2 class="mb-3 font-mono text-[10px] tracking-[0.14em] text-brand">ONCE IDEAL</h2>
 
-    @if ($lineup)
+    @if ($canEditLineup)
+        {{-- Sólo el técnico de este club y sólo en la temporada vigente recibe
+             el componente; a cualquier otro visitante se le sirve el campo
+             dibujado, sin JavaScript de más. El componente vuelve a comprobar
+             el permiso en cada acción: esto es la cortesía, no la cerradura. --}}
+        <livewire:starting-eleven-editor :team="$team" />
+    @elseif ($lineup)
         <x-site.pitch :lineup="$lineup" :team="$team" />
     @else
         <p class="font-mono text-[11px] tracking-[0.08em] text-white/50">
