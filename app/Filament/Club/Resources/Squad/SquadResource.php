@@ -30,6 +30,8 @@ use Illuminate\Database\Eloquent\Builder;
  * acompaña de una temporada a otra. El dorsal, que sí cambia cada año, se
  * muestra leyéndolo de la plantilla de la temporada vigente.
  *
+ * El nombre y el valor son de sólo lectura: los fija el administrador.
+ *
  * Las altas y bajas de jugadores no están aquí a propósito: las hace el
  * administrador, y en la Fase 12 pasarán por fichajes y traspasos.
  */

@@ -2,14 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Club\Resources\Trophies\Pages\ListTrophies;
-use App\Filament\Club\Resources\Trophies\TrophyResource;
 use App\Filament\Resources\Trophies\Pages\CreateTrophy;
 use App\Models\Club;
 use App\Models\Season;
 use App\Models\Trophy;
 use App\Models\User;
-use Filament\Facades\Filament;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -84,20 +81,24 @@ class TrophyTest extends TestCase
             ->assertHasFormErrors(['name']);
     }
 
-    public function test_the_coach_sees_only_their_clubs_trophies_and_cannot_award_any(): void
+    /**
+     * El palmarés se lee en la ficha pública del club, así que el panel del
+     * técnico ya no lo repite: una segunda pantalla para lo mismo sólo añade
+     * sitios donde mirar.
+     */
+    public function test_the_coach_panel_no_longer_lists_trophies(): void
     {
         $club = Club::factory()->create();
         $coach = User::factory()->coachOf($club)->create();
-        $own = Trophy::factory()->create(['club_id' => $club->id]);
-        $foreign = Trophy::factory()->create();
+        Trophy::factory()->create(['club_id' => $club->id, 'name' => 'Copa Amazonas']);
 
         $this->actingAs($coach, 'club');
-        Filament::setCurrentPanel('club');
 
-        Livewire::test(ListTrophies::class)
-            ->assertCanSeeTableRecords([$own])
-            ->assertCanNotSeeTableRecords([$foreign]);
+        $this->get('/club/trofeos')->assertNotFound();
 
-        $this->assertFalse(TrophyResource::canCreate());
+        // Y donde sí se leen es en la ficha pública, sin sesión ninguna.
+        $this->get(route('site.clubs.show', ['club' => $club->id, 'tab' => 'trofeos']))
+            ->assertOk()
+            ->assertSee('Copa Amazonas');
     }
 }

@@ -74,6 +74,19 @@ class ClubSquadResourceTest extends TestCase
     }
 
     /**
+     * El valor, en cambio, no: lo pone el administrador y aquí sólo se lee.
+     */
+    public function test_the_coach_cannot_set_the_value(): void
+    {
+        $player = Player::factory()->create(['club_id' => $this->club->id, 'market_value' => 90000]);
+
+        $component = Livewire::test(EditSquadPlayer::class, ['record' => $player->getRouteKey()])->instance();
+
+        $this->assertNull($component->getSchemaComponent('form.market_value'));
+        $this->assertSame(90000, $player->fresh()->market_value);
+    }
+
+    /**
      * Las opciones siguen a la posición general, así que un portero sólo puede
      * ser POR y un delantero no aparece como lateral.
      */
