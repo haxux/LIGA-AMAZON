@@ -14,6 +14,7 @@ class ScorersController extends SiteController
         return view('site.scorers', [
             'scorers' => $goalscorers->topScorers($season),
             'assisters' => $goalscorers->topAssisters($season),
+            'cleanSheets' => $goalscorers->topCleanSheets($season),
         ]);
     }
 }

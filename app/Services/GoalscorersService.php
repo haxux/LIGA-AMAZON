@@ -35,6 +35,15 @@ final class GoalscorersService
     }
 
     /**
+     * @param  ?Team  $team  narrows the board to one club's season squad
+     * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
+     */
+    public function topCleanSheets(Season $season, ?int $limit = 10, ?Team $team = null): Collection
+    {
+        return $this->leaderboard($season, GameEvent::TYPE_CLEAN_SHEET, $limit, $team);
+    }
+
+    /**
      * El filtro por equipo es un parámetro y no un servicio aparte (design
      * D12): la ficha de un club necesita el mismo cómputo, acotado a quienes
      * estuvieron en su plantilla esa temporada. La pertenencia es el puente,
