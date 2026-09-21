@@ -186,8 +186,10 @@ The tabs MUST hold:
 
 1. **General** — the next unplayed game, the last five results as G/E/P from this club's side,
    the position in its division's table, the club's top scorer and top assister of the season,
-   and the starting eleven drawn on a pitch.
-2. **Partidos** — every game of the club that season, played and unplayed, by matchday.
+   and the starting eleven drawn on a pitch. That pitch is also where the club's own coach
+   builds the eleven, for the current season only; `coach-panel` specifies it.
+2. **Partidos** — every game of the club that season, played and unplayed, by matchday. This
+   is the only place a club's calendar is listed: the coach's panel does not repeat it.
 3. **Jugadores** — that season's squad, grouped by general position, with shirt number,
    specific position, age, value and loans marked, plus the squad's total value. Values are
    plain figures with thousands separators and no currency symbol: the league fixes no
@@ -217,6 +219,37 @@ The tabs MUST hold:
 - GIVEN a club profile
 - WHEN a tab that does not exist is requested
 - THEN General is rendered with HTTP 200
+
+### Requirement: The chat is a page of the site, not of a panel
+
+The chat MUST live at `/chat`, on the public site, and MUST NOT have a copy inside either
+panel: a conversation needs the width of a page, and two screens for one thread drift apart.
+
+It is the only page of the site that requires a session. The reader MUST be resolved from
+**both** guards — a coach signs in through `club`, an administrator through `web` — and with
+both open the coach's wins, which is the session the rest of the site already follows. Anyone
+without either MUST be sent to the coach's sign-in, the way in the site already offers.
+
+A participant MUST see only their own conversations and MUST NOT open someone else's by
+typing its id — the administrator included, who in the chat is a presidente like any other.
+There MUST be one conversation per pair, and the unread count MUST ride in the site's header,
+on every page, since this deployment sends no mail and runs no websockets.
+
+Offers MUST read inside the thread, in the order they happened, and MUST be offered only when
+both sides are coaches with clubs: bidding needs a club to buy with, and an administrator runs
+none. `league-data-model` specifies what accepting does, and does not do.
+
+#### Scenario: A thread that is not yours does not open
+
+- GIVEN a conversation between two other people
+- WHEN a third person requests it by id
+- THEN nothing is shown
+
+#### Scenario: The header carries what is waiting
+
+- GIVEN two messages nobody has read yet
+- WHEN their recipient opens any page of the site
+- THEN the Chat entry carries the number 2
 
 ### Requirement: The coach's way in does not change the public site
 

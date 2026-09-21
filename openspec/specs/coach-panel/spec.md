@@ -18,8 +18,14 @@ The panel MUST register only the coach's own modules, and MUST NOT register any
 administrator resource, for the reason given in `admin-panel`: hiding a resource inside a
 shared panel leaves its route alive.
 
-As of Fase 13 the modules are **Plantilla**, **Trofeos**, **Mis enfrentamientos**, **Once
-ideal**, **Contabilidad**, **Fichajes** and **Chat**. That is the block complete.
+As of Fase 13 the modules are **Plantilla**, **Contabilidad** and **Fichajes**.
+
+Four things that might be expected here are deliberately absent, because the public site
+already holds them and a second screen for the same thing only adds places to look: the
+**starting eleven**, which the coach builds on the club's own page, the **palmarés**, the
+club's **calendar**, and the **chat**, which needs a whole page and gets one at `/chat`
+(`public-views`). The panel does not link to them either — the public site is the way
+back.
 
 Every module MUST scope its own query to the coach's club, independently of the record
 policies. The policies are the second lock, not the first: a resource that forgets to scope
@@ -35,9 +41,9 @@ would list other clubs' records even where each row is then refused on open.
 
 `SquadResource` MUST let the coach set a player's general position, from the four in
 `league-data-model`, and their specific position, from the ones that belong to that general
-one. It MUST NOT let the coach edit the player's identity — their name is the
-administrator's to set — and MUST NOT offer creating or deleting players: squad arrivals and
-departures are the administrator's, and become transfers in Fase 12.
+one. It MUST NOT let the coach edit the player's identity — their name is the administrator's
+to set — and MUST NOT offer creating or deleting players: squad arrivals and departures are
+the administrator's, and become transfers in Fase 12.
 
 Changing the general position MUST clear the specific one in the form, because a specific
 position that belonged to the old general one is not merely stale, it is invalid: the model
@@ -80,43 +86,6 @@ the administrator without a way to fill it in.
 - WHEN the administrator edits them in `/admin` and picks LD
 - THEN the player is saved with LD
 
-### Requirement: Fixtures are the club's calendar, read-only
-
-`FixtureResource` MUST list the games the coach's club plays, home and away, and MUST NOT
-allow creating, editing or deleting one: results are loaded by the administrator.
-
-A game MUST be matched to the club, not to the team, so that a game from a previous season
-still belongs to the club that played it — which is what the club entity exists for.
-
-The list MUST be filterable by season and by matchday. The matchday filter MUST filter by
-**number** and MUST offer only the numbers the club actually plays: each division runs its
-own calendar, so there is one "jornada 1" per division and season, and a filter over
-matchday rows would offer the same number several times with nothing to tell them apart.
-
-#### Scenario: A past season's game is still the club's
-
-- GIVEN a club that played in a season before this one
-- WHEN its coach opens Mis enfrentamientos
-- THEN that game is listed, although the team row of that season is not this season's
-
-#### Scenario: The matchday filter narrows to one number
-
-- GIVEN the club's games across two matchdays
-- WHEN the coach filters by the first one's number
-- THEN only that matchday's games remain
-
-### Requirement: Trophies are read-only to the coach
-
-The trophies module MUST show the coach's club's trophies with no create, edit or delete
-action. Who awards them, and the rule against awarding the same one twice in a season, is
-specified in `admin-league-crud`.
-
-#### Scenario: The coach cannot award themselves a trophy
-
-- GIVEN a coach with their club's palmarés open
-- WHEN they look for a way to add one
-- THEN there is none
-
 ### Requirement: The coach proposes money and never approves it
 
 The Contabilidad module MUST show the club's ledger and its balance, and MUST let the coach
@@ -151,59 +120,38 @@ a sale for the one letting them go — since the same row is both.
 - WHEN A's coach opens their history
 - THEN the row reads as a sale, naming B as the other side
 
-### Requirement: The chat is one screen behind two panels
+### Requirement: The starting eleven is built on the club's public page
 
-The chat MUST be the same screen in `/club` and in `/admin`, built from one shared component:
-it is the same thread seen from both sides, and two copies of it would drift apart. It MUST
-refresh by polling rather than websockets (design D11), which need a process this deployment
-does not keep up.
+The starting eleven MUST be edited on the club's public profile, in the General tab, and MUST
+NOT have a second screen in the coach's panel: two screens writing the same lineup drift
+apart, and the place to judge how an eleven looks is the place where it is shown.
 
-A participant MUST see only their own conversations, and MUST NOT open someone else's by
-typing its id — the administrator included, who in the chat is a presidente like any other and
-reads only their own threads. The navigation entry MUST carry the number of unread messages.
+The page MUST render the editor only for the coach of that club and only for the **current**
+season — a past season's eleven is history, not a draft. Everyone else MUST get the pitch as
+plain HTML, drawn with whatever is stored or empty, and no interactive component at all.
 
-Administrators MUST be shown as **presidentes**, and coaches with their club.
+Because the editing requests do not travel through the public route, the component MUST
+re-check that permission on **every** action, and MUST refuse a player who is not in that
+season's squad even when the id is supplied by hand.
 
-#### Scenario: A thread that is not yours does not open
-
-- GIVEN a conversation between two other people
-- WHEN a third person requests it by id
-- THEN nothing is shown
-
-### Requirement: A coach bids from inside the thread
-
-The offer form MUST be offered only when both sides are coaches with clubs, and MUST list only
-the other club's squad for the current season. Offers, and their answers, MUST read in the
-thread in the order they happened: an offer is part of the conversation, not a screen of its
-own.
-
-Accepting MUST tell the coach plainly that nothing has moved yet and that the administrator
-records the transfer.
-
-#### Scenario: A president is talked to, not negotiated with
-
-- GIVEN a coach in a conversation with an administrator
-- WHEN they look for the offer form
-- THEN there is none, because an administrator runs no club to buy with
-
-### Requirement: The starting eleven is a page, not a CRUD
-
-The starting eleven MUST be a page inside the coach's panel rather than a resource (design
-D5): eleven slots laid across the lines of a formation is not a table of rows.
-
-It MUST offer the eight formations of `league-data-model`, draw the goalkeeper's line first
+It MUST offer the eight formations of `league-data-model`, draw the goalkeeper's line first,
 and MUST store the slot each player occupies, never coordinates (design D6).
 
-The page MUST:
+The editor MUST:
 
-1. offer only the players in the club's squad **for the current season**, since the eleven
-   belongs to that season's team;
+1. offer only the players in the club's squad for the current season;
 2. keep, on a change of formation, every player whose slot still exists, and drop only those
    left without one — reshaping a 4-4-2 into a 4-3-3 must not empty the pitch;
-3. save an incomplete eleven, because a coach builds it over several sittings;
-4. refuse the same player in two slots;
-5. say so plainly, instead of failing, when the club is not enrolled in the current season
-   and there is therefore no squad to pick from.
+3. place a player who already holds another slot by **moving** them, not by repeating them;
+4. save only when the coach asks it to, never on each pick: on a page anyone can read, saving
+   every click would leave a half-built eleven on show;
+5. save an incomplete eleven, because a coach builds it over several sittings.
+
+#### Scenario: Only the club's own coach gets the editor
+
+- GIVEN a club's public profile
+- WHEN an anonymous visitor, another club's coach, or an administrator opens it
+- THEN the eleven is drawn read-only and no save button exists
 
 #### Scenario: Changing formation keeps whoever still fits
 
@@ -211,8 +159,8 @@ The page MUST:
 - WHEN the coach switches to a formation with fewer slots
 - THEN the players whose slots survive are still placed, and the rest are cleared
 
-#### Scenario: The same player cannot hold two slots
+#### Scenario: Placing a player twice moves them
 
-- GIVEN a player already placed
-- WHEN the coach places them in a second slot and saves
-- THEN the save is refused and the eleven is left as it was
+- GIVEN a player already placed in one slot
+- WHEN the coach places them in another
+- THEN the first slot is emptied and the player holds only the second
