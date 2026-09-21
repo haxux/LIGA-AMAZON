@@ -101,6 +101,10 @@ class Player extends Model
     {
         return [
             'birth_date' => 'date',
+            // La salida de la liga es una fecha, no una cadena: sin este cast
+            // llegaba en crudo desde la base y cualquier ->format() sobre ella
+            // reventaba la página que la leyera (Fase 12, D9).
+            'left_at' => 'date',
             'shirt_number' => 'integer',
             'market_value' => 'integer',
         ];

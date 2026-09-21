@@ -28,7 +28,8 @@
 
         <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($group['members'] as $membership)
-                <div class="flex items-center gap-3 rounded-[5px] bg-surface-alt p-3">
+                <a href="{{ route('site.players.show', array_filter(['player' => $membership->player_id, 'temporada' => $selectedSeason?->id])) }}"
+                   class="flex items-center gap-3 rounded-[5px] bg-surface-alt p-3 hover:bg-surface-muted">
                     <span class="flex size-8 shrink-0 items-center justify-center rounded-[3px] bg-surface-muted font-display text-sm font-bold text-brand">
                         {{ $membership->shirt_number ?? '—' }}
                     </span>
@@ -44,7 +45,7 @@
                             @if ($membership->type === \App\Models\SquadMembership::TYPE_LOAN) · CEDIDO @endif
                         </span>
                     </span>
-                </div>
+                </a>
             @endforeach
         </div>
     </section>
