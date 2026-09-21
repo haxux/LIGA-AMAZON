@@ -95,12 +95,25 @@ phases:
       y un traspaso no se edita, porque se ejecuta al crearse. Hallazgo: un
       SELECT que no trae `status` deja el saldo clavado en el inicial, porque
       la columna ausente llega como null.
+
+      Fase 13 aplicada en la rama fase-13/1-chat-y-ofertas, en dos commits
+      (mensajería; ofertas y bandeja). Suite de 408 a 433. Cuatro tablas
+      nuevas, todo aditivo. Decisiones propias: una conversación por pareja,
+      las ofertas sólo entre técnicos —ofertar exige un club que comprar y un
+      presidente no dirige ninguno—, negociar crea una contraoferta en vez de
+      reescribir la anterior, y la bandeja del admin ejecuta creando un
+      traspaso de la Fase 12, que sigue siendo la única puerta al dinero.
+      Hallazgo con arreglo de raíz: ClubFactory sorteaba el nombre de un
+      repertorio de diez y chocaba contra los clubes nombrados a mano en los
+      tests (clubs.name es único); ahora elige uno que no tenga nadie. Con eso
+      el bloque 9-13 queda aplicado entero y ninguna de las cinco ramas está
+      subida.
   tasks:
     status: done
     artifact: openspec/changes/fase-9-direccion-tecnica/tasks.md
     note: >
-      Fases 9 a 12 detalladas, una debajo de la otra en el mismo artefacto; la
-      13 sigue como esqueleto al final.
+      Las cinco fases del bloque detalladas, una debajo de la otra en el mismo
+      artefacto, con el cuadro de cierre al final.
       De la 9, la unidad 1 lleva dos restricciones aprendidas en el cambio
       anterior: el
       índice único nuevo entra antes de soltar el viejo (errno 1553 en MySQL,

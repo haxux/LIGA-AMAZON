@@ -332,6 +332,91 @@ migraciones, todas aditivas.
       decisión cerrada —no hay tareas programadas en este despliegue— y el regreso lo registra
       el administrador.
 
-## Fases siguientes (esqueleto)
+---
 
-- **Fase 13** — Chat y ofertas.
+# Tasks: Fase 13 — Chat y ofertas
+
+**Estado: aplicada.** 433 tests en verde (línea base 408), Pint limpio sobre lo tocado. Cuatro
+tablas nuevas, todo aditivo.
+
+**Rama**: `fase-13/1-chat-y-ofertas`
+
+## Decisiones de esta fase (no estaban en la propuesta, se toman aquí)
+
+- **Una conversación por pareja**, buscada o creada al abrirla. Dos hilos entre las mismas dos
+  personas partirían la historia en dos y el contador de no leídos dejaría de significar nada.
+- **Las ofertas son entre técnicos.** Una oferta necesita un club que compre, y un
+  administrador no dirige ninguno (invariante de `User` desde la Fase 9). Con un presidente se
+  puede hablar; ofrecer, no.
+- **Negociar es una contraoferta**: la anterior queda en `negociando` y nace otra por el mismo
+  jugador, con el mismo club comprador y el importe nuevo, movida por quien responde. Así la
+  cadena se lee entera en el hilo y ninguna oferta se reescribe.
+- **La bandeja del administrador ejecuta creando un traspaso** (design D8), no tocando
+  plantillas ni saldos por su cuenta: sigue habiendo UNA sola puerta de entrada al dinero.
+- **El chat se guarda en el panel de cada uno**: una pantalla en `/club` para los técnicos y
+  otra en `/admin` para los presidentes, con el mismo componente detrás. Dos paneles, un chat.
+
+## Unidad 1 — Conversaciones y mensajes (TDD)
+
+- [x] 1.1 RED: abrir una conversación con la misma persona dos veces devuelve la misma; un
+      tercero no la ve; los no leídos se cuentan por participante.
+- [x] 1.2 Migración: `conversations`, `conversation_user` (con `last_read_at`) y `messages`.
+- [x] 1.3 `ChatService` o modelo con `Conversation::between()`, y política: sólo los dos
+      participantes leen y escriben.
+- [x] 1.4 Pantalla de chat compartida por los dos paneles, con sondeo (design D11: no hay
+      websockets en este despliegue) y contador de no leídos en el menú.
+      **HALLAZGO**: `ClubFactory` sorteaba el nombre de un repertorio de diez y chocaba con
+      los clubes que un test nombra a mano —`clubs.name` es único—, así que la suite caía una
+      de cada pocas ejecuciones. Se arregló en el factory, no test a test: ahora elige un
+      nombre que no tenga nadie, ni en la base ni entregado antes en el mismo proceso.
+- [x] 1.5 Los administradores se llaman **presidentes** en el chat (decisión cerrada).
+
+## Unidad 2 — Ofertas dentro del hilo (TDD)
+
+- [x] 2.1 RED: se ofrece por un jugador de la plantilla del interlocutor, no por uno propio;
+      el importe tiene que ser mayor que cero.
+- [x] 2.2 RED: aceptar NO mueve plantillas ni presupuestos (design D10), sólo deja la oferta
+      como acordada; rechazar la cierra; negociar crea la contraoferta.
+- [x] 2.3 Migración y modelo `Offer` con sus cinco estados y quién movió cada uno.
+- [x] 2.4 La oferta se ve dentro del hilo, entre los mensajes, en orden.
+
+## Unidad 3 — La bandeja del administrador (TDD)
+
+- [x] 3.1 RED: una oferta aceptada aparece pendiente de ejecutar; ejecutarla crea el traspaso
+      —que es lo que mueve dinero y plantilla— y la deja como ejecutada.
+- [x] 3.2 Recurso de ofertas en `/admin` con el contador en el menú, como la bandeja del
+      presupuesto.
+
+## Unidad 4 — Especificación y cierre
+
+- [x] 4.1 Deltas en `league-data-model`, `coach-panel` y `admin-league-crud`.
+- [x] 4.2 Suite en verde y Pint limpio.
+- [x] 4.3 Marcar tareas, anotar estado y cerrar el bloque de las fases 9 a 13.
+
+## Lo que queda por hacer a mano
+
+- [ ] V.1 Probar el chat en el navegador entre dos cuentas reales, incluido el sondeo: es la
+      única pantalla del bloque que no se puede juzgar del todo con tests.
+- [ ] V.2 Recorrer el circuito entero: oferta, contraoferta, aceptación y firma, y comprobar
+      que los dos saldos y la plantilla quedan como deben.
+- [ ] V.3 Desplegar. Las cuatro migraciones son aditivas.
+- [ ] V.4 Pendiente anotado, no defecto: el chat no avisa por correo (decisión cerrada). El
+      aviso vive en el contador de no leídos.
+
+---
+
+# El bloque 9–13, cerrado
+
+Las cinco fases están aplicadas y en verde, cada una en su rama y ninguna subida todavía:
+
+| Fase | Rama | Tests |
+|---|---|---|
+| 9 — Club y rol técnico | `fase-9/1-club-y-rol-tecnico` | 299 |
+| 10 — Plantilla, trofeos, enfrentamientos, once ideal | `fase-10/1-plantilla-trofeos` | 340 |
+| 11 — Equipos en la parte pública | `fase-11/1-equipos-publicos` | 369 |
+| 12 — Contabilidad | `fase-12/1-contabilidad` | 408 |
+| 13 — Chat y ofertas | `fase-13/1-chat-y-ofertas` | 433 |
+
+Las ramas están apiladas una sobre otra en ese orden, así que subirlas es subirlas en ese
+mismo orden. Lo que la propuesta dejaba fuera sigue fuera: fotos de jugadores, avisos por
+correo, websockets, tareas programadas y traducir `/admin`.

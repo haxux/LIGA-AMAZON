@@ -22,6 +22,10 @@ The system MUST create the following tables (all with `id` and `timestamps()`):
 | players | club_id (FK→clubs, cascade), name, position, specific_position (nullable), market_value (nullable), left_at/left_to (nullable), birth_date (nullable) | — |
 | budget_movements | club_id (FK→clubs, cascade), season_id (FK→seasons, cascade), transfer_id (FK→transfers, nullable, cascade), type (ingreso/egreso), amount, reason, status, created_by (FK→users, nullable) | indexed (club_id, status) |
 | transfers | player_id (FK→players, cascade), season_id (FK→seasons, cascade), type, scope, from_club_id/to_club_id (FK→clubs, nullable), external_club (nullable), fee, loan_term (nullable) | indexed (season_id, type) |
+| conversations | — | one per pair of participants |
+| conversation_user | conversation_id (FK→conversations, cascade), user_id (FK→users, cascade), last_read_at (nullable) | unique(conversation_id, user_id) |
+| messages | conversation_id (FK→conversations, cascade), user_id (FK→users, cascade), body | indexed (conversation_id, id) |
+| offers | conversation_id (FK→conversations, cascade), player_id (FK→players, cascade), from_club_id (FK→clubs, cascade), amount, status, moved_by (FK→users, nullable), transfer_id (FK→transfers, nullable) | indexed (status, id) |
 | stadiums | club_id (FK→clubs, cascade, unique), name, city, capacity (nullable) | 1:1 with club |
 | matchdays | season_id (FK→seasons, cascade), division_id (FK→divisions, cascade), number, date (nullable, nominal) | unique(season_id, division_id, number) |
 | games | matchday_id (FK→matchdays, cascade), home_team_id/away_team_id (FK→teams, restrict), kickoff_at (nullable), home_score/away_score (nullable) | indexed FKs |
@@ -294,6 +298,39 @@ what it cost. Only an administrator sets it.
 - GIVEN a squad whose players carry values
 - WHEN the club page is opened
 - THEN the total is the sum of their current values
+
+### Requirement: A conversation is one per pair, and an offer is a state machine inside it
+
+There MUST be at most one conversation between any two people: two threads between the same
+two would split the history and leave the unread counter meaningless. What each participant
+has read MUST be a timestamp on their participation, not a flag per message — the question it
+answers is how many are left, which a date answers.
+
+An offer MUST record the conversation it was made in, the player, the club bidding, the
+amount, its status (enviada, aceptada, rechazada, negociando, ejecutada) and who moved it last.
+The amount MUST be positive, and a club MUST NOT bid for a player it already owns: an offer is
+for someone in the other party's squad.
+
+Accepting an offer MUST NOT move squads or budgets (design D10). It MUST mark the offer agreed
+and leave it for an administrator, who executes it by recording a transfer — the single write
+that pays, collects and moves a player. Two paths writing the same thing is how one of them
+ends up unwatched.
+
+Negotiating MUST leave the previous offer as `negociando` and create a counter-offer for the
+same player and the same buying club, so the chain reads whole in the thread. Whoever moved an
+offer MUST NOT be the one to answer it, which is what keeps a negotiation alternating.
+
+#### Scenario: Accepting agrees and nothing else
+
+- GIVEN an offer for a player of another club
+- WHEN the other coach accepts it
+- THEN it reads as accepted, no movement or transfer exists, and the player has not moved
+
+#### Scenario: A counter-offer keeps the buyer
+
+- GIVEN an offer from club A for a player of club B
+- WHEN B's coach counters with a higher amount
+- THEN the first offer reads as negotiating and the new one still has A as the buying club
 
 ### Requirement: Standings zones band a division's table by position
 

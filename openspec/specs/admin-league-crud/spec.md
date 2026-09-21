@@ -144,6 +144,23 @@ player's identity form.
 - WHEN the administrator rejects it
 - THEN it is kept in the ledger as rejected and the balance does not move
 
+### Requirement: Accepted offers wait in the administrator's tray
+
+`OfferResource` MUST list the offers and MUST NOT allow creating one: offers are born in the
+chat, between coaches. An accepted offer MUST be executable from here, and executing it MUST
+record a transfer — which is what charges the buyer, credits the seller and moves the player —
+and mark the offer executed, keeping the link between the two. The number of accepted offers
+awaiting a signature MUST show on the navigation entry.
+
+Only an administrator MUST be able to execute, and only an accepted offer.
+
+#### Scenario: Signing an offer records the transfer
+
+- GIVEN an offer both coaches agreed on
+- WHEN the administrator executes it
+- THEN a transfer exists with that fee, both budgets move, the player changes squad and the
+  offer reads as executed
+
 ### Requirement: Team crest upload wires to the Fase 2 public disk
 
 `TeamResource`'s form MUST include a `FileUpload` component bound to the `public` disk, storing new files under `crests/`. Uploading a new crest MUST replace the team's `crest_path`, and the resulting file MUST be retrievable via its public URL.

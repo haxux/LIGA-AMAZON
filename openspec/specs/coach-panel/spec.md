@@ -18,8 +18,8 @@ The panel MUST register only the coach's own modules, and MUST NOT register any
 administrator resource, for the reason given in `admin-panel`: hiding a resource inside a
 shared panel leaves its route alive.
 
-As of Fase 12 the modules are **Plantilla**, **Trofeos**, **Mis enfrentamientos**, **Once
-ideal**, **Contabilidad** and **Fichajes**. The chat (Fase 13) joins them later.
+As of Fase 13 the modules are **Plantilla**, **Trofeos**, **Mis enfrentamientos**, **Once
+ideal**, **Contabilidad**, **Fichajes** and **Chat**. That is the block complete.
 
 Every module MUST scope its own query to the coach's club, independently of the record
 policies. The policies are the second lock, not the first: a resource that forgets to scope
@@ -150,6 +150,41 @@ a sale for the one letting them go — since the same row is both.
 - GIVEN a transfer from club A to club B
 - WHEN A's coach opens their history
 - THEN the row reads as a sale, naming B as the other side
+
+### Requirement: The chat is one screen behind two panels
+
+The chat MUST be the same screen in `/club` and in `/admin`, built from one shared component:
+it is the same thread seen from both sides, and two copies of it would drift apart. It MUST
+refresh by polling rather than websockets (design D11), which need a process this deployment
+does not keep up.
+
+A participant MUST see only their own conversations, and MUST NOT open someone else's by
+typing its id — the administrator included, who in the chat is a presidente like any other and
+reads only their own threads. The navigation entry MUST carry the number of unread messages.
+
+Administrators MUST be shown as **presidentes**, and coaches with their club.
+
+#### Scenario: A thread that is not yours does not open
+
+- GIVEN a conversation between two other people
+- WHEN a third person requests it by id
+- THEN nothing is shown
+
+### Requirement: A coach bids from inside the thread
+
+The offer form MUST be offered only when both sides are coaches with clubs, and MUST list only
+the other club's squad for the current season. Offers, and their answers, MUST read in the
+thread in the order they happened: an offer is part of the conversation, not a screen of its
+own.
+
+Accepting MUST tell the coach plainly that nothing has moved yet and that the administrator
+records the transfer.
+
+#### Scenario: A president is talked to, not negotiated with
+
+- GIVEN a coach in a conversation with an administrator
+- WHEN they look for the offer form
+- THEN there is none, because an administrator runs no club to buy with
 
 ### Requirement: The starting eleven is a page, not a CRUD
 
