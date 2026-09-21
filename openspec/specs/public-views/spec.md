@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Public-facing, unauthenticated Blade views and their composition rules: standings (division-aware), partidos (combined schedule/results), goleadores (season-wide top scorers/assisters), and noticias (listing + slug detail). A read-only surface over the Fase 2–5 domain models and services.
+Public-facing, unauthenticated Blade views and their composition rules: standings (division-aware), partidos (combined schedule/results), goleadores (season-wide top scorers/assisters), noticias (listing + slug detail), and equipos (club listing + club profile). A read-only surface over the domain models and services.
 
 ## Requirements
 
@@ -147,6 +147,74 @@ A slug-based detail route MUST render a single news item's full content when its
 - GIVEN a news item with a null or future `published_at` and slug "borrador"
 - WHEN its detail page is requested at that slug
 - THEN the response is HTTP 404
+
+### Requirement: Equipos lists a season's clubs by division
+
+`/equipos` MUST list the clubs taking part in a season, grouped by division and ordered by
+name, with the same `?temporada` contract as the other public pages: the value picks a
+season, and anything the list does not hold falls back to the active one.
+
+A team without a division MUST still be listed, under its own heading. `teams.division_id`
+is nullable, so a club just enrolled may not have one yet, and hiding it would hide it
+exactly when someone is looking for it.
+
+Each entry MUST link to that club's profile, carrying the season being viewed.
+
+#### Scenario: A club with no division still appears
+
+- GIVEN a season with one division and a team left without one
+- WHEN the listing is requested
+- THEN both are listed, the second under a heading of its own
+
+### Requirement: A club profile is the club's, and the season is a filter inside it
+
+`/equipos/{club}` MUST render the profile of a **club** — the permanent identity of Fase 9 —
+with six tabs in this order: General (the default), Partidos, Jugadores, Trofeos, Stats and
+Técnico. The tab MUST live in the path, because a tab is a page that gets linked and shared,
+while the season stays in `?temporada`, which is a filter. An unknown tab MUST fall back to
+General rather than 404: a public URL is typed by hand.
+
+The season selector MUST offer only the seasons the club actually played. A club not enrolled
+in the season being viewed MUST still render — that is what a permanent identity is for — and
+MUST say so instead of showing empty tabs.
+
+Every figure MUST be derived at request time from `games` and `game_events`, with no
+statistics table (design D12), reusing `StandingsService` for the position and
+`GoalscorersService`, narrowed to the club's squad, for the scorer and assister.
+
+The tabs MUST hold:
+
+1. **General** — the next unplayed game, the last five results as G/E/P from this club's side,
+   the position in its division's table, the club's top scorer and top assister of the season,
+   and the starting eleven drawn on a pitch.
+2. **Partidos** — every game of the club that season, played and unplayed, by matchday.
+3. **Jugadores** — that season's squad, grouped by general position, with shirt number,
+   specific position, age, and loans marked.
+4. **Trofeos** — the **whole** palmarés, not the selected season's: a title is won once and
+   displayed ever after.
+5. **Stats** — played, won, drawn, lost, goals for and against, goal difference, points,
+   cards and clean sheets. Cards and clean sheets MUST count only players who belonged to that
+   season's squad, since the events hang off the player and a loaned player played for two.
+6. **Técnico** — the name of the coach's account, and nothing else about them. When the club
+   has no coach, the tab MUST say so.
+
+#### Scenario: The palmarés ignores the season selector
+
+- GIVEN a club with a trophy won in a past season
+- WHEN its Trofeos tab is opened on the current season
+- THEN the past trophy is listed
+
+#### Scenario: A rival's goals are not this club's
+
+- GIVEN a game where a player of each club scored
+- WHEN the club's General tab is opened
+- THEN only its own player is named as top scorer
+
+#### Scenario: An unknown tab opens General
+
+- GIVEN a club profile
+- WHEN a tab that does not exist is requested
+- THEN General is rendered with HTTP 200
 
 ### Requirement: The coach's way in does not change the public site
 

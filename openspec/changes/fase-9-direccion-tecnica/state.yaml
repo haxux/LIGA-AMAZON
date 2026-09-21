@@ -73,12 +73,23 @@ phases:
       indistinguibles, así que la jornada se filtra por número. NOTA: ni la
       Fase 9 ni la 10 están subidas todavía — el propietario decidió el
       2026-09-21 construir primero y subir después.
+
+      Fase 11 aplicada en la rama fase-11/1-equipos-publicos, en dos commits
+      (la derivación y la sección pública). Suite de 340 a 369. Sin
+      migraciones. Tres decisiones que la propuesta no traía y se toman aquí:
+      la URL de un club lleva su id (un slug pediría columna nueva y relleno
+      hacia atrás, y esta fase sólo añade), la pestaña va en la ruta y la
+      temporada en la query, y un club no inscrito este año conserva ficha.
+      Dos hallazgos: el multiorden de Collection desordena cuando el segundo
+      criterio mezcla fechas con nulos (los partidos se ordenan por una clave
+      compuesta), y Lineup ya tenía un rows() que nadie usaba y devolvía el
+      tamaño de cada línea en vez de sus huecos.
   tasks:
     status: done
     artifact: openspec/changes/fase-9-direccion-tecnica/tasks.md
     note: >
-      Fases 9 y 10 detalladas, una debajo de la otra en el mismo artefacto; las
-      11 a 13 siguen como esqueleto al final.
+      Fases 9, 10 y 11 detalladas, una debajo de la otra en el mismo
+      artefacto; la 12 y la 13 siguen como esqueleto al final.
       De la 9, la unidad 1 lleva dos restricciones aprendidas en el cambio
       anterior: el
       índice único nuevo entra antes de soltar el viejo (errno 1553 en MySQL,

@@ -162,8 +162,94 @@ revertir los commits y soltar esas tablas.
 - [ ] V.4 Desplegar. Las tres migraciones son aditivas y el arranque del contenedor las aplica
       solo (`DESPLIEGUE.md` §5.1).
 
+---
+
+# Tasks: Fase 11 — Equipos en la parte pública
+
+**Estado: aplicada.** 369 tests en verde (línea base 340), Pint limpio. Puramente aditiva:
+una sección nueva del sitio, sin migraciones. Revertirla es revertir sus dos commits.
+
+**Rama**: `fase-11/1-equipos-publicos`
+
+## Decisiones de esta fase (no estaban en la propuesta, se toman aquí)
+
+- **URL por id, no por slug**: `/equipos/12`. Un slug obligaría a una columna nueva, única y
+  rellenada hacia atrás; la fase dejaría de ser aditiva por una cuestión de estética de URL.
+  Queda anotado como posible mejora.
+- **La pestaña va en la ruta, la temporada en la query**: `/equipos/12/jugadores?temporada=3`.
+  Una pestaña es una página —se enlaza y se comparte—; la temporada es un filtro, y el resto
+  del sitio ya la lleva en `?temporada`.
+- **El selector ofrece sólo las temporadas que el club jugó**, y si la vigente no es una de
+  ellas cae en la última que sí. Un club no inscrito este año tiene ficha igualmente: es lo
+  que la identidad permanente de la Fase 9 existe para permitir.
+- **Pestaña desconocida → General**, como `?jornada` inexistente cae en la jornada en curso.
+
+## Unidad 1 — Listado de equipos (TDD)
+
+- [x] 1.1 RED: `/equipos` lista los clubes de la temporada vigente agrupados por división,
+      cambia con `?temporada`, y un club sin división no desaparece del listado.
+- [x] 1.2 `Site\ClubsController@index` + vista, con el selector de temporada que ya usan
+      Clasificación y Partidos.
+- [x] 1.3 «Equipos» en la barra de navegación, junto a Noticias, y en el pie.
+
+## Unidad 2 — La ficha y sus seis pestañas (TDD)
+
+- [x] 2.1 RED: `/equipos/{club}` abre en General; cada pestaña responde en su ruta; una
+      inventada cae en General; un club sin ficha en esa temporada no revienta.
+- [x] 2.2 `Site\ClubsController@show` con la lista blanca de pestañas y el selector de
+      temporada acotado a las del club.
+- [x] 2.3 Cabecera de la ficha: escudo, nombre, año de fundación, estadio y división de la
+      temporada elegida.
+
+## Unidad 3 — General (TDD)
+
+- [x] 3.1 RED: próximo partido, últimos cinco resultados como G/E/P, posición en la tabla,
+      máximo goleador y máximo asistente del club, y el once ideal dibujado.
+- [x] 3.2 `ClubSeasonService`: todo derivado de `games` y `game_events`, sin tabla nueva
+      (design D12), como ya hacen `StandingsService` y `GoalscorersService`.
+      **HALLAZGO**: ordenar los partidos por dos criterios a la vez los dejaba desordenados
+      —el multiorden de `Collection` falla cuando el segundo criterio mezcla fechas con
+      nulos, y la hora de un partido es opcional—. Se ordena por una clave compuesta.
+- [x] 3.3 `GoalscorersService` gana un filtro por equipo en lugar de un servicio nuevo
+      (design D12). La pertenencia de la temporada es la que dice si el gol es de este club.
+- [x] 3.4 El dibujo del once se comparte con el panel: las líneas de una formación salen de
+      `Lineup`, que es donde vive la formación, y no se copian en dos vistas.
+      **HALLAZGO**: `Lineup` ya tenía un `rows()` que devolvía sólo el TAMAÑO de cada línea y
+      no lo usaba nadie; se sustituye por el que devuelve los números de hueco.
+
+## Unidad 4 — Partidos, Jugadores y Trofeos (TDD)
+
+- [x] 4.1 RED: Partidos lista los del club en la temporada, jugados y por jugar, por jornada.
+- [x] 4.2 RED: Jugadores muestra la plantilla de esa temporada —dorsal, posición específica y
+      edad— agrupada por posición general, y marca las cesiones.
+- [x] 4.3 RED: Trofeos muestra el palmarés ENTERO, no el de la temporada elegida: un título
+      se gana una vez y se exhibe siempre (es para lo que existe la entidad Club).
+
+## Unidad 5 — Stats y Técnico (TDD)
+
+- [x] 5.1 RED: Stats da partidos jugados, ganados, empatados, perdidos, goles a favor y en
+      contra, diferencia, puntos, tarjetas y porterías a cero de esa temporada.
+- [x] 5.2 RED: Técnico muestra el nombre de la cuenta del técnico asignado (decisión cerrada)
+      y dice que no hay ninguno cuando el club está sin técnico.
+
+## Unidad 6 — Especificación y cierre
+
+- [x] 6.1 Deltas en `public-views` con la sección nueva, y en `coach-panel` nada: esto es
+      sitio público, no panel.
+- [x] 6.2 Suite en verde (369) y Pint limpio sobre `app/`, `tests/` y `resources/`.
+- [x] 6.3 Marcar las tareas y anotar el estado.
+- [x] 6.4 Las siete rutas comprobadas contra el contenedor local con los datos del seed:
+      listado y las seis pestañas responden 200 y pintan lo suyo.
+
+## Lo que queda por hacer a mano
+
+- [ ] V.1 Mirar la sección en el navegador con ojos, no con `curl`: es la primera parte
+      pública que no sale del mockup de referencia.
+- [ ] V.2 Desplegar. Sin migraciones, así que el despliegue es sólo código.
+- [ ] V.3 Pendiente anotado, no defecto: la URL de un club lleva su id. Un slug pide columna,
+      unicidad y relleno hacia atrás, y encaja mejor en una fase que ya toque el esquema.
+
 ## Fases siguientes (esqueleto)
 
-- **Fase 11** — Equipos en la parte pública: listado y ficha con sus seis pestañas.
 - **Fase 12** — Contabilidad: valores, presupuesto, fichajes, ventas y préstamos.
 - **Fase 13** — Chat y ofertas.
