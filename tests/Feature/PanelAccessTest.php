@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Club;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,5 +64,34 @@ class PanelAccessTest extends TestCase
             Route::getRoutes()->getByName('register'),
             'A route named `register` appeared. canAccessPanel() must be narrowed before this ships.',
         );
+    }
+
+    /**
+     * Desde que el chat, el once ideal y las fichas viven en el sitio, se cruza
+     * de un lado a otro a menudo: cada panel deja la puerta a la vista.
+     *
+     * En dos tests y no en uno: visitar un panel deja a Filament con ése como
+     * panel actual durante el resto del proceso, así que encadenar los dos aquí
+     * pintaría el menú del primero en la segunda petición. En un navegador cada
+     * petición es un proceso nuevo y eso no pasa.
+     */
+    public function test_the_admin_panel_links_back_to_the_public_site(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('Go to the site')
+            ->assertSee(route('site.standings'), false);
+    }
+
+    public function test_the_coach_panel_links_back_to_their_club_page(): void
+    {
+        $club = Club::factory()->create();
+
+        $this->actingAs(User::factory()->coachOf($club)->create(), 'club')
+            ->get('/club')
+            ->assertOk()
+            ->assertSee('Ir al sitio')
+            ->assertSee(route('site.clubs.show', ['club' => $club->id]), false);
     }
 }

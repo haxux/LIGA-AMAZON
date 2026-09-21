@@ -7,10 +7,12 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -56,6 +58,17 @@ class ClubPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Club/Pages'), for: 'App\Filament\Club\Pages')
             ->pages([
                 Dashboard::class,
+            ])
+            // La salida al sitio, arriba del todo: el once, el chat y la ficha
+            // de su club están allí, así que se cruza a menudo. La vuelta la da
+            // el escudo de la cabecera pública.
+            ->navigationItems([
+                NavigationItem::make('Ir al sitio')
+                    ->url(fn (): string => route('site.clubs.show', array_filter([
+                        'club' => auth()->user()?->club_id,
+                    ])))
+                    ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                    ->sort(-1),
             ])
 
             ->middleware([
