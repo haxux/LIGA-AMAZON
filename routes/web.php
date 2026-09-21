@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Site\ClubProfileController;
+use App\Http\Controllers\Site\ClubsController;
 use App\Http\Controllers\Site\FixturesController;
 use App\Http\Controllers\Site\NewsController;
 use App\Http\Controllers\Site\ScorersController;
@@ -18,6 +20,11 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/', StandingsController::class)->name('site.standings');
     Route::get('/partidos', FixturesController::class)->name('site.fixtures');
     Route::get('/goleadores', ScorersController::class)->name('site.scorers');
+    Route::get('/equipos', ClubsController::class)->name('site.clubs.index');
+    // La pestaña va en la ruta y no en la query: es una página que se enlaza y
+    // se comparte, no un filtro. La temporada sí es un filtro, y viaja en
+    // ?temporada como en el resto del sitio.
+    Route::get('/equipos/{club}/{tab?}', ClubProfileController::class)->name('site.clubs.show');
     Route::get('/noticias', [NewsController::class, 'index'])->name('site.news.index');
     Route::get('/noticias/{slug}', [NewsController::class, 'show'])->name('site.news.show');
 });

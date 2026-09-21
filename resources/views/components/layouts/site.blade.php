@@ -16,6 +16,7 @@
                 ['label' => 'Clasificación', 'route' => 'site.standings', 'pattern' => 'site.standings'],
                 ['label' => 'Partidos', 'route' => 'site.fixtures', 'pattern' => 'site.fixtures'],
                 ['label' => 'Goleadores', 'route' => 'site.scorers', 'pattern' => 'site.scorers'],
+                ['label' => 'Equipos', 'route' => 'site.clubs.index', 'pattern' => 'site.clubs.*'],
                 ['label' => 'Noticias', 'route' => 'site.news.index', 'pattern' => 'site.news.*'],
             ];
         @endphp
@@ -71,6 +72,7 @@
                     </div>
                     <div class="flex flex-col gap-2">
                         <span class="font-mono text-[9px] tracking-[0.14em] text-brand">CLUBES</span>
+                        <a href="{{ route('site.clubs.index') }}" class="text-sm text-white/60 hover:text-brand">Equipos</a>
                         <a href="{{ route('site.scorers') }}" class="text-sm text-white/60 hover:text-brand">Goleadores</a>
                     </div>
                     <div class="flex flex-col gap-2">
