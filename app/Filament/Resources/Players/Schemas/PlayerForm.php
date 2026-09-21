@@ -7,6 +7,8 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 /**
@@ -48,7 +50,20 @@ class PlayerForm
             Select::make('position')
                 ->options(array_combine(self::POSITIONS, self::POSITIONS))
                 ->required()
-                ->native(false),
+                ->native(false)
+                ->live()
+                // Cambiar de posición general invalida la específica anterior:
+                // un central no puede seguir siendo extremo. Mismo gesto que en
+                // SquadResource, porque el campo es el mismo visto desde el
+                // otro panel.
+                ->afterStateUpdated(fn (Set $set) => $set('specific_position', null)),
+            Select::make('specific_position')
+                ->options(fn (Get $get): array => array_combine(
+                    Player::specificPositionsFor($get('position')),
+                    Player::specificPositionsFor($get('position')),
+                ))
+                ->native(false)
+                ->helperText('Pick the general position first.'),
             DatePicker::make('birth_date'),
         ];
     }

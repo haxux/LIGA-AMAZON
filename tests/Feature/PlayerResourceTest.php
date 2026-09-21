@@ -90,6 +90,47 @@ class PlayerResourceTest extends TestCase
         ]);
     }
 
+    /**
+     * La posición específica es de las dos partes (Fase 10): el técnico la
+     * ajusta desde su panel y el administrador, desde aquí.
+     */
+    public function test_the_administrator_assigns_a_specific_position(): void
+    {
+        $player = Player::factory()->create(['position' => 'Defender', 'specific_position' => null]);
+
+        Livewire::test(EditPlayer::class, ['record' => $player->getRouteKey()])
+            ->fillForm(['position' => 'Defender', 'specific_position' => 'LD'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('LD', $player->fresh()->specific_position);
+    }
+
+    public function test_the_specific_options_follow_the_general_position(): void
+    {
+        $player = Player::factory()->create(['position' => Player::POSITION_GOALKEEPER]);
+
+        $options = Livewire::test(EditPlayer::class, ['record' => $player->getRouteKey()])
+            ->instance()
+            ->getSchemaComponent('form.specific_position')
+            ->getOptions();
+
+        $this->assertSame(['POR' => 'POR'], $options);
+    }
+
+    /**
+     * Cambiar la general deja sin sentido a la específica anterior, así que el
+     * formulario la suelta en lugar de guardar un central de extremo.
+     */
+    public function test_changing_the_general_position_clears_the_specific_one(): void
+    {
+        $player = Player::factory()->create(['position' => 'Forward', 'specific_position' => 'ED']);
+
+        Livewire::test(EditPlayer::class, ['record' => $player->getRouteKey()])
+            ->fillForm(['position' => 'Midfielder'])
+            ->assertFormSet(['specific_position' => null]);
+    }
+
     public function test_position_filter_returns_only_matching_records(): void
     {
         $team = Team::factory()->create();

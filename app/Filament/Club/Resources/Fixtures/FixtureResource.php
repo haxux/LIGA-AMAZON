@@ -4,6 +4,7 @@ namespace App\Filament\Club\Resources\Fixtures;
 
 use App\Filament\Club\Resources\Fixtures\Pages\ListFixtures;
 use App\Models\Game;
+use App\Models\Matchday;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
@@ -47,13 +48,21 @@ class FixtureResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
+        return static::scopeToClub(parent::getEloquentQuery())
+            ->with(['homeTeam.club', 'awayTeam.club', 'matchday.division', 'matchday.season']);
+    }
+
+    /**
+     * @param  Builder<Game>  $query
+     * @return Builder<Game>
+     */
+    private static function scopeToClub(Builder $query): Builder
+    {
         $clubId = auth()->user()?->club_id;
 
-        return parent::getEloquentQuery()
-            ->with(['homeTeam.club', 'awayTeam.club', 'matchday.division', 'matchday.season'])
-            ->where(fn (Builder $query) => $query
-                ->whereHas('homeTeam', fn (Builder $team) => $team->where('club_id', $clubId))
-                ->orWhereHas('awayTeam', fn (Builder $team) => $team->where('club_id', $clubId)));
+        return $query->where(fn (Builder $game) => $game
+            ->whereHas('homeTeam', fn (Builder $team) => $team->where('club_id', $clubId))
+            ->orWhereHas('awayTeam', fn (Builder $team) => $team->where('club_id', $clubId)));
     }
 
     public static function table(Table $table): Table
@@ -81,9 +90,23 @@ class FixtureResource extends Resource
                 SelectFilter::make('temporada')
                     ->label('Temporada')
                     ->relationship('matchday.season', 'name'),
+                // Por número y no por fila: cada división lleva su propio
+                // calendario desde 2026-09-20, así que hay una jornada 1 por
+                // división y temporada y un desplegable de filas las
+                // ofrecería repetidas, sin nada que las distinga. Las
+                // opciones salen además de las jornadas que el club juega:
+                // ofrecer la 38 a quien lleva 12 no filtra, despista.
                 SelectFilter::make('jornada')
                     ->label('Jornada')
-                    ->relationship('matchday', 'number'),
+                    ->options(fn (): array => Matchday::query()
+                        ->whereHas('games', fn (Builder $games) => static::scopeToClub($games))
+                        ->distinct()
+                        ->orderBy('number')
+                        ->pluck('number', 'number')
+                        ->all())
+                    ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
+                        ? $query->whereHas('matchday', fn (Builder $matchday) => $matchday->where('number', $data['value']))
+                        : $query),
             ])
             ->emptyStateHeading('Todavía sin partidos')
             ->emptyStateDescription('Cuando el club tenga calendario, aparecerá aquí.');

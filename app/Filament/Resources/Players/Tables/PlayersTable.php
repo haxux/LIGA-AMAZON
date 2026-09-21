@@ -19,6 +19,7 @@ class PlayersTable
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('club.name')->label('Club')->searchable()->sortable(),
                 TextColumn::make('position')->badge(),
+                TextColumn::make('specific_position')->badge()->color('info')->placeholder('—'),
             ])
             ->filters([
                 SelectFilter::make('position')->options(array_combine(PlayerForm::POSITIONS, PlayerForm::POSITIONS)),

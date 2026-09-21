@@ -33,7 +33,10 @@ class SeasonCurrentGuardTest extends TestCase
 
     public function test_saving_a_non_current_season_leaves_the_current_flag_alone(): void
     {
-        $current = Season::factory()->create(['is_current' => true]);
+        // Los dos nombres van puestos a mano: el de la factory sale de un año
+        // al azar entre 2000 y 2099, así que uno de cada cien intentos chocaba
+        // contra el unique de `seasons.name` y tumbaba la suite sin motivo.
+        $current = Season::factory()->create(['is_current' => true, 'name' => '2023/24']);
         $other = Season::factory()->create(['is_current' => false, 'name' => '2024/25']);
 
         $other->update(['name' => '2024/25 - Renamed']);

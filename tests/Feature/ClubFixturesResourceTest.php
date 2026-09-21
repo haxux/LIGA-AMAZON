@@ -31,7 +31,7 @@ class ClubFixturesResourceTest extends TestCase
         parent::setUp();
 
         $this->club = Club::factory()->create();
-        $this->season = Season::factory()->create(['is_current' => true]);
+        $this->season = Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
         $this->actingAs(User::factory()->coachOf($this->club)->create());
         Filament::setCurrentPanel('club');
     }
@@ -40,13 +40,22 @@ class ClubFixturesResourceTest extends TestCase
     {
         $season ??= $this->season;
         $matchday = Matchday::factory()->create(['season_id' => $season->id]);
-        $mine = Team::factory()->create(['season_id' => $season->id, 'club_id' => ($club ?? Club::factory()->create())->id, 'division_id' => $matchday->division_id]);
+        // Un club se inscribe UNA vez por temporada, así que dos jornadas de la
+        // misma temporada reutilizan su equipo en lugar de chocar contra el
+        // unique(season_id, club_id).
+        $mine = $this->teamFor($club ?? Club::factory()->create(), $season, $matchday->division_id);
         $rival = Team::factory()->create(['season_id' => $season->id, 'division_id' => $matchday->division_id]);
 
         return Game::factory()->for($matchday)->create([
             'home_team_id' => $atHome ? $mine->id : $rival->id,
             'away_team_id' => $atHome ? $rival->id : $mine->id,
         ]);
+    }
+
+    private function teamFor(Club $club, Season $season, int $divisionId): Team
+    {
+        return Team::query()->where('season_id', $season->id)->where('club_id', $club->id)->first()
+            ?? Team::factory()->create(['season_id' => $season->id, 'club_id' => $club->id, 'division_id' => $divisionId]);
     }
 
     public function test_lists_only_games_the_club_plays(): void
@@ -76,6 +85,49 @@ class ClubFixturesResourceTest extends TestCase
         $previous = $this->gameFor($this->club, $old);
 
         Livewire::test(ListFixtures::class)->assertCanSeeTableRecords([$previous]);
+    }
+
+    /**
+     * La jornada se filtra por NÚMERO y no por fila: cada división lleva su
+     * propio calendario, así que hay tantas "jornada 1" como divisiones y
+     * temporadas, y un desplegable de filas las mostraría repetidas y sin
+     * forma de distinguirlas.
+     */
+    public function test_the_matchday_filter_keeps_only_that_matchday(): void
+    {
+        $first = $this->gameFor($this->club);
+        $second = $this->gameFor($this->club);
+
+        Livewire::test(ListFixtures::class)
+            ->filterTable('jornada', $first->matchday->number)
+            ->assertCanSeeTableRecords([$first])
+            ->assertCanNotSeeTableRecords([$second]);
+    }
+
+    public function test_the_matchday_filter_only_offers_the_clubs_own_numbers(): void
+    {
+        $mine = $this->gameFor($this->club);
+        $theirs = $this->gameFor(null);
+
+        $options = Livewire::test(ListFixtures::class)
+            ->instance()
+            ->getTable()
+            ->getFilter('jornada')
+            ->getOptions();
+
+        $this->assertSame([$mine->matchday->number => $mine->matchday->number], $options);
+        $this->assertArrayNotHasKey($theirs->matchday->number, $options);
+    }
+
+    public function test_the_season_filter_keeps_only_that_season(): void
+    {
+        $current = $this->gameFor($this->club);
+        $old = $this->gameFor($this->club, Season::factory()->create(['name' => '2023/24']));
+
+        Livewire::test(ListFixtures::class)
+            ->filterTable('temporada', $this->season->id)
+            ->assertCanSeeTableRecords([$current])
+            ->assertCanNotSeeTableRecords([$old]);
     }
 
     public function test_the_coach_cannot_create_games(): void

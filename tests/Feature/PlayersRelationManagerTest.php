@@ -64,6 +64,34 @@ class PlayersRelationManagerTest extends TestCase
     }
 
     /**
+     * La posición específica viaja con la identidad, así que se pone también
+     * aquí y no sólo desde el panel del técnico (Fase 10).
+     */
+    public function test_the_administrator_files_a_specific_position_from_the_club(): void
+    {
+        $club = Club::factory()->create();
+
+        Livewire::test(PlayersRelationManager::class, [
+            'ownerRecord' => $club,
+            'pageClass' => EditClub::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData([
+                'name' => 'Left Back',
+                'position' => 'Defender',
+                'specific_position' => 'LI',
+            ])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('players', [
+            'club_id' => $club->id,
+            'name' => 'Left Back',
+            'specific_position' => 'LI',
+        ]);
+    }
+
+    /**
      * El dorsal pertenece a la plantilla de una temporada, así que no se pide
      * al dar de alta la identidad de un jugador.
      */
