@@ -36,7 +36,18 @@ Filament's environment-dependent fallback, in any `APP_ENV`.
 
 Since Fase 9 there are two panels and the decision is **which** one a user may open, not
 whether they may open one: `admin` for the administrator role, `club` for the coach, and
-neither for anything else. This is still not the permission check — what a coach may touch
+neither for anything else.
+
+Each panel MUST authenticate on its **own guard** over the same user provider — `web` for
+`/admin`, `club` for `/club`. Sharing one guard had two consequences, both seen in testing: an
+administrator with a session open was treated as signed in on the coach's panel, so its login
+page redirected them into a 403 and the coach never reached the form at all; and signing in as
+a coach threw the administrator out, since a session holds one user per guard. Two guards let
+both sessions live in one session, which is what allows one panel per browser tab.
+
+Any middleware that depends on the default guard — `AuthenticateSession` is the one in the
+stack — MUST run with the panel's guard already set, or with both doors open it watches the
+wrong session. This is still not the permission check — what a coach may touch
 inside their own panel is decided by record policies (see below).
 
 While `canAccessPanel()` grants access unconditionally, the system MUST NOT expose any path

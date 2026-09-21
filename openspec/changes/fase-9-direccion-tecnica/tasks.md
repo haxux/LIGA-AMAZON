@@ -241,6 +241,20 @@ una sección nueva del sitio, sin migraciones. Revertirla es revertir sus dos co
 - [x] 6.4 Las siete rutas comprobadas contra el contenedor local con los datos del seed:
       listado y las seis pestañas responden 200 y pintan lo suyo.
 
+- [x] C.3 **El técnico no podía entrar en su panel** por más que la contraseña fuese correcta.
+      Los dos paneles compartían el guard `web`, así que con una sesión de administrador
+      abierta `Login::mount()` daba la sesión por buena, mandaba al técnico a `/club` y allí
+      `canAccessPanel` respondía 403: el formulario no llegaba a verse. El panel del técnico
+      pasa a tener guard propio (`club`, mismo proveedor de usuarios), lo que además permite
+      lo que pedía el propietario: `/admin` en una pestaña y `/club` en otra, a la vez.
+- [x] C.4 Un middleware propio fija ese guard al principio de la pila del panel, porque
+      `AuthenticateSession` mira el guard por defecto y corre antes de que Filament ponga el
+      suyo: con las dos puertas abiertas habría vigilado la sesión del administrador mientras
+      atendía al técnico.
+- [x] C.5 Los tests del panel del técnico se autentican por el guard `club`, que es lo que
+      hace producción. Tres de ellos sólo pasaban porque `Livewire::test()` se salta el
+      middleware.
+
 ## Lo que queda por hacer a mano
 
 - [ ] V.1 Mirar la sección en el navegador con ojos, no con `curl`: es la primera parte
