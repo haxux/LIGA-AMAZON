@@ -25,6 +25,27 @@ php artisan route:cache
 
 # §5.1 de DESPLIEGUE.md: las migraciones se aplican al arrancar, no a mano.
 #
+# Pero NO se comprueban con el migrador entero en cada arranque. El contenedor
+# escala a cero tras cinco minutos sin trafico y vuelve a arrancar muchas veces
+# al dia; medido contra la base real, `migrate:status` mas `migrate --force
+# --isolated` cuestan unos 4,2 s —dos arranques completos de Laravel y varias
+# idas y vueltas a la base— para descubrir, casi siempre, que no hay nada
+# pendiente. Conectar y contar filas cuesta 0,6 s.
+#
+# Asi que primero se pregunta barato: cuantas migraciones hay aplicadas frente a
+# cuantos ficheros trae la imagen (el numero se hornea en el build, donde la
+# lista de ficheros ya es definitiva). Si cuadran, no se toca nada.
+#
+# `applied` vale -1 cuando no se puede saber —base caida, o recien creada y sin
+# tabla `migrations`—, y entonces se migra: ante la duda, migrar.
+# Sin fichero se migra, no se salta: el fallo tiene que caer del lado seguro.
+expected=$(cat /app/.migraciones-esperadas 2>/dev/null || echo 999999)
+applied=$(php /app/docker/vercel/migraciones-aplicadas.php 2>/dev/null || echo -1)
+
+if [ "$applied" -ge "$expected" ] 2>/dev/null; then
+    echo "entrypoint: ${applied}/${expected} migraciones aplicadas, no hay nada que migrar" >&2
+else
+
 # --isolated toma un cerrojo atomico en el almacen de cache. En produccion
 # CACHE_STORE=database, asi que el cerrojo vive en la propia base y vale entre
 # instancias: si el host arranca varias a la vez, una migra y las demas siguen
@@ -64,6 +85,8 @@ done
 if [ "$migrated" -ne 1 ]; then
     echo "entrypoint: no se pudieron aplicar las migraciones" >&2
     exit 1
+fi
+
 fi
 
 exec frankenphp run --config /etc/frankenphp/Caddyfile

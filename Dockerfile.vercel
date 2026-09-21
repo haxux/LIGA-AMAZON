@@ -76,6 +76,13 @@ RUN mkdir -p \
 # DESPLIEGUE.md.
 RUN php artisan view:cache
 
+# Cuantas migraciones trae esta imagen. El entrypoint compara este numero con
+# las filas de la tabla `migrations` para saber, por 0,6 s en vez de 4,2 s, si
+# hay algo que migrar en este arranque. Aqui es donde la lista de ficheros es
+# definitiva; en tiempo de arranque contarlos tambien valdria, pero el fichero
+# deja el numero dicho y el arranque no tiene que recorrer el directorio.
+RUN ls database/migrations/*.php | wc -l > /app/.migraciones-esperadas
+
 # ---------------------------------------------------------------------------
 # Imagen final.
 # ---------------------------------------------------------------------------

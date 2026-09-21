@@ -34,6 +34,44 @@ class ContainerDeployTest extends TestCase
     }
 
     /**
+     * Medido contra la base real: `migrate:status` mas `migrate --force
+     * --isolated` cuestan unos 4,2 s, y conectar y contar filas 0,6 s. El
+     * contenedor escala a cero tras cinco minutos y arranca muchas veces al
+     * dia, asi que esos 3,6 s se pagaban una y otra vez para descubrir, casi
+     * siempre, que no habia nada pendiente.
+     */
+    public function test_the_migrator_only_runs_when_the_cheap_check_says_so(): void
+    {
+        $entrypoint = file_get_contents(self::ENTRYPOINT);
+
+        $this->assertStringContainsString('migraciones-aplicadas.php', $entrypoint);
+        $this->assertFileExists(__DIR__.'/../../docker/vercel/migraciones-aplicadas.php');
+
+        // El numero se hornea en la imagen, donde la lista de ficheros ya es
+        // definitiva.
+        $this->assertStringContainsString('.migraciones-esperadas', file_get_contents(self::DOCKERFILE));
+
+        // Y la sonda se pregunta ANTES de arrancar el migrador, que es lo unico
+        // que hace que ahorre algo.
+        $this->assertLessThan(
+            mb_strpos($entrypoint, 'migrate --force --isolated'),
+            mb_strpos($entrypoint, 'migraciones-aplicadas.php'),
+        );
+    }
+
+    /**
+     * Sin fichero horneado se migra, no se salta: el fallo cae del lado seguro,
+     * porque servir codigo nuevo contra un esquema viejo falla en silencio.
+     */
+    public function test_a_missing_stamp_makes_the_container_migrate(): void
+    {
+        $this->assertMatchesRegularExpression(
+            '/\.migraciones-esperadas 2>\/dev\/null \|\| echo 9+/',
+            file_get_contents(self::ENTRYPOINT),
+        );
+    }
+
+    /**
      * The host may start several instances at once; the lock lives in the
      * cache store, which production points at the database, so it is shared
      * between them.

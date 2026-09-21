@@ -96,6 +96,38 @@ En orden. Los pasos marcados **⚠** dependen de decisiones de §3.
 11. Comprobar permisos de escritura de `storage/` y `bootstrap/cache/` para el
     usuario del servidor web.
 
+### Arranques en frio: lo que cuesta levantar el contenedor
+
+Medido el 2026-09-21 contra el mismo clúster de TiDB (base desechable), con la
+imagen de produccion:
+
+| Paso del entrypoint | Coste |
+|---|---|
+| `config:cache` | 0,42 s |
+| `route:cache` | 0,38 s |
+| `migrate:status` | 1,7 s |
+| `migrate --force --isolated` | 2,5 s |
+| **Total antes de servir** | **~5 s** |
+
+Y con la base **fria** —TiDB se suspende sola tras un rato sin uso— la misma
+secuencia llego a **44 s**, de los que 37 se los llevo `migrate --isolated`
+esperando a que la base despertara para darle el cerrojo.
+
+Desde entonces el entrypoint pregunta primero barato (`migraciones-aplicadas.php`:
+conectar y contar filas, 0,6 s) y solo arranca el migrador cuando el numero no
+cuadra con el horneado en la imagen. El arranque baja de ~5 s a ~1,4 s, y el
+caso malo —base fria— deja de pagar el cerrojo.
+
+Medido desde fuera, contra produccion: peticion en frio 4,6 s, en caliente
+0,7 s. Una de cada varias se quedaba colgada mas de 60 s, que es el caso de la
+base fria descrito arriba.
+
+**Lo que NO arregla esto**: el host escala a cero tras cinco minutos sin
+trafico, y volver a levantarlo sigue costando lo que cuesta traerse la imagen.
+Eso solo se quita manteniendolo caliente: el plan Pro de Vercel levanta a uno
+en vez de a cero para el despliegue de produccion, o un ping externo cada pocos
+minutos.
+
 ### Antes de cada despliegue
 
 ```bash
