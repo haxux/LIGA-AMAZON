@@ -9,6 +9,17 @@
     ];
 @endphp
 
+@php($total = collect($squad)->flatMap(fn ($group) => $group['members'])->sum(fn ($membership) => $membership->player?->market_value ?? 0))
+
+@if ($total > 0)
+    {{-- Entero con separador de miles y sin símbolo de moneda: la liga no fija
+         una divisa (decisión de la Fase 12). --}}
+    <div class="mb-6 flex items-baseline gap-3 rounded-[5px] bg-surface-alt px-4 py-3">
+        <span class="font-mono text-[10px] tracking-[0.14em] text-white/45">VALOR DE LA PLANTILLA</span>
+        <span class="font-display text-2xl font-bold text-brand">{{ number_format($total, 0, ',', '.') }}</span>
+    </div>
+@endif
+
 @forelse ($squad as $group)
     <section class="mb-8">
         <h2 class="font-display mb-3 rounded-[4px] bg-surface-alt px-4 py-2 text-lg uppercase tracking-wide text-brand">
@@ -29,6 +40,7 @@
                         <span class="block font-mono text-[10px] tracking-[0.1em] text-white/45">
                             {{ $membership->player?->specific_position ?? '—' }}
                             @if ($membership->player?->birth_date) · {{ $membership->player->birth_date->age }} AÑOS @endif
+                            @if ($membership->player?->market_value) · {{ number_format($membership->player->market_value, 0, ',', '.') }} @endif
                             @if ($membership->type === \App\Models\SquadMembership::TYPE_LOAN) · CEDIDO @endif
                         </span>
                     </span>

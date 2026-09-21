@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * La identidad permanente de un club, la que sobrevive a las temporadas. Su
  * participación en cada una de ellas es una fila de `teams`.
  */
-#[Fillable(['name', 'short_name', 'crest_path', 'founded_year'])]
+#[Fillable(['name', 'short_name', 'crest_path', 'founded_year', 'initial_balance'])]
 class Club extends Model
 {
     /** @use HasFactory<ClubFactory> */
@@ -23,6 +23,7 @@ class Club extends Model
     {
         return [
             'founded_year' => 'integer',
+            'initial_balance' => 'integer',
         ];
     }
 
@@ -49,6 +50,11 @@ class Club extends Model
     public function coach(): HasOne
     {
         return $this->hasOne(User::class)->where('role', User::ROLE_COACH);
+    }
+
+    public function budgetMovements(): HasMany
+    {
+        return $this->hasMany(BudgetMovement::class);
     }
 
     public function trophies(): HasMany

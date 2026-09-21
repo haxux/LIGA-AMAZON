@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
-#[Fillable(['club_id', 'name', 'position', 'specific_position', 'birth_date'])]
+#[Fillable(['club_id', 'name', 'position', 'specific_position', 'market_value', 'birth_date'])]
 class Player extends Model
 {
     /** @use HasFactory<PlayerFactory> */
@@ -84,6 +84,17 @@ class Player extends Model
                 ]);
             }
         });
+
+        // El valor no puede ser negativo. La columna es unsigned, pero SQLite
+        // —el motor de la suite— no hace cumplir eso, así que el invariante se
+        // dice aquí y vale en los dos motores.
+        static::saving(function (Player $player): void {
+            if ($player->market_value !== null && $player->market_value < 0) {
+                throw ValidationException::withMessages([
+                    'market_value' => 'El valor de un jugador no puede ser negativo.',
+                ]);
+            }
+        });
     }
 
     protected function casts(): array
@@ -91,6 +102,7 @@ class Player extends Model
         return [
             'birth_date' => 'date',
             'shirt_number' => 'integer',
+            'market_value' => 'integer',
         ];
     }
 

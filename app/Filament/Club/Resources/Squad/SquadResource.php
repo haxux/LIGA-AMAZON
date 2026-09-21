@@ -16,6 +16,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -108,6 +109,14 @@ class SquadResource extends Resource
                     ->badge()
                     ->color('info')
                     ->placeholder('Sin asignar'),
+                // Se ve y no se edita: el valor lo fija el administrador, y por
+                // eso no está en el formulario de esta pantalla.
+                TextColumn::make('market_value')
+                    ->label('Valor')
+                    ->numeric(thousandsSeparator: '.')
+                    ->placeholder('Sin valorar')
+                    ->sortable()
+                    ->summarize(Sum::make()->label('Total')->numeric(thousandsSeparator: '.')),
             ])
             ->filters([
                 SelectFilter::make('position')

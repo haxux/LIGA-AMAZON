@@ -40,6 +40,15 @@ class ClubForm
                     ->visibility('public'),
                 TextInput::make('founded_year')
                     ->numeric(),
+                // El punto de partida del saldo (Fase 12). Lo fija el
+                // administrador y el saldo se deriva de él y del libro de
+                // movimientos; puede ser negativo, que es un club endeudado.
+                TextInput::make('initial_balance')
+                    ->label('Initial balance')
+                    ->numeric()
+                    ->default(0)
+                    ->required()
+                    ->helperText('Starting point of the budget; movements are added to it.'),
             ]);
     }
 }

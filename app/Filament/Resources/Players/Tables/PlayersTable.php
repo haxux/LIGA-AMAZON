@@ -20,6 +20,7 @@ class PlayersTable
                 TextColumn::make('club.name')->label('Club')->searchable()->sortable(),
                 TextColumn::make('position')->badge(),
                 TextColumn::make('specific_position')->badge()->color('info')->placeholder('—'),
+                TextColumn::make('market_value')->label('Value')->numeric(thousandsSeparator: '.')->placeholder('—')->sortable(),
             ])
             ->filters([
                 SelectFilter::make('position')->options(array_combine(PlayerForm::POSITIONS, PlayerForm::POSITIONS)),

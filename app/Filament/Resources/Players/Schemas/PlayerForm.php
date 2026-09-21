@@ -64,6 +64,13 @@ class PlayerForm
                 ))
                 ->native(false)
                 ->helperText('Pick the general position first.'),
+            TextInput::make('market_value')
+                ->label('Value')
+                ->numeric()
+                ->minValue(0)
+                // Entero con separador de miles y sin símbolo de moneda
+                // (decisión del propietario): la liga no fija una divisa.
+                ->helperText('Plain figure, no currency symbol.'),
             DatePicker::make('birth_date'),
         ];
     }

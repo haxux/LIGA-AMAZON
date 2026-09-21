@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\BudgetMovement;
 use App\Models\Club;
 use App\Models\Player;
 use App\Models\Season;
@@ -78,6 +79,23 @@ class ClubScopedPoliciesTest extends TestCase
 
         $this->assertTrue(Gate::forUser($fieldingCoach)->allows('update', $membership));
         $this->assertFalse(Gate::forUser($owningCoach)->allows('update', $membership));
+    }
+
+    /**
+     * El libro de movimientos es del club, pero responder una propuesta es del
+     * administrador: el técnico ve el suyo y no lo edita (Fase 12).
+     */
+    public function test_a_coach_reads_their_budget_but_does_not_edit_it(): void
+    {
+        $club = Club::factory()->create();
+        $coach = User::factory()->coachOf($club)->create();
+        $mine = BudgetMovement::factory()->create(['club_id' => $club->id]);
+        $theirs = BudgetMovement::factory()->create();
+
+        $this->assertTrue(Gate::forUser($coach)->allows('view', $mine));
+        $this->assertFalse(Gate::forUser($coach)->allows('view', $theirs));
+        $this->assertFalse(Gate::forUser($coach)->allows('update', $mine));
+        $this->assertFalse(Gate::forUser($coach)->allows('delete', $mine));
     }
 
     public function test_an_administrator_passes_everywhere(): void
