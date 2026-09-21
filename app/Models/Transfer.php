@@ -26,8 +26,8 @@ use Illuminate\Validation\ValidationException;
  * hay un club comprador al que apuntar.
  */
 #[Fillable([
-    'player_id', 'season_id', 'type', 'scope', 'from_club_id', 'to_club_id',
-    'external_club', 'fee', 'loan_term',
+    'player_id', 'season_id', 'type', 'scope', 'status', 'from_club_id', 'to_club_id',
+    'external_club', 'fee', 'loan_term', 'proposed_by',
 ])]
 #[ObservedBy(TransferObserver::class)]
 class Transfer extends Model
@@ -44,6 +44,12 @@ class Transfer extends Model
     public const SCOPE_INTERNAL = 'interna';
 
     public const SCOPE_EXTERNAL = 'externa';
+
+    public const STATUS_PROPOSED = 'propuesto';
+
+    public const STATUS_EXECUTED = 'ejecutado';
+
+    public const STATUS_REJECTED = 'rechazado';
 
     public const TERM_SIX_MONTHS = '6m';
 
@@ -62,10 +68,32 @@ class Transfer extends Model
         self::SCOPE_EXTERNAL => 'Fuera de la liga',
     ];
 
+    /**
+     * Un traspaso del administrador nace ejecutado; el del técnico, propuesto.
+     *
+     * @var array<string, string>
+     */
+    public const STATUSES = [
+        self::STATUS_PROPOSED => 'Propuesto',
+        self::STATUS_EXECUTED => 'Ejecutado',
+        self::STATUS_REJECTED => 'Rechazado',
+    ];
+
     /** @var array<string, string> */
     public const LOAN_TERMS = [
         self::TERM_SIX_MONTHS => '6 meses',
         self::TERM_ONE_YEAR => '1 año',
+    ];
+
+    /**
+     * En memoria y no sólo como valor por omisión de la columna: el observador
+     * lee `status` justo después de crear, y un valor que sólo vive en la base
+     * llegaría nulo y no ejecutaría nada.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'status' => self::STATUS_EXECUTED,
     ];
 
     protected function casts(): array
@@ -85,6 +113,10 @@ class Transfer extends Model
         static::saving(function (Transfer $transfer): void {
             if (! array_key_exists($transfer->type, self::TYPES)) {
                 throw ValidationException::withMessages(['type' => "El tipo {$transfer->type} no existe."]);
+            }
+
+            if (! array_key_exists($transfer->status, self::STATUSES)) {
+                throw ValidationException::withMessages(['status' => "El estado {$transfer->status} no existe."]);
             }
 
             if (! array_key_exists($transfer->scope, self::SCOPES)) {
@@ -150,6 +182,16 @@ class Transfer extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(BudgetMovement::class);
+    }
+
+    public function proposer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'proposed_by');
+    }
+
+    public function isProposal(): bool
+    {
+        return $this->status === self::STATUS_PROPOSED;
     }
 
     public function isLoan(): bool

@@ -7,7 +7,9 @@ use App\Models\Club;
 use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Models\Transfer;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Ejecutar un traspaso (Fase 12, design D8).
@@ -29,6 +31,43 @@ final class TransferService
             $this->moveMoney($transfer);
             $this->moveSquad($transfer);
         });
+    }
+
+    /**
+     * La firma del administrador sobre lo que propuso un técnico: ejecuta lo
+     * mismo que si lo hubiera registrado él, y deja constancia de que ya no es
+     * una propuesta.
+     */
+    public function approve(Transfer $transfer, User $admin): void
+    {
+        $this->guardApproval($transfer, $admin);
+
+        $transfer->update(['status' => Transfer::STATUS_EXECUTED]);
+
+        $this->execute($transfer->fresh());
+    }
+
+    /**
+     * Rechazar conserva la fila. Una propuesta contestada es historia del club
+     * —qué pidió su técnico y qué se le respondió—, igual que un movimiento de
+     * presupuesto rechazado se queda en el libro.
+     */
+    public function reject(Transfer $transfer, User $admin): void
+    {
+        $this->guardApproval($transfer, $admin);
+
+        $transfer->update(['status' => Transfer::STATUS_REJECTED]);
+    }
+
+    private function guardApproval(Transfer $transfer, User $admin): void
+    {
+        if (! $admin->isAdmin()) {
+            throw ValidationException::withMessages(['status' => 'Sólo un administrador firma un traspaso.']);
+        }
+
+        if (! $transfer->isProposal()) {
+            throw ValidationException::withMessages(['status' => 'Este traspaso ya está contestado.']);
+        }
     }
 
     /**

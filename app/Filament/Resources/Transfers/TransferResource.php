@@ -23,6 +23,17 @@ class TransferResource extends Resource
 
     protected static ?string $modelLabel = 'transfer';
 
+    /**
+     * Lo que espera firma, en el menú: es la bandeja del administrador, como la
+     * del presupuesto y la de las ofertas.
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $pending = Transfer::query()->where('status', Transfer::STATUS_PROPOSED)->count();
+
+        return $pending === 0 ? null : (string) $pending;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return TransferForm::configure($schema);

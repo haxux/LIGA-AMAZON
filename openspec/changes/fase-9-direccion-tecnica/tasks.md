@@ -419,6 +419,14 @@ tablas nuevas, todo aditivo.
       comparar, y ningún test pintaba un hilo con más de una entrada. Ahora lo hacen dos, uno
       por panel.
 
+- [x] C.6 **Cambio de alcance pedido por el propietario**: lo que el técnico propone deja de ser
+      un movimiento de presupuesto y pasa a ser el FICHAJE entero, desde su módulo de
+      Fichajes. Sustituye a la decisión de la Fase 12 («el técnico propone el movimiento con su
+      razón»): una propuesta de ingreso o egreso sin la operación detrás dejaba al
+      administrador adivinando de qué era. `transfers` gana `status` y `proposed_by`; una
+      propuesta no mueve nada hasta que el administrador la firma, y firmarla ejecuta el
+      traspaso de siempre. Contabilidad queda de sólo lectura para el técnico.
+
 ## Lo que queda por hacer a mano
 
 - [ ] V.1 Seguir probando el chat en el navegador entre dos cuentas reales: es la única

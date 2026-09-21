@@ -102,6 +102,9 @@ final class OfferService
             'season_id' => $season->getKey(),
             'type' => Transfer::TYPE_SIGNING,
             'scope' => Transfer::SCOPE_INTERNAL,
+            // Ejecutado, no propuesto: aquí la firma ya la está poniendo el
+            // administrador, que es lo que faltaba.
+            'status' => Transfer::STATUS_EXECUTED,
             // El vendedor es el club del jugador AHORA, no el de cuando se
             // ofreció: entre una cosa y otra puede haber pasado otro traspaso.
             'from_club_id' => $offer->player?->club_id,

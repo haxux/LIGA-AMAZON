@@ -18,7 +18,8 @@ The panel MUST register only the coach's own modules, and MUST NOT register any
 administrator resource, for the reason given in `admin-panel`: hiding a resource inside a
 shared panel leaves its route alive.
 
-As of Fase 13 the modules are **Plantilla**, **Contabilidad** and **Fichajes**.
+As of Fase 13 the modules are **Plantilla**, **Contabilidad** (read-only) and **Fichajes**,
+which is where the coach proposes.
 
 Four things that might be expected here are deliberately absent, because the public site
 already holds them and a second screen for the same thing only adds places to look: the
@@ -86,30 +87,45 @@ the administrator without a way to fill it in.
 - WHEN the administrator edits them in `/admin` and picks LD
 - THEN the player is saved with LD
 
-### Requirement: The coach proposes money and never approves it
+### Requirement: The coach proposes the transfer, not the money
 
-The Contabilidad module MUST show the club's ledger and its balance, and MUST let the coach
-create a movement with its type, amount and reason. What they create MUST be born proposed, on
-their own club and in the current season — none of those three is theirs to choose — and MUST
-NOT move the balance until an administrator approves it.
+What a coach proposes is the **operation**: the player, the fee, the scope and which side
+their club is on — the same thing an administrator records, with one difference, that theirs
+is a proposal and moves nothing until it is signed. It lives in the Fichajes module, next to
+the history it will become part of.
 
-The coach MUST NOT approve, reject, edit or delete a movement, their own included: what they
-proposed is already said, and answering it belongs to the administrator.
+A loose proposal of income or expense, with no operation behind it, left the administrator
+guessing what it was for, so Contabilidad is **read-only** to the coach: the balance and the
+club's ledger, filterable, with no create, edit or delete. The movements are written by the
+administrator, and an approved transfer generates its own.
 
-A club's budget MUST NOT be public, and a coach MUST see only their own.
+A proposal MUST fix what is not the coach's to choose: their club is one of the two ends, the
+season is the current one, the status is proposed and the author is them. They MUST choose
+only which side they are on — keeping the player or letting them go — and the rest follows
+from it.
 
-#### Scenario: A proposal names its author and waits
+A coach MUST NOT be offered a signing from outside the league: bringing someone in needs an
+identity created first, and identities are the administrator's.
 
-- GIVEN a coach with a balance of 500.000
-- WHEN they propose an expense of 120.000
-- THEN the movement is stored as proposed, on their club and the current season, and the
-  balance still reads 500.000
+#### Scenario: A proposal waits, and nothing moves
+
+- GIVEN a coach proposing to sign a player from another league club
+- WHEN the proposal is stored
+- THEN it reads as proposed, no budget movement exists, and the player is still in the other
+  club's squad
+
+#### Scenario: The budget takes no proposals
+
+- GIVEN a coach with their ledger open
+- WHEN they look for a way to propose a movement
+- THEN there is none
 
 ### Requirement: The coach reads their transfer history, both directions
 
-The Fichajes module MUST list the transfers where the coach's club is at either end, filterable
-by season, and MUST be read-only: recording a transfer executes it, and executing it is the
-administrator's.
+The Fichajes module MUST list the transfers where the coach's club is at either end —
+executed, proposed and rejected alike — filterable by season, type and status. Executing is
+still the administrator's: recording an executed transfer is what pays, collects and moves a
+player.
 
 Each row MUST be labelled from this club's side — a signing for the club receiving the player,
 a sale for the one letting them go — since the same row is both.

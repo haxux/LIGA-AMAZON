@@ -3,9 +3,12 @@
 namespace App\Filament\Club\Resources\Transfers;
 
 use App\Filament\Club\Resources\Transfers\Pages\ListTransferHistory;
+use App\Filament\Club\Resources\Transfers\Pages\ProposeTransfer;
+use App\Filament\Club\Resources\Transfers\Schemas\TransferProposalForm;
 use App\Models\Transfer;
 use BackedEnum;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -13,11 +16,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * El historial de fichajes del club, en el panel del técnico: sólo lectura.
+ * Los fichajes del club: lo que ha entrado y salido, y lo que su técnico ha
+ * propuesto.
  *
- * Quien registra un traspaso es el administrador, porque registrarlo lo ejecuta
- * —mueve al jugador y el dinero de los dos presupuestos—. Aquí el técnico ve lo
- * que ha entrado y salido de su club, filtrable por temporada.
+ * El técnico PROPONE la operación entera —el mismo jugador, el mismo importe y
+ * el mismo ámbito que registraría el administrador— y hasta que la firmen no
+ * mueve ni plantilla ni dinero. Ejecutar sigue siendo del administrador, porque
+ * ejecutar es lo que paga, cobra y cambia de plantilla a un jugador.
  *
  * El mismo traspaso se lee distinto según el lado: fichaje para quien recibe,
  * venta para quien cede. Es una fila leída desde los dos lados (design D8).
@@ -40,7 +45,14 @@ class TransferHistoryResource extends Resource
 
     public static function canCreate(): bool
     {
-        return false;
+        // Proponer sí; ejecutar no. Lo que se crea aquí nace en estado
+        // propuesto (ver ProposeTransfer).
+        return auth()->user()?->isCoach() === true;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return TransferProposalForm::configure($schema);
     }
 
     public static function getEloquentQuery(): Builder
@@ -60,6 +72,15 @@ class TransferHistoryResource extends Resource
             ->defaultSort('id', 'desc')
             ->columns([
                 TextColumn::make('created_at')->label('Fecha')->date('d/m/Y')->sortable(),
+                TextColumn::make('status')
+                    ->label('Estado')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => Transfer::STATUSES[$state] ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        Transfer::STATUS_EXECUTED => 'success',
+                        Transfer::STATUS_REJECTED => 'danger',
+                        default => 'warning',
+                    }),
                 TextColumn::make('season.name')->label('Temporada')->sortable(),
                 TextColumn::make('player.name')->label('Jugador')->searchable(),
                 TextColumn::make('operacion')
@@ -84,15 +105,17 @@ class TransferHistoryResource extends Resource
             ->filters([
                 SelectFilter::make('season')->label('Temporada')->relationship('season', 'name'),
                 SelectFilter::make('type')->label('Tipo')->options(Transfer::TYPES),
+                SelectFilter::make('status')->label('Estado')->options(Transfer::STATUSES),
             ])
             ->emptyStateHeading('Todavía sin movimientos')
-            ->emptyStateDescription('Los fichajes, ventas y préstamos del club aparecerán aquí.');
+            ->emptyStateDescription('Propón un fichaje y el administrador lo firmará.');
     }
 
     public static function getPages(): array
     {
         return [
             'index' => ListTransferHistory::route('/'),
+            'create' => ProposeTransfer::route('/proponer'),
         ];
     }
 }

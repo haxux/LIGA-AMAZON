@@ -21,7 +21,7 @@ The system MUST create the following tables (all with `id` and `timestamps()`):
 | lineup_slots | lineup_id (FK→lineups, cascade), player_id (FK→players, cascade), slot | unique(lineup_id, slot), unique(lineup_id, player_id) |
 | players | club_id (FK→clubs, cascade), name, position, specific_position (nullable), market_value (nullable), left_at/left_to (nullable), birth_date (nullable) | — |
 | budget_movements | club_id (FK→clubs, cascade), season_id (FK→seasons, cascade), transfer_id (FK→transfers, nullable, cascade), type (ingreso/egreso), amount, reason, status, created_by (FK→users, nullable) | indexed (club_id, status) |
-| transfers | player_id (FK→players, cascade), season_id (FK→seasons, cascade), type, scope, from_club_id/to_club_id (FK→clubs, nullable), external_club (nullable), fee, loan_term (nullable) | indexed (season_id, type) |
+| transfers | player_id (FK→players, cascade), season_id (FK→seasons, cascade), type, status, scope, from_club_id/to_club_id (FK→clubs, nullable), external_club (nullable), fee, loan_term (nullable), proposed_by (FK→users, nullable) | indexed (season_id, type) |
 | conversations | — | one per pair of participants |
 | conversation_user | conversation_id (FK→conversations, cascade), user_id (FK→users, cascade), last_read_at (nullable) | unique(conversation_id, user_id) |
 | messages | conversation_id (FK→conversations, cascade), user_id (FK→users, cascade), body | indexed (conversation_id, id) |
@@ -254,7 +254,14 @@ each movement is what the ledger is filtered by.
 
 A transfer MUST record the player, the season, its type (fichaje, venta, préstamo), its scope
 (inside or outside the league), the club at each end and, when one end is outside, that club's
-name as free text. Saving it MUST execute it, in one transaction:
+name as free text.
+
+It MUST also record a **status**. One recorded by an administrator is born executed; one
+proposed by a coach is born proposed and MUST move nothing at all until an administrator
+signs it, which executes it exactly as if they had recorded it themselves. A rejected proposal
+MUST be kept: what a coach asked for, and the answer, is the club's history.
+
+Saving an executed transfer MUST execute it, in one transaction:
 
 1. **Money.** A fee MUST generate the expense in the buying club and the income in the selling
    club, both already approved — this money is not proposed by anyone, it happens. A loan MUST

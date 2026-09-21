@@ -131,7 +131,9 @@ another form field. The number of proposals awaiting an answer MUST be visible o
 navigation entry, which is the administrator's tray.
 
 `TransferResource` MUST record transfers and MUST NOT offer editing one, because saving a
-transfer executes it and editing it afterwards would move the money twice or not at all.
+transfer executes it and editing it afterwards would move the money twice or not at all. It
+MUST also hold the coaches' proposals: approving one executes it, rejecting one keeps it, and
+the number awaiting an answer MUST show on the navigation entry.
 Deleting one MUST remove the budget movements it created, and the confirmation MUST say that
 the player is not moved back.
 

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Club\Resources\Budget\Pages\CreateBudgetProposal;
+use App\Filament\Club\Resources\Budget\BudgetResource;
 use App\Filament\Club\Resources\Budget\Pages\ListBudget;
 use App\Filament\Resources\BudgetMovements\Pages\CreateBudgetMovement;
 use App\Filament\Resources\BudgetMovements\Pages\ListBudgetMovements;
@@ -17,7 +17,11 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * El técnico propone y el administrador aprueba (Fase 12, decisión cerrada).
+ * El libro de movimientos: el administrador lo escribe y el técnico lo lee.
+ *
+ * Lo que el técnico propone son fichajes, no movimientos sueltos —una propuesta
+ * de ingreso o egreso sin la operación detrás dejaba al administrador
+ * adivinando de qué era—, y eso vive en `TransferProposalTest`.
  */
 class BudgetPanelsTest extends TestCase
 {
@@ -44,28 +48,18 @@ class BudgetPanelsTest extends TestCase
         return $coach;
     }
 
-    public function test_the_coachs_movement_is_born_proposed_on_their_club(): void
+    /**
+     * El técnico ya no propone movimientos sueltos: lo que propone es el
+     * fichaje entero, desde su módulo de Fichajes, y es esa operación la que
+     * explica el dinero (ver TransferProposalTest). Aquí sólo lee.
+     */
+    public function test_the_coach_cannot_propose_a_movement_any_more(): void
     {
-        $coach = $this->asCoach();
+        $this->asCoach();
 
-        Livewire::test(CreateBudgetProposal::class)
-            ->fillForm([
-                'type' => BudgetMovement::TYPE_EXPENSE,
-                'amount' => 120_000,
-                'reason' => 'Fichaje de un lateral',
-            ])
-            ->call('create')
-            ->assertHasNoFormErrors();
-
-        $movement = BudgetMovement::query()->latest('id')->first();
-
-        $this->assertSame($this->club->id, $movement->club_id);
-        $this->assertSame($this->season->id, $movement->season_id);
-        $this->assertSame(BudgetMovement::STATUS_PROPOSED, $movement->status);
-        $this->assertSame($coach->id, $movement->created_by);
-
-        // Y no toca el saldo mientras nadie lo apruebe.
-        $this->assertSame(500_000, app(BudgetService::class)->balanceFor($this->club->fresh()));
+        $this->assertFalse(BudgetResource::canCreate());
+        $this->get('/club/contabilidad/create')->assertNotFound();
+        $this->assertSame(0, BudgetMovement::query()->count());
     }
 
     public function test_the_coach_only_sees_their_own_book(): void
