@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Site;
 
 use App\Models\Club;
+use App\Models\Game;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\SquadMembership;
@@ -64,7 +65,7 @@ class ClubProfileController extends SiteController
             'team' => $team,
             'tab' => $tab,
             'tabs' => self::TABS,
-        ] + $this->dataFor($tab, $club, $team, $clubSeason));
+        ] + $this->dataFor($tab, $club, $team, $clubSeason, $request));
     }
 
     /**
@@ -88,7 +89,7 @@ class ClubProfileController extends SiteController
      *
      * @return array<string, mixed>
      */
-    private function dataFor(string $tab, Club $club, ?Team $team, ClubSeasonService $clubSeason): array
+    private function dataFor(string $tab, Club $club, ?Team $team, ClubSeasonService $clubSeason, Request $request): array
     {
         if ($tab === 'trofeos') {
             // El palmarés ENTERO, no el de la temporada elegida: un título se
@@ -116,11 +117,42 @@ class ClubProfileController extends SiteController
                 'lineup' => $team->lineup,
                 'canEditLineup' => $this->coachMayEditLineup($team),
             ],
-            'partidos' => ['games' => $clubSeason->games($team)],
+            'partidos' => $this->fixturesTab($team, $clubSeason, $request),
             'jugadores' => ['squad' => $this->squad($team)],
             'stats' => $this->statsTab($team, $clubSeason),
             default => [],
         };
+    }
+
+    /**
+     * El calendario, filtrable por competición y **empezando por la liga**
+     * (decisión del propietario): es la competición que un club mira a diario,
+     * y con la copa mezclada la jornada que viene queda enterrada entre cruces.
+     *
+     * Aquí se filtra y no se separa, al revés que en las cifras: un calendario
+     * es largo, y verlos todos seguidos es justamente lo que se quería evitar.
+     *
+     * Un club que no juega ninguna copa no tiene nada que elegir, y su pestaña
+     * queda como estaba.
+     *
+     * @return array<string, mixed>
+     */
+    private function fixturesTab(Team $team, ClubSeasonService $clubSeason, Request $request): array
+    {
+        $competitions = Competition::forTeam($team);
+        $competition = Competition::resolve(
+            $competitions,
+            $request->string('competicion')->toString(),
+            Competition::league(),
+        );
+
+        return [
+            'games' => $clubSeason->games($team)->filter(
+                fn (Game $game) => $competition->matches($game),
+            )->values(),
+            'competition' => $competition,
+            'competitionOptions' => $competitions->count() > 2 ? Competition::asSelectOptions($competitions) : [],
+        ];
     }
 
     /**

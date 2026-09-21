@@ -275,6 +275,43 @@ class CompetitionStatsTest extends TestCase
             ->assertDontSee('GENERAL');
     }
 
+    /**
+     * El calendario sí se filtra, al revés que las cifras: es largo, y verlo
+     * entero seguido es justamente lo que se quiere evitar. Arranca en la liga
+     * porque es la que un club mira a diario (decisión del propietario).
+     */
+    public function test_the_fixtures_tab_starts_on_the_league_and_filters(): void
+    {
+        $this->leagueGame(3, 1, 7);
+        $this->cupGame(1, 2);
+
+        $url = '/equipos/'.$this->team->club_id.'/partidos?temporada='.$this->season->id;
+
+        $this->get($url)
+            ->assertOk()
+            ->assertSee('Jornada 7')
+            ->assertDontSee('Copa Amazonas · Final');
+
+        $this->get($url.'&competicion=copa:'.$this->cup->id)
+            ->assertOk()
+            ->assertSee('Copa Amazonas · Final')
+            ->assertDontSee('Jornada 7');
+
+        $this->get($url.'&competicion='.Competition::ALL)
+            ->assertOk()
+            ->assertSee('Jornada 7')
+            ->assertSee('Copa Amazonas · Final');
+    }
+
+    public function test_a_club_without_a_cup_gets_no_fixtures_filter(): void
+    {
+        $solo = $this->teamNamed('Xingu Rangers');
+
+        $this->get('/equipos/'.$solo->club_id.'/partidos?temporada='.$this->season->id)
+            ->assertOk()
+            ->assertDontSee('name="competicion"', false);
+    }
+
     public function test_the_player_page_shows_one_block_per_competition(): void
     {
         GameEvent::factory()->count(2)->for($this->leagueGame(2, 0))->for($this->player)->goal()->create();

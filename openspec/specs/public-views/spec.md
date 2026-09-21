@@ -307,17 +307,25 @@ Cup games MUST appear wherever games are already read: the Partidos page and the
 Partidos tab, grouped under the competition they belong to rather than under a matchday number
 they do not have. A game's detail page MUST name its competition.
 
+A club's Partidos tab MUST offer a competition filter and MUST **start on the league** (owner's
+decision): the league is what a club follows week to week, and with the cup mixed in, the game
+coming up is buried among ties. The filter MUST offer everything, the league and each cup the
+club plays, and MUST NOT be shown to a club that plays no cup. The calendar filters rather than
+separating, unlike the figures below: it is long, and showing every competition one after
+another is the thing being avoided.
+
 #### Scenario: The bracket says who went through and why
 
 - GIVEN a tie the administrator decided after it finished level
 - WHEN the cup's page is read
 - THEN the tie shows the aggregate, the team that went through and the stated reason
 
-#### Scenario: A club's calendar includes its cup games
+#### Scenario: A club's calendar starts on the league and reaches the cup
 
 - GIVEN a club playing both a league and a cup
 - WHEN its Partidos tab is read
-- THEN the cup games are there, under the name of their round
+- THEN only the league games are listed, and choosing the cup lists its games under the name of
+  their round
 
 ### Requirement: Statistics are readable per competition
 

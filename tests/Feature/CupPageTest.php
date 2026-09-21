@@ -176,6 +176,9 @@ class CupPageTest extends TestCase
     /**
      * Un partido de copa no tiene jornada, así que en el calendario de un club
      * se agrupa por su competición en vez de caer en un cajón de «sin jornada».
+     *
+     * El calendario arranca en la liga, así que la copa se pide: es el filtro
+     * que el propietario quiso, y no un descuido de esta prueba.
      */
     public function test_the_clubs_calendar_groups_a_cup_game_under_its_round(): void
     {
@@ -184,7 +187,11 @@ class CupPageTest extends TestCase
 
         $club = Club::query()->whereKey($this->home->club_id)->first();
 
-        $this->get(route('site.clubs.show', ['club' => $club->id, 'tab' => 'partidos']))
+        $this->get(route('site.clubs.show', [
+            'club' => $club->id,
+            'tab' => 'partidos',
+            'competicion' => 'copa:'.$this->cup->id,
+        ]))
             ->assertOk()
             ->assertSee('Copa Amazonas · Final')
             ->assertDontSee('Sin jornada');

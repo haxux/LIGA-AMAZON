@@ -97,14 +97,16 @@ final class Competition
     }
 
     /**
-     * La elegida de entre unas opciones dadas, o «Todo» si la clave no está
-     * entre ellas.
+     * La elegida de entre unas opciones dadas, o la de respaldo si la clave no
+     * está entre ellas —«Todo» salvo que se diga otra cosa—. El calendario de un
+     * club, por ejemplo, arranca en la liga y no en todo (decisión del
+     * propietario): es la competición que se mira a diario.
      *
      * @param  Collection<int, self>  $options
      */
-    public static function resolve(Collection $options, ?string $key): self
+    public static function resolve(Collection $options, ?string $key, ?self $fallback = null): self
     {
-        return $options->firstWhere('key', (string) $key) ?? self::all();
+        return $options->firstWhere('key', (string) $key) ?? $fallback ?? self::all();
     }
 
     /**
