@@ -99,6 +99,97 @@ class OfferTest extends TestCase
         ]);
     }
 
+    /**
+     * Entre técnicos se negocian las mismas cuatro operaciones que con la
+     * dirección, con las dos puntas dentro de la liga.
+     */
+    public function test_a_coach_offers_one_of_theirs_for_sale(): void
+    {
+        $mine = Player::factory()->create(['club_id' => $this->buying->id, 'name' => 'El Mío']);
+
+        $offer = Offer::create([
+            'conversation_id' => $this->conversation->id,
+            'player_id' => $mine->id,
+            'kind' => Offer::KIND_SELL,
+            'from_club_id' => $this->buying->id,
+            'amount' => 200_000,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->buyer->id,
+        ]);
+
+        $this->assertFalse($offer->isAsking());
+        // Quien ofrece cede: el que se queda al jugador es el otro.
+        $this->assertSame($this->buying->id, $offer->player->club_id);
+    }
+
+    public function test_a_loan_offer_carries_a_term_and_no_money(): void
+    {
+        $offer = Offer::create([
+            'conversation_id' => $this->conversation->id,
+            'player_id' => $this->player->id,
+            'kind' => Offer::KIND_LOAN_IN,
+            'from_club_id' => $this->buying->id,
+            'amount' => 999,
+            'loan_term' => Transfer::TERM_ONE_YEAR,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->buyer->id,
+        ]);
+
+        // El importe se guarda en cero: una cesión no tiene coste, y dos formas
+        // de decir lo mismo acaban discrepando.
+        $this->assertSame(0, $offer->fresh()->amount);
+        $this->assertTrue($offer->isFree());
+    }
+
+    /**
+     * Pedir es pedir lo del otro; ofrecer es ofrecer lo propio. Al revés, la
+     * operación no significa nada.
+     */
+    public function test_offering_a_player_who_is_not_yours_is_refused(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        Offer::create([
+            'conversation_id' => $this->conversation->id,
+            'player_id' => $this->player->id,
+            'kind' => Offer::KIND_SELL,
+            'from_club_id' => $this->buying->id,
+            'amount' => 100,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->buyer->id,
+        ]);
+    }
+
+    /**
+     * Y lo pactado es lo que se ejecuta: una cesión acordada en el chat no se
+     * convierte en una compra al firmarla el administrador.
+     */
+    public function test_executing_a_loan_offer_records_a_loan(): void
+    {
+        $offer = Offer::create([
+            'conversation_id' => $this->conversation->id,
+            'player_id' => $this->player->id,
+            'kind' => Offer::KIND_LOAN_IN,
+            'from_club_id' => $this->buying->id,
+            'loan_term' => Transfer::TERM_SIX_MONTHS,
+            'amount' => 0,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->buyer->id,
+        ]);
+
+        app(OfferService::class)->accept($offer, $this->seller);
+        $transfer = app(OfferService::class)->execute($offer->fresh(), User::factory()->create());
+
+        $this->assertSame(Transfer::TYPE_LOAN_IN, $transfer->type);
+        $this->assertSame(Transfer::TERM_SIX_MONTHS, $transfer->loan_term);
+        $this->assertSame(0, BudgetMovement::query()->count());
+        $this->assertDatabaseHas('squad_memberships', [
+            'team_id' => Team::query()->where('club_id', $this->buying->id)->value('id'),
+            'player_id' => $this->player->id,
+            'type' => SquadMembership::TYPE_LOAN,
+        ]);
+    }
+
     public function test_offering_for_your_own_player_is_refused(): void
     {
         $this->expectException(ValidationException::class);

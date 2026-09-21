@@ -237,7 +237,10 @@ on every page, since this deployment sends no mail and runs no websockets.
 
 Offers MUST read inside the thread, in the order they happened, and MUST be offered only when
 both sides are coaches with clubs: bidding needs a club to buy with, and an administrator runs
-none. `league-data-model` specifies what accepting does, and does not do.
+none. An offer MUST say which of the four operations it is — buy, sell, borrow or lend —
+because that decides whose squad the player is picked from and whether what is agreed is a
+price or a term; a loan carries no money at all. What is agreed is what gets executed: a loan
+closed in the chat is recorded as a loan. `league-data-model` specifies what accepting does, and does not do.
 
 #### Scenario: A thread that is not yours does not open
 

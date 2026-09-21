@@ -26,8 +26,8 @@ use Illuminate\Validation\ValidationException;
  * hay un club comprador al que apuntar.
  */
 #[Fillable([
-    'player_id', 'season_id', 'type', 'scope', 'status', 'from_club_id', 'to_club_id',
-    'external_club', 'fee', 'loan_term', 'proposed_by',
+    'player_id', 'external_player', 'season_id', 'type', 'scope', 'status',
+    'from_club_id', 'to_club_id', 'external_club', 'fee', 'loan_term', 'proposed_by',
 ])]
 #[ObservedBy(TransferObserver::class)]
 class Transfer extends Model
@@ -39,7 +39,9 @@ class Transfer extends Model
 
     public const TYPE_SALE = 'venta';
 
-    public const TYPE_LOAN = 'prestamo';
+    public const TYPE_LOAN_IN = 'cesion';
+
+    public const TYPE_LOAN_OUT = 'ceder';
 
     public const SCOPE_INTERNAL = 'interna';
 
@@ -55,12 +57,29 @@ class Transfer extends Model
 
     public const TERM_ONE_YEAR = '1a';
 
-    /** @var array<string, string> */
+    /**
+     * Las cuatro operaciones, cada una con su dirección: el préstamo se parte
+     * en dos porque no es lo mismo traer a alguien cedido que cederlo, y el
+     * formulario, el dinero y la plantilla se mueven distinto en cada caso.
+     *
+     * @var array<string, string>
+     */
     public const TYPES = [
         self::TYPE_SIGNING => 'Fichaje',
         self::TYPE_SALE => 'Venta',
-        self::TYPE_LOAN => 'Préstamo',
+        self::TYPE_LOAN_IN => 'Cesión',
+        self::TYPE_LOAN_OUT => 'Ceder',
     ];
+
+    /**
+     * Las que traen a un jugador al club, frente a las que se lo llevan.
+     *
+     * @var array<int, string>
+     */
+    public const INCOMING = [self::TYPE_SIGNING, self::TYPE_LOAN_IN];
+
+    /** @var array<int, string> */
+    public const FREE = [self::TYPE_LOAN_IN, self::TYPE_LOAN_OUT];
 
     /** @var array<string, string> */
     public const SCOPES = [
@@ -123,6 +142,12 @@ class Transfer extends Model
                 throw ValidationException::withMessages(['scope' => "El ámbito {$transfer->scope} no existe."]);
             }
 
+            if ($transfer->player_id === null && blank($transfer->external_player)) {
+                throw ValidationException::withMessages([
+                    'player_id' => 'Un traspaso necesita un jugador: de la liga, o el nombre de uno de fuera.',
+                ]);
+            }
+
             if ($transfer->scope === self::SCOPE_INTERNAL) {
                 if ($transfer->type === self::TYPE_SALE) {
                     throw ValidationException::withMessages([
@@ -139,21 +164,25 @@ class Transfer extends Model
                 return;
             }
 
-            if (blank($transfer->external_club)) {
+            // El club de fuera es obligatorio cuando el jugador VIENE de allí:
+            // sin él, la propuesta no dice de quién se está hablando. Cuando
+            // sale, puede no saberse todavía —es justo lo que la dirección va a
+            // buscar— y se completa al concretar la operación.
+            if ($transfer->isIncoming() && blank($transfer->external_club) && $transfer->from_club_id === null) {
                 throw ValidationException::withMessages([
-                    'external_club' => 'Un traspaso fuera de la liga necesita el nombre del club de fuera.',
+                    'external_club' => 'Hace falta saber de qué club viene el jugador.',
                 ]);
             }
 
-            if ($transfer->type === self::TYPE_SALE && $transfer->from_club_id === null) {
+            if ($transfer->isIncoming() && $transfer->to_club_id === null) {
                 throw ValidationException::withMessages([
-                    'from_club_id' => 'Una venta necesita el club que vende.',
+                    'to_club_id' => 'Falta el club que recibe al jugador.',
                 ]);
             }
 
-            if ($transfer->type !== self::TYPE_SALE && $transfer->to_club_id === null) {
+            if (! $transfer->isIncoming() && $transfer->from_club_id === null) {
                 throw ValidationException::withMessages([
-                    'to_club_id' => 'Un fichaje o un préstamo de fuera necesita el club que recibe al jugador.',
+                    'from_club_id' => 'Falta el club que cede al jugador.',
                 ]);
             }
         });
@@ -196,7 +225,25 @@ class Transfer extends Model
 
     public function isLoan(): bool
     {
-        return $this->type === self::TYPE_LOAN;
+        return in_array($this->type, self::FREE, true);
+    }
+
+    /**
+     * Si la operación trae al jugador al club o se lo lleva. Lo decide el tipo
+     * y no los extremos: con un club de fuera, uno de los dos extremos no es
+     * una fila de `clubs` sino un nombre.
+     */
+    public function isIncoming(): bool
+    {
+        return in_array($this->type, self::INCOMING, true);
+    }
+
+    /**
+     * Cómo se llama al jugador cuando todavía no tiene ficha.
+     */
+    public function playerName(): ?string
+    {
+        return $this->player?->name ?? $this->external_player;
     }
 
     /**

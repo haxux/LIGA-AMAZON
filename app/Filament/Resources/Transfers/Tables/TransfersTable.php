@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Transfers\Tables;
 
+use App\Filament\Resources\Transfers\Schemas\TransferCompletionForm;
 use App\Models\Transfer;
 use App\Services\TransferService;
 use Filament\Actions\Action;
@@ -29,7 +30,10 @@ class TransfersTable
                         Transfer::STATUS_REJECTED => 'danger',
                         default => 'warning',
                     }),
-                TextColumn::make('player.name')->label('Player')->searchable(),
+                TextColumn::make('player.name')
+                    ->label('Player')
+                    ->state(fn (Transfer $record): ?string => $record->playerName())
+                    ->searchable(),
                 TextColumn::make('type')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => Transfer::TYPES[$state] ?? $state)
@@ -64,11 +68,16 @@ class TransfersTable
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->visible(fn (Transfer $record): bool => $record->isProposal())
-                    ->requiresConfirmation()
-                    ->modalDescription('This executes the transfer: the buyer is charged, the seller credited and the player moves squad.')
-                    ->action(function (Transfer $record): void {
+                    // Con formulario, no con un «¿seguro?»: aceptar es el momento
+                    // de poner lo que la propuesta no sabía, y al guardarlo se
+                    // ejecuta la operación entera.
+                    ->modalHeading('Close this operation')
+                    ->modalDescription('Filling this in moves the player and both budgets, and tells the coach in their chat.')
+                    ->modalSubmitActionLabel('Close it')
+                    ->form(fn (Transfer $record): array => TransferCompletionForm::for($record))
+                    ->action(function (Transfer $record, array $data): void {
                         try {
-                            app(TransferService::class)->approve($record, auth()->user());
+                            app(TransferService::class)->approve($record, auth()->user(), $data);
                         } catch (ValidationException $exception) {
                             Notification::make()->danger()->title($exception->validator->errors()->first())->send();
 

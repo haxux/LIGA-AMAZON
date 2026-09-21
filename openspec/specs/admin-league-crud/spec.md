@@ -132,8 +132,16 @@ navigation entry, which is the administrator's tray.
 
 `TransferResource` MUST record transfers and MUST NOT offer editing one, because saving a
 transfer executes it and editing it afterwards would move the money twice or not at all. It
-MUST also hold the coaches' proposals: approving one executes it, rejecting one keeps it, and
-the number awaiting an answer MUST show on the navigation entry.
+MUST also hold the coaches' proposals, and the number awaiting an answer MUST show on the
+navigation entry.
+
+Accepting a proposal MUST NOT be a yes/no button: it MUST open a form where the administrator
+fills in what the proposal could not know — the club at the other end, the price or term
+actually agreed, and, when someone arrives from outside the league, that player's identity,
+which is created there. Saving it MUST execute the whole operation at once: identity, squad
+and both budgets. Rejecting keeps the row.
+
+Either answer MUST tell the proposing coach in his chat, naming the player and the terms.
 Deleting one MUST remove the budget movements it created, and the confirmation MUST say that
 the player is not moved back.
 

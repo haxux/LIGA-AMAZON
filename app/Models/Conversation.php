@@ -89,6 +89,23 @@ class Conversation extends Model
             ->sum(fn (self $conversation) => $conversation->unreadFor($user));
     }
 
+    /**
+     * Un aviso automático de uno a otro, en el hilo que ya tienen (o en el que
+     * se abre para la ocasión).
+     *
+     * El chat es el único aviso que esta aplicación tiene —no hay correos ni
+     * websockets—, así que lo que la dirección decide sobre una propuesta se
+     * cuenta aquí, y queda escrito donde el técnico ya mira.
+     */
+    public static function announce(User $from, User $to, string $body): Message
+    {
+        return Message::create([
+            'conversation_id' => self::between($from, $to)->getKey(),
+            'user_id' => $from->getKey(),
+            'body' => $body,
+        ]);
+    }
+
     public function markReadBy(User $user): void
     {
         $this->participants()->updateExistingPivot($user->getKey(), ['last_read_at' => now()]);

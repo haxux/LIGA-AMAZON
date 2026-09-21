@@ -93,7 +93,7 @@ class TransferPanelsTest extends TestCase
 
         $this->assertArrayNotHasKey(Transfer::TYPE_SALE, $options);
         $this->assertArrayHasKey(Transfer::TYPE_SIGNING, $options);
-        $this->assertArrayHasKey(Transfer::TYPE_LOAN, $options);
+        $this->assertArrayHasKey(Transfer::TYPE_LOAN_IN, $options);
     }
 
     public function test_the_administrator_lists_every_clubs_transfers(): void

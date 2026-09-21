@@ -84,12 +84,12 @@ class TransferForm
                     ->numeric()
                     ->default(0)
                     ->minValue(0)
-                    ->visible(fn (Get $get): bool => $get('type') !== Transfer::TYPE_LOAN)
+                    ->visible(fn (Get $get): bool => ! in_array($get('type'), Transfer::FREE, true))
                     ->helperText('Plain figure. It becomes one movement in each budget, already approved.'),
                 Select::make('loan_term')
                     ->label('Loan term')
                     ->options(Transfer::LOAN_TERMS)
-                    ->visible(fn (Get $get): bool => $get('type') === Transfer::TYPE_LOAN)
+                    ->visible(fn (Get $get): bool => in_array($get('type'), Transfer::FREE, true))
                     ->native(false)
                     // Se anota como dato y no vence solo: este despliegue no
                     // tiene tareas programadas (decisión cerrada).

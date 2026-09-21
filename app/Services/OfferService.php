@@ -97,19 +97,25 @@ final class OfferService
             throw ValidationException::withMessages(['offer' => 'No hay temporada vigente en la que registrar el traspaso.']);
         }
 
+        $receiving = $offer->receivingClubId();
+        $giving = $offer->isAsking() ? $offer->player?->club_id : $offer->conversation?->other($offer->mover)?->club_id;
+
         $transfer = Transfer::create([
             'player_id' => $offer->player_id,
             'season_id' => $season->getKey(),
-            'type' => Transfer::TYPE_SIGNING,
+            // Una cesión pactada en el chat es una cesión, no una compra: lo
+            // acordado entre los dos técnicos es lo que se ejecuta.
+            'type' => $offer->isFree() ? Transfer::TYPE_LOAN_IN : Transfer::TYPE_SIGNING,
             'scope' => Transfer::SCOPE_INTERNAL,
             // Ejecutado, no propuesto: aquí la firma ya la está poniendo el
             // administrador, que es lo que faltaba.
             'status' => Transfer::STATUS_EXECUTED,
-            // El vendedor es el club del jugador AHORA, no el de cuando se
+            // El club que cede es el del jugador AHORA, no el de cuando se
             // ofreció: entre una cosa y otra puede haber pasado otro traspaso.
-            'from_club_id' => $offer->player?->club_id,
-            'to_club_id' => $offer->from_club_id,
+            'from_club_id' => $offer->player?->club_id ?? $giving,
+            'to_club_id' => $receiving,
             'fee' => $offer->amount,
+            'loan_term' => $offer->loan_term,
         ]);
 
         $offer->update([

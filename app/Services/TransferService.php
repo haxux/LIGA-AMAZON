@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\BudgetMovement;
 use App\Models\Club;
+use App\Models\Conversation;
+use App\Models\Player;
 use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Models\Transfer;
@@ -25,11 +27,11 @@ final class TransferService
 {
     public function __construct(private readonly BudgetService $budget) {}
 
-    public function execute(Transfer $transfer): void
+    public function execute(Transfer $transfer, ?int $shirtNumber = null): void
     {
-        DB::transaction(function () use ($transfer): void {
+        DB::transaction(function () use ($transfer, $shirtNumber): void {
             $this->moveMoney($transfer);
-            $this->moveSquad($transfer);
+            $this->moveSquad($transfer, $shirtNumber);
         });
     }
 
@@ -38,13 +40,98 @@ final class TransferService
      * mismo que si lo hubiera registrado él, y deja constancia de que ya no es
      * una propuesta.
      */
-    public function approve(Transfer $transfer, User $admin): void
+    /**
+     * La firma del administrador sobre lo que propuso un técnico.
+     *
+     * Aceptar no es un botón que dice «sí»: es el momento de rellenar lo que la
+     * propuesta no podía saber —a qué club se fue, por cuánto, y quién es el
+     * jugador que entra, que hasta ahora era sólo un nombre— y al guardarlo se
+     * mueve todo de una vez. Por eso `$completion` llega desde el formulario de
+     * la acción.
+     *
+     * @param  array<string, mixed>  $completion
+     */
+    public function approve(Transfer $transfer, User $admin, array $completion = []): void
     {
         $this->guardApproval($transfer, $admin);
 
-        $transfer->update(['status' => Transfer::STATUS_EXECUTED]);
+        DB::transaction(function () use ($transfer, $completion): void {
+            // Si entra alguien de fuera, su ficha nace aquí: hasta ahora era un
+            // nombre en una propuesta, y sin fila no hay a quién mover.
+            if ($transfer->isIncoming() && $transfer->player_id === null) {
+                $transfer->player_id = $this->createIncomingPlayer($transfer, $completion)->getKey();
+            }
 
-        $this->execute($transfer->fresh());
+            $transfer->fill(array_filter([
+                'external_club' => $completion['external_club'] ?? null,
+                'fee' => $completion['fee'] ?? null,
+                'loan_term' => $completion['loan_term'] ?? null,
+            ], fn ($value) => $value !== null && $value !== ''));
+
+            $transfer->status = Transfer::STATUS_EXECUTED;
+            $transfer->save();
+
+            $this->execute($transfer->fresh(), $completion['shirt_number'] ?? null);
+        });
+
+        $this->announce($transfer->fresh(), $admin, true);
+    }
+
+    /**
+     * La ficha del que llega: el club es el que lo recibe, y la posición hace
+     * falta porque la ficha pública agrupa por ella (Fase 10).
+     *
+     * @param  array<string, mixed>  $completion
+     */
+    private function createIncomingPlayer(Transfer $transfer, array $completion): Player
+    {
+        return Player::create([
+            'club_id' => $transfer->to_club_id,
+            'name' => $completion['player_name'] ?? $transfer->external_player,
+            'position' => $completion['position'] ?? Player::POSITIONS[1],
+            'specific_position' => $completion['specific_position'] ?? null,
+            'birth_date' => $completion['birth_date'] ?? null,
+            'market_value' => $completion['market_value'] ?? null,
+        ]);
+    }
+
+    /**
+     * El aviso al técnico que lo propuso, en su chat: nombre del jugador y lo
+     * pactado, que es lo que quiere leer.
+     */
+    private function announce(Transfer $transfer, User $admin, bool $approved): void
+    {
+        $coach = $transfer->proposer;
+
+        if ($coach === null || $coach->is($admin)) {
+            return;
+        }
+
+        // Con su género, que en castellano un «Venta rechazado» canta.
+        [$what, $yes, $no] = match ($transfer->type) {
+            Transfer::TYPE_SALE => ['Venta', 'aprobada', 'rechazada'],
+            Transfer::TYPE_LOAN_IN => ['Cesión', 'aprobada', 'rechazada'],
+            Transfer::TYPE_LOAN_OUT => ['Cesión de salida', 'aprobada', 'rechazada'],
+            default => ['Fichaje', 'aprobado', 'rechazado'],
+        };
+
+        $terms = $transfer->isLoan()
+            ? 'plazo de '.(Transfer::LOAN_TERMS[$transfer->loan_term] ?? 'sin fijar')
+            : number_format((int) $transfer->fee, 0, ',', '.');
+
+        // El club del OTRO lado, nunca el suyo: en una propuesta de salida
+        // todavía puede no haberlo, y entonces no se nombra ninguno.
+        $counterpart = $transfer->external_club
+            ?? ($transfer->isIncoming() ? $transfer->fromClub?->name : $transfer->toClub?->name);
+
+        Conversation::announce($admin, $coach, sprintf(
+            '%s %s: %s%s. %s.',
+            $what,
+            $approved ? $yes : $no,
+            $transfer->playerName(),
+            $counterpart ? ' ('.$counterpart.')' : '',
+            $approved ? 'Cerrado en '.$terms : 'Se pedía '.$terms,
+        ));
     }
 
     /**
@@ -57,6 +144,8 @@ final class TransferService
         $this->guardApproval($transfer, $admin);
 
         $transfer->update(['status' => Transfer::STATUS_REJECTED]);
+
+        $this->announce($transfer->fresh(), $admin, false);
     }
 
     private function guardApproval(Transfer $transfer, User $admin): void
@@ -105,7 +194,7 @@ final class TransferService
         }
     }
 
-    private function moveSquad(Transfer $transfer): void
+    private function moveSquad(Transfer $transfer, ?int $shirtNumber = null): void
     {
         $player = $transfer->player;
 
@@ -119,7 +208,7 @@ final class TransferService
         // y su ficha se conserva (design D9). Borrarlo se llevaría por delante
         // sus game_events —la FK es cascadeOnDelete— y con ellos los goleadores
         // y las tarjetas de partidos ya jugados.
-        if ($transfer->type === Transfer::TYPE_SALE) {
+        if (! $transfer->isIncoming() && ! $transfer->isLoan()) {
             $player->forceFill([
                 'left_at' => now()->toDateString(),
                 'left_to' => $transfer->external_club,
@@ -147,7 +236,7 @@ final class TransferService
         SquadMembership::firstOrCreate(
             ['team_id' => $team->getKey(), 'player_id' => $player->getKey()],
             [
-                'shirt_number' => $this->firstFreeShirtNumber($team),
+                'shirt_number' => $shirtNumber ?? $this->firstFreeShirtNumber($team),
                 'type' => $transfer->isLoan() ? SquadMembership::TYPE_LOAN : SquadMembership::TYPE_OWNED,
             ],
         );

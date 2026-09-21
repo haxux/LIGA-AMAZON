@@ -4,11 +4,11 @@ namespace Tests\Feature;
 
 use App\Filament\Club\Resources\Budget\BudgetResource;
 use App\Filament\Club\Resources\Transfers\Pages\ProposeTransfer;
-use App\Filament\Club\Resources\Transfers\Schemas\TransferProposalForm;
 use App\Filament\Resources\Transfers\Pages\ListTransfers;
 use App\Filament\Resources\Transfers\TransferResource;
 use App\Models\BudgetMovement;
 use App\Models\Club;
+use App\Models\Conversation;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\SquadMembership;
@@ -25,9 +25,9 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * El técnico propone el fichaje entero —jugador, importe y ámbito— desde su
- * módulo de Fichajes, y el administrador lo firma o lo rechaza. Hasta la firma
- * no se mueve ni la plantilla ni el dinero.
+ * El técnico propone a la dirección, siempre hacia fuera de la liga —lo de
+ * dentro se negocia por el chat—, y el administrador acepta rellenando lo que
+ * la propuesta no podía saber. Al guardar eso se mueve todo de una vez.
  */
 class TransferProposalTest extends TestCase
 {
@@ -35,38 +35,29 @@ class TransferProposalTest extends TestCase
 
     private Season $season;
 
-    private Club $mine;
+    private Club $club;
 
-    private Club $theirs;
-
-    private Team $myTeam;
-
-    private Team $theirTeam;
+    private Team $team;
 
     private User $coach;
 
-    private Player $theirPlayer;
+    private User $admin;
 
-    private Player $myPlayer;
+    private Player $mine;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->season = Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
-        $this->mine = Club::factory()->create(['name' => 'Manaos FC', 'initial_balance' => 1_000_000]);
-        $this->theirs = Club::factory()->create(['name' => 'Tapajós SC', 'initial_balance' => 1_000_000]);
+        $this->club = Club::factory()->create(['name' => 'Manaos FC', 'initial_balance' => 1_000_000]);
+        $this->team = Team::factory()->create(['club_id' => $this->club->id, 'season_id' => $this->season->id]);
 
-        $this->myTeam = Team::factory()->create(['club_id' => $this->mine->id, 'season_id' => $this->season->id]);
-        $this->theirTeam = Team::factory()->create(['club_id' => $this->theirs->id, 'season_id' => $this->season->id]);
+        $this->coach = User::factory()->coachOf($this->club)->create(['name' => 'Técnico Uno']);
+        $this->admin = User::factory()->create(['name' => 'Presidenta']);
 
-        $this->coach = User::factory()->coachOf($this->mine)->create();
-
-        $this->theirPlayer = Player::factory()->create(['club_id' => $this->theirs->id, 'name' => 'El Fichaje']);
-        SquadMembership::factory()->create(['team_id' => $this->theirTeam->id, 'player_id' => $this->theirPlayer->id, 'shirt_number' => 9]);
-
-        $this->myPlayer = Player::factory()->create(['club_id' => $this->mine->id, 'name' => 'El Mío']);
-        SquadMembership::factory()->create(['team_id' => $this->myTeam->id, 'player_id' => $this->myPlayer->id, 'shirt_number' => 4]);
+        $this->mine = Player::factory()->create(['club_id' => $this->club->id, 'name' => 'El Mío']);
+        SquadMembership::factory()->create(['team_id' => $this->team->id, 'player_id' => $this->mine->id, 'shirt_number' => 4]);
     }
 
     private function asCoach(): void
@@ -75,21 +66,39 @@ class TransferProposalTest extends TestCase
         Filament::setCurrentPanel('club');
     }
 
-    private function balance(Club $club): int
+    private function balance(): int
     {
-        return app(BudgetService::class)->balanceFor($club->fresh());
+        return app(BudgetService::class)->balanceFor($this->club->fresh());
     }
 
-    public function test_the_coach_proposes_a_signing_and_nothing_moves_yet(): void
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function proposal(array $attributes): Transfer
+    {
+        $incoming = in_array($attributes['type'], Transfer::INCOMING, true);
+
+        return Transfer::create($attributes + [
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_EXTERNAL,
+            'status' => Transfer::STATUS_PROPOSED,
+            'from_club_id' => $incoming ? null : $this->club->id,
+            'to_club_id' => $incoming ? $this->club->id : null,
+            'proposed_by' => $this->coach->id,
+        ]);
+    }
+
+    // ── Lo que el técnico propone ─────────────────────────────────────────
+
+    public function test_the_coach_asks_to_sign_someone_from_outside(): void
     {
         $this->asCoach();
 
         Livewire::test(ProposeTransfer::class)
             ->fillForm([
-                'direction' => TransferProposalForm::IN,
-                'scope' => Transfer::SCOPE_INTERNAL,
                 'type' => Transfer::TYPE_SIGNING,
-                'player_id' => $this->theirPlayer->id,
+                'external_player' => 'Rivaldo Nunes',
+                'external_club' => 'Palmeiras',
                 'fee' => 300_000,
             ])
             ->call('create')
@@ -97,33 +106,28 @@ class TransferProposalTest extends TestCase
 
         $proposal = Transfer::query()->latest('id')->first();
 
-        // Los dos extremos salen de la dirección y del club del jugador.
         $this->assertSame(Transfer::STATUS_PROPOSED, $proposal->status);
-        $this->assertSame($this->theirs->id, $proposal->from_club_id);
-        $this->assertSame($this->mine->id, $proposal->to_club_id);
-        $this->assertSame($this->season->id, $proposal->season_id);
+        $this->assertSame(Transfer::SCOPE_EXTERNAL, $proposal->scope);
+        $this->assertSame('Rivaldo Nunes', $proposal->external_player);
+        $this->assertNull($proposal->player_id);
+        $this->assertSame($this->club->id, $proposal->to_club_id);
+        $this->assertNull($proposal->from_club_id);
         $this->assertSame($this->coach->id, $proposal->proposed_by);
 
-        // Y no ha movido nada: ni dinero, ni plantilla, ni propiedad.
+        // Y no ha movido nada: ni ficha, ni dinero.
+        $this->assertSame(1, Player::query()->count());
         $this->assertSame(0, BudgetMovement::query()->count());
-        $this->assertSame($this->theirs->id, $this->theirPlayer->fresh()->club_id);
-        $this->assertDatabaseHas('squad_memberships', [
-            'team_id' => $this->theirTeam->id,
-            'player_id' => $this->theirPlayer->id,
-        ]);
+        $this->assertSame(1_000_000, $this->balance());
     }
 
-    public function test_the_coach_proposes_letting_one_of_theirs_go(): void
+    public function test_the_coach_puts_one_of_theirs_up_for_sale(): void
     {
         $this->asCoach();
 
         Livewire::test(ProposeTransfer::class)
             ->fillForm([
-                'direction' => TransferProposalForm::OUT,
-                'scope' => Transfer::SCOPE_EXTERNAL,
                 'type' => Transfer::TYPE_SALE,
-                'player_id' => $this->myPlayer->id,
-                'external_club' => 'Palmeiras',
+                'player_id' => $this->mine->id,
                 'fee' => 500_000,
             ])
             ->call('create')
@@ -131,191 +135,254 @@ class TransferProposalTest extends TestCase
 
         $proposal = Transfer::query()->latest('id')->first();
 
-        $this->assertSame($this->mine->id, $proposal->from_club_id);
+        $this->assertSame($this->mine->id, $proposal->player_id);
+        $this->assertSame($this->club->id, $proposal->from_club_id);
         $this->assertNull($proposal->to_club_id);
-        $this->assertSame('Palmeiras', $proposal->external_club);
-        $this->assertNull($this->myPlayer->fresh()->left_at);
+        $this->assertNull($this->mine->fresh()->left_at);
     }
 
-    /**
-     * Traer a alguien de fuera exige darle ficha antes, y las fichas las crea
-     * el administrador: al técnico no se le ofrece esa combinación.
-     */
-    public function test_an_incoming_transfer_from_outside_is_not_offered(): void
+    public function test_a_loan_carries_a_term_and_no_money(): void
     {
         $this->asCoach();
 
-        $scopes = Livewire::test(ProposeTransfer::class)
-            ->fillForm(['direction' => TransferProposalForm::IN])
-            ->instance()
-            ->getSchemaComponent('form.scope')
-            ->getOptions();
+        Livewire::test(ProposeTransfer::class)
+            ->fillForm([
+                'type' => Transfer::TYPE_LOAN_IN,
+                'external_player' => 'Cedido Nunes',
+                'external_club' => 'Palmeiras',
+                'loan_term' => Transfer::TERM_ONE_YEAR,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
 
-        $this->assertSame([Transfer::SCOPE_INTERNAL => Transfer::SCOPES[Transfer::SCOPE_INTERNAL]], $scopes);
+        $proposal = Transfer::query()->latest('id')->first();
+
+        $this->assertSame(Transfer::TERM_ONE_YEAR, $proposal->loan_term);
+        $this->assertSame(0, $proposal->fee);
     }
 
     /**
-     * Una venta entre clubes de la liga es el fichaje del comprador: una fila,
-     * leída desde los dos lados (design D8).
+     * Fichaje y venta mueven dinero: una propuesta sin cifra no es una
+     * propuesta, es una pregunta.
      */
-    public function test_an_internal_sale_is_not_among_the_types(): void
-    {
-        $this->assertArrayNotHasKey(
-            Transfer::TYPE_SALE,
-            TransferProposalForm::typesFor(TransferProposalForm::OUT, Transfer::SCOPE_INTERNAL),
-        );
-
-        $this->assertArrayHasKey(
-            Transfer::TYPE_SALE,
-            TransferProposalForm::typesFor(TransferProposalForm::OUT, Transfer::SCOPE_EXTERNAL),
-        );
-    }
-
-    public function test_the_coach_only_offers_players_of_the_right_side(): void
+    public function test_the_amount_is_required_when_there_is_money(): void
     {
         $this->asCoach();
 
-        $this->assertArrayHasKey($this->theirPlayer->id, TransferProposalForm::playersElsewhere());
-        $this->assertArrayNotHasKey($this->myPlayer->id, TransferProposalForm::playersElsewhere());
-
-        $this->assertArrayHasKey($this->myPlayer->id, TransferProposalForm::ownPlayers());
-        $this->assertArrayNotHasKey($this->theirPlayer->id, TransferProposalForm::ownPlayers());
+        Livewire::test(ProposeTransfer::class)
+            ->fillForm([
+                'type' => Transfer::TYPE_SIGNING,
+                'external_player' => 'Rivaldo Nunes',
+                'external_club' => 'Palmeiras',
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['fee']);
     }
 
-    public function test_the_administrator_signs_it_and_then_everything_moves(): void
+    /**
+     * Desde el panel sólo se propone hacia fuera de la liga, así que no hay
+     * ámbito que elegir: lo de dentro se negocia por el chat.
+     */
+    public function test_the_form_does_not_ask_for_a_scope(): void
     {
-        $proposal = Transfer::create([
-            'player_id' => $this->theirPlayer->id,
-            'season_id' => $this->season->id,
+        $this->asCoach();
+
+        $this->assertNull(Livewire::test(ProposeTransfer::class)->instance()->getSchemaComponent('form.scope'));
+    }
+
+    // ── Lo que el administrador hace con ella ─────────────────────────────
+
+    public function test_approving_a_signing_creates_the_player_and_moves_the_money(): void
+    {
+        $proposal = $this->proposal([
             'type' => Transfer::TYPE_SIGNING,
-            'scope' => Transfer::SCOPE_INTERNAL,
-            'status' => Transfer::STATUS_PROPOSED,
-            'from_club_id' => $this->theirs->id,
-            'to_club_id' => $this->mine->id,
+            'external_player' => 'Rivaldo Nunes',
+            'external_club' => 'Palmeiras',
             'fee' => 300_000,
-            'proposed_by' => $this->coach->id,
         ]);
 
-        $this->actingAs(User::factory()->create());
+        app(TransferService::class)->approve($proposal, $this->admin, [
+            'player_name' => 'Rivaldo Nunes',
+            'position' => 'Forward',
+            'specific_position' => 'DC',
+            'external_club' => 'Palmeiras',
+            'fee' => 280_000,
+            'shirt_number' => 11,
+        ]);
 
-        Livewire::test(ListTransfers::class)
-            ->callTableAction('approve', $proposal)
-            ->assertHasNoTableActionErrors();
+        $player = Player::query()->where('name', 'Rivaldo Nunes')->first();
 
-        $this->assertSame(Transfer::STATUS_EXECUTED, $proposal->fresh()->status);
-        $this->assertSame(700_000, $this->balance($this->mine));
-        $this->assertSame(1_300_000, $this->balance($this->theirs));
-        $this->assertSame($this->mine->id, $this->theirPlayer->fresh()->club_id);
+        $this->assertNotNull($player, 'la ficha del que llega nace al aceptar');
+        $this->assertSame($this->club->id, $player->club_id);
+        $this->assertSame('DC', $player->specific_position);
+
+        // Con el dorsal que puso el administrador, no con el primero libre.
         $this->assertDatabaseHas('squad_memberships', [
-            'team_id' => $this->myTeam->id,
-            'player_id' => $this->theirPlayer->id,
+            'team_id' => $this->team->id,
+            'player_id' => $player->id,
+            'shirt_number' => 11,
+        ]);
+
+        // Y con el importe que se cerró, que no tiene por qué ser el pedido.
+        $this->assertSame(Transfer::STATUS_EXECUTED, $proposal->fresh()->status);
+        $this->assertSame(280_000, $proposal->fresh()->fee);
+        $this->assertSame(720_000, $this->balance());
+    }
+
+    public function test_approving_a_sale_collects_and_marks_the_player_as_gone(): void
+    {
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SALE,
+            'player_id' => $this->mine->id,
+            'fee' => 500_000,
+        ]);
+
+        app(TransferService::class)->approve($proposal, $this->admin, [
+            'external_club' => 'Palmeiras',
+            'fee' => 450_000,
+        ]);
+
+        $this->assertSame(1_450_000, $this->balance());
+        $this->assertNotNull($this->mine->fresh()->left_at);
+        $this->assertSame('Palmeiras', $this->mine->fresh()->left_to);
+        $this->assertDatabaseMissing('squad_memberships', [
+            'team_id' => $this->team->id,
+            'player_id' => $this->mine->id,
         ]);
     }
 
-    /**
-     * Rechazar conserva la fila: qué pidió el técnico y qué se le respondió es
-     * historia del club.
-     */
-    public function test_rejecting_keeps_the_record_and_moves_nothing(): void
+    public function test_approving_a_loan_moves_the_player_and_no_money(): void
     {
-        $proposal = Transfer::create([
-            'player_id' => $this->theirPlayer->id,
-            'season_id' => $this->season->id,
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_LOAN_IN,
+            'external_player' => 'Cedido Nunes',
+            'external_club' => 'Palmeiras',
+            'fee' => 0,
+            'loan_term' => Transfer::TERM_ONE_YEAR,
+        ]);
+
+        app(TransferService::class)->approve($proposal, $this->admin, [
+            'player_name' => 'Cedido Nunes',
+            'position' => 'Midfielder',
+            'external_club' => 'Palmeiras',
+            'loan_term' => Transfer::TERM_SIX_MONTHS,
+        ]);
+
+        $player = Player::query()->where('name', 'Cedido Nunes')->first();
+
+        $this->assertSame(0, BudgetMovement::query()->count());
+        $this->assertSame(1_000_000, $this->balance());
+        $this->assertDatabaseHas('squad_memberships', [
+            'team_id' => $this->team->id,
+            'player_id' => $player->id,
+            'type' => SquadMembership::TYPE_LOAN,
+        ]);
+        $this->assertSame(Transfer::TERM_SIX_MONTHS, $proposal->fresh()->loan_term);
+    }
+
+    // ── Lo que el técnico lee después ─────────────────────────────────────
+
+    /**
+     * El chat es el único aviso que hay: sin correos ni websockets, lo que la
+     * dirección decide se cuenta donde el técnico ya mira.
+     */
+    public function test_the_coach_is_told_in_their_chat(): void
+    {
+        $proposal = $this->proposal([
             'type' => Transfer::TYPE_SIGNING,
-            'scope' => Transfer::SCOPE_INTERNAL,
-            'status' => Transfer::STATUS_PROPOSED,
-            'from_club_id' => $this->theirs->id,
-            'to_club_id' => $this->mine->id,
+            'external_player' => 'Rivaldo Nunes',
+            'external_club' => 'Palmeiras',
             'fee' => 300_000,
         ]);
 
-        app(TransferService::class)->reject($proposal, User::factory()->create());
+        app(TransferService::class)->approve($proposal, $this->admin, [
+            'player_name' => 'Rivaldo Nunes',
+            'position' => 'Forward',
+            'external_club' => 'Palmeiras',
+            'fee' => 300_000,
+        ]);
 
-        $this->assertSame(Transfer::STATUS_REJECTED, $proposal->fresh()->status);
-        $this->assertSame(0, BudgetMovement::query()->count());
-        $this->assertDatabaseHas('transfers', ['id' => $proposal->id]);
+        $conversation = Conversation::query()->with('participants')->first();
+        $message = $conversation->messages()->latest('id')->first();
+
+        $this->assertTrue($conversation->includes($this->coach));
+        $this->assertTrue($conversation->includes($this->admin));
+        $this->assertSame($this->admin->id, $message->user_id);
+        $this->assertStringContainsString('Fichaje aprobado', $message->body);
+        $this->assertStringContainsString('Rivaldo Nunes', $message->body);
+        $this->assertStringContainsString('300.000', $message->body);
     }
 
-    public function test_only_an_administrator_signs_and_only_a_proposal(): void
+    public function test_a_rejection_is_told_too_and_moves_nothing(): void
     {
-        $proposal = Transfer::create([
-            'player_id' => $this->theirPlayer->id,
-            'season_id' => $this->season->id,
-            'type' => Transfer::TYPE_SIGNING,
-            'scope' => Transfer::SCOPE_INTERNAL,
-            'status' => Transfer::STATUS_PROPOSED,
-            'from_club_id' => $this->theirs->id,
-            'to_club_id' => $this->mine->id,
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SALE,
+            'player_id' => $this->mine->id,
+            'fee' => 500_000,
+        ]);
+
+        app(TransferService::class)->reject($proposal, $this->admin);
+
+        $message = Conversation::query()->first()->messages()->latest('id')->first();
+
+        $this->assertStringContainsString('Venta rechazada', $message->body);
+        $this->assertStringContainsString('El Mío', $message->body);
+        $this->assertSame(Transfer::STATUS_REJECTED, $proposal->fresh()->status);
+        $this->assertSame(1_000_000, $this->balance());
+        $this->assertNull($this->mine->fresh()->left_at);
+    }
+
+    // ── Quién puede qué ───────────────────────────────────────────────────
+
+    public function test_only_an_administrator_answers_and_only_once(): void
+    {
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SALE,
+            'player_id' => $this->mine->id,
             'fee' => 1,
         ]);
 
         try {
-            app(TransferService::class)->approve($proposal, $this->coach);
+            app(TransferService::class)->approve($proposal, $this->coach, ['external_club' => 'Palmeiras', 'fee' => 1]);
             $this->fail('un técnico no debería poder firmar su propia propuesta');
         } catch (ValidationException) {
             $this->assertSame(Transfer::STATUS_PROPOSED, $proposal->fresh()->status);
         }
 
-        $admin = User::factory()->create();
-        app(TransferService::class)->approve($proposal->fresh(), $admin);
+        app(TransferService::class)->approve($proposal->fresh(), $this->admin, ['external_club' => 'Palmeiras', 'fee' => 1]);
 
         $this->expectException(ValidationException::class);
-        app(TransferService::class)->approve($proposal->fresh(), $admin);
+        app(TransferService::class)->approve($proposal->fresh(), $this->admin, ['external_club' => 'Palmeiras', 'fee' => 1]);
     }
 
-    /**
-     * Lo que el administrador registra de su mano sigue naciendo ejecutado: no
-     * tiene a quién pedirle permiso.
-     */
-    public function test_what_the_administrator_records_executes_at_once(): void
+    public function test_the_tray_shows_what_is_waiting_and_closes_it(): void
     {
-        Transfer::create([
-            'player_id' => $this->theirPlayer->id,
-            'season_id' => $this->season->id,
-            'type' => Transfer::TYPE_SIGNING,
-            'scope' => Transfer::SCOPE_INTERNAL,
-            'from_club_id' => $this->theirs->id,
-            'to_club_id' => $this->mine->id,
-            'fee' => 200_000,
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SALE,
+            'player_id' => $this->mine->id,
+            'fee' => 500_000,
         ]);
 
-        $this->assertSame(800_000, $this->balance($this->mine));
-        $this->assertSame($this->mine->id, $this->theirPlayer->fresh()->club_id);
-    }
-
-    public function test_the_pending_proposals_show_on_the_admin_navigation(): void
-    {
-        $this->actingAs(User::factory()->create());
-
-        $this->assertNull(TransferResource::getNavigationBadge());
-
-        Transfer::create([
-            'player_id' => $this->theirPlayer->id,
-            'season_id' => $this->season->id,
-            'type' => Transfer::TYPE_SIGNING,
-            'scope' => Transfer::SCOPE_INTERNAL,
-            'status' => Transfer::STATUS_PROPOSED,
-            'from_club_id' => $this->theirs->id,
-            'to_club_id' => $this->mine->id,
-            'fee' => 1,
-        ]);
+        $this->actingAs($this->admin);
 
         $this->assertSame('1', TransferResource::getNavigationBadge());
+
+        Livewire::test(ListTransfers::class)
+            ->mountTableAction('approve', $proposal)
+            ->setTableActionData(['external_club' => 'Palmeiras', 'fee' => 500_000])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(Transfer::STATUS_EXECUTED, $proposal->fresh()->status);
+        $this->assertSame(1_500_000, $this->balance());
     }
 
-    /**
-     * Y el presupuesto deja de aceptar propuestas sueltas: lo que el técnico
-     * propone es la operación entera, que es la que explica el dinero.
-     */
-    public function test_the_budget_no_longer_takes_proposals(): void
+    public function test_the_budget_takes_no_proposals(): void
     {
         $this->asCoach();
 
         $this->assertFalse(BudgetResource::canCreate());
         $this->get('/club/contabilidad/create')->assertNotFound();
-
-        // Lo que sí puede crear es una propuesta de fichaje, que es adonde se ha
-        // mudado lo de proponer.
         $this->assertTrue(Gate::forUser($this->coach)->allows('create', Transfer::class));
     }
 }

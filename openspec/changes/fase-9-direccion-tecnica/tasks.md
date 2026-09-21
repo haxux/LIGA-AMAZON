@@ -427,6 +427,21 @@ tablas nuevas, todo aditivo.
       propuesta no mueve nada hasta que el administrador la firma, y firmarla ejecuta el
       traspaso de siempre. Contabilidad queda de sólo lectura para el técnico.
 
+- [x] C.7 **Las cuatro operaciones**, pedidas por el propietario. Desde el panel el técnico
+      propone SIEMPRE hacia fuera de la liga —lo de dentro se negocia por el chat, con el otro
+      técnico—, así que desaparece el ámbito: fichaje, venta, cesión y ceder. Lo que entra
+      nombra al jugador en texto libre, porque aún no tiene ficha.
+- [x] C.8 **Aceptar deja de ser un botón de sí**: abre un formulario donde el administrador
+      pone lo que la propuesta no sabía —club del otro lado, precio o plazo cerrados y, si
+      llega alguien de fuera, su ficha entera— y al guardarlo se mueve todo de una vez. El
+      técnico sólo propone; el dinero y las plantillas siguen teniendo una única puerta.
+- [x] C.9 Y se avisa por el chat: aprobada o rechazada, sale un mensaje automático del
+      administrador al técnico con el jugador y lo pactado. Es el único aviso que hay, porque
+      no existen ni correos ni websockets.
+- [x] C.10 En el chat, las ofertas entre técnicos pasan a ser las mismas cuatro. Una cesión no
+      lleva importe sino plazo, pedir elige de la plantilla del otro y ofrecer de la propia, y
+      lo pactado es lo que se ejecuta: una cesión cerrada en el chat se registra como cesión.
+
 ## Lo que queda por hacer a mano
 
 - [ ] V.1 Seguir probando el chat en el navegador entre dos cuentas reales: es la única

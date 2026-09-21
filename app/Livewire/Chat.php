@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Offer;
 use App\Models\Player;
+use App\Models\Transfer;
 use App\Models\User;
 use App\Services\OfferService;
 use App\Services\SeasonResolver;
@@ -31,7 +32,11 @@ class Chat extends Component
 
     public string $body = '';
 
+    public string $offerKind = Offer::KIND_BUY;
+
     public ?string $offerPlayerId = null;
+
+    public ?string $offerTerm = null;
 
     public ?string $offerAmount = null;
 
@@ -187,16 +192,20 @@ class Chat extends Component
      */
     public function offerableOptions(): array
     {
-        $otherClub = $this->conversation()?->other($this->user())?->club;
+        $user = $this->user();
+        $otherClub = $this->conversation()?->other($user)?->club;
 
         if (! $this->mayOffer() || $otherClub === null) {
             return [];
         }
 
+        // Pedir es pedir lo del otro; ofrecer es ofrecer lo propio.
+        $club = $this->asking() ? $otherClub->getKey() : $user->club_id;
+
         $season = app(SeasonResolver::class)->active();
 
         return Player::query()
-            ->where('club_id', $otherClub->getKey())
+            ->where('club_id', $club)
             ->when($season, fn (Builder $query) => $query->whereHas(
                 'memberships',
                 fn (Builder $memberships) => $memberships->whereHas(
@@ -213,6 +222,44 @@ class Chat extends Component
      * Ofrecer exige un club que compre, y un presidente no dirige ninguno
      * (invariante de `User` desde la Fase 9). Con él se habla; no se negocia.
      */
+    /**
+     * Si la operación elegida pide un jugador al interlocutor, en vez de
+     * ofrecerle uno propio.
+     */
+    public function asking(): bool
+    {
+        return in_array($this->offerKind, Offer::ASKING, true);
+    }
+
+    public function free(): bool
+    {
+        return in_array($this->offerKind, Offer::FREE, true);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function offerKinds(): array
+    {
+        return Offer::KINDS;
+    }
+
+    /**
+     * Los plazos de una cesión son los mismos que los de un traspaso: no hay
+     * dos vocabularios para lo mismo.
+     *
+     * @return array<string, string>
+     */
+    public function loanTerms(): array
+    {
+        return Transfer::LOAN_TERMS;
+    }
+
+    public function updatedOfferKind(): void
+    {
+        $this->reset(['offerPlayerId', 'offerAmount', 'offerTerm', 'error']);
+    }
+
     public function mayOffer(): bool
     {
         $user = $this->user();
@@ -231,7 +278,12 @@ class Chat extends Component
             return;
         }
 
-        if (blank($this->offerPlayerId) || blank($this->offerAmount)) {
+        if (blank($this->offerPlayerId)) {
+            return;
+        }
+
+        // Una cesión se pacta por plazo; lo demás, por dinero.
+        if ($this->free() ? blank($this->offerTerm) : blank($this->offerAmount)) {
             return;
         }
 
@@ -239,8 +291,10 @@ class Chat extends Component
             Offer::create([
                 'conversation_id' => $conversation->getKey(),
                 'player_id' => (int) $this->offerPlayerId,
+                'kind' => $this->offerKind,
                 'from_club_id' => $user->club_id,
-                'amount' => (int) $this->offerAmount,
+                'amount' => $this->free() ? 0 : (int) $this->offerAmount,
+                'loan_term' => $this->free() ? $this->offerTerm : null,
                 'status' => Offer::STATUS_SENT,
                 'moved_by' => $user->getKey(),
             ]);
@@ -250,7 +304,7 @@ class Chat extends Component
             return;
         }
 
-        $this->reset(['offerPlayerId', 'offerAmount', 'error']);
+        $this->reset(['offerPlayerId', 'offerAmount', 'offerTerm', 'error']);
     }
 
     public function acceptOffer(int $offerId): void

@@ -112,7 +112,7 @@ class TransferTest extends TestCase
         Transfer::create([
             'player_id' => $this->player->id,
             'season_id' => $this->season->id,
-            'type' => Transfer::TYPE_LOAN,
+            'type' => Transfer::TYPE_LOAN_IN,
             'scope' => Transfer::SCOPE_INTERNAL,
             'from_club_id' => $this->selling->id,
             'to_club_id' => $this->buying->id,

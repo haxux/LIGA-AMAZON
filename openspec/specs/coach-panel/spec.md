@@ -87,45 +87,51 @@ the administrator without a way to fill it in.
 - WHEN the administrator edits them in `/admin` and picks LD
 - THEN the player is saved with LD
 
-### Requirement: The coach proposes the transfer, not the money
+### Requirement: The coach proposes four operations, always outside the league
 
-What a coach proposes is the **operation**: the player, the fee, the scope and which side
-their club is on — the same thing an administrator records, with one difference, that theirs
-is a proposal and moves nothing until it is signed. It lives in the Fichajes module, next to
-the history it will become part of.
+What a coach proposes from his panel is the **operation**, and it always points outside the
+league: what moves between league clubs is negotiated in the chat, with the other coach. The
+form therefore MUST NOT ask for a scope.
 
-A loose proposal of income or expense, with no operation behind it, left the administrator
-guessing what it was for, so Contabilidad is **read-only** to the coach: the balance and the
-club's ledger, filterable, with no create, edit or delete. The movements are written by the
-administrator, and an approved transfer generates its own.
+The four are: **Fichaje** (buy someone from outside), **Venta** (put one of his own up for
+sale), **Cesión** (borrow someone from outside) and **Ceder** (offer one of his own on loan).
+Each asks only what it needs:
 
-A proposal MUST fix what is not the coach's to choose: their club is one of the two ends, the
-season is the current one, the status is proposed and the author is them. They MUST choose
-only which side they are on — keeping the player or letting them go — and the rest follows
-from it.
+1. what comes in names the player as **free text**, because they have no identity in the
+   league yet — the administrator creates it if the deal closes;
+2. what goes out picks from his own squad;
+3. fichaje and venta MUST carry an amount, since a money operation with no figure is a
+   question, not a proposal;
+4. cesión and ceder carry a **term** and no money at all.
 
-A coach MUST NOT be offered a signing from outside the league: bringing someone in needs an
-identity created first, and identities are the administrator's.
+His club is one end and he does not choose it, the season is the current one, the status is
+proposed, and the author is him. A proposal MUST move nothing: no money, no squad, no
+identity created.
+
+Contabilidad stays **read-only** to him: a loose proposal of income or expense, with no
+operation behind it, left the administrator guessing what it was for.
 
 #### Scenario: A proposal waits, and nothing moves
 
-- GIVEN a coach proposing to sign a player from another league club
+- GIVEN a coach asking to sign someone from outside the league
 - WHEN the proposal is stored
-- THEN it reads as proposed, no budget movement exists, and the player is still in the other
-  club's squad
+- THEN it reads as proposed, no player identity exists, no movement exists, and his balance is
+  unchanged
 
-#### Scenario: The budget takes no proposals
+#### Scenario: A loan asks for a term, not a price
 
-- GIVEN a coach with their ledger open
-- WHEN they look for a way to propose a movement
-- THEN there is none
+- GIVEN a coach proposing to borrow a player
+- WHEN the form is shown
+- THEN it asks for the term and offers no amount
 
 ### Requirement: The coach reads their transfer history, both directions
 
 The Fichajes module MUST list the transfers where the coach's club is at either end —
-executed, proposed and rejected alike — filterable by season, type and status. Executing is
-still the administrator's: recording an executed transfer is what pays, collects and moves a
-player.
+executed, proposed and rejected alike — filterable by season, type and status. Closing one is
+the administrator's, and how he closes it is specified in `admin-league-crud`.
+
+Whatever he decides, the coach MUST be told in his chat, naming the player and what was
+agreed: the chat is the only notice this deployment has.
 
 Each row MUST be labelled from this club's side — a signing for the club receiving the player,
 a sale for the one letting them go — since the same row is both.

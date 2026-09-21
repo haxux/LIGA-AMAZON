@@ -130,14 +130,19 @@
                             <div class="max-w-[85%] rounded-[6px] border-l-[3px] border-brand bg-surface-alt p-3">
                                 <div class="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-brand">
                                     <span aria-hidden="true">💰</span>
-                                    <span>Oferta</span>
+                                    <span>{{ \App\Models\Offer::KINDS[$entry->kind] ?? 'Oferta' }}</span>
                                     <span class="rounded-full bg-white/10 px-2 py-0.5 text-white/70">{{ Offer::STATUSES[$entry->status] }}</span>
                                 </div>
 
                                 <div class="mt-1 font-display text-base text-white">
                                     <span class="font-semibold">{{ $entry->player?->name }}</span>
-                                    <span class="text-white/50">por</span>
-                                    <span class="font-bold text-brand">{{ number_format($entry->amount, 0, ',', '.') }}</span>
+                                    @if ($entry->isFree())
+                                        <span class="text-white/50">en cesión,</span>
+                                        <span class="font-bold text-brand">{{ \App\Models\Transfer::LOAN_TERMS[$entry->loan_term] ?? 'sin plazo' }}</span>
+                                    @else
+                                        <span class="text-white/50">por</span>
+                                        <span class="font-bold text-brand">{{ number_format($entry->amount, 0, ',', '.') }}</span>
+                                    @endif
                                 </div>
 
                                 <div class="mt-0.5 font-mono text-[10px] tracking-[0.08em] text-white/40">
@@ -197,28 +202,50 @@
 
                 @if ($this->mayOffer())
                     <div x-show="offering" x-cloak class="mb-3 rounded-[6px] border-l-[3px] border-brand bg-surface p-3">
-                        <div class="mb-2 font-mono text-[9px] uppercase tracking-[0.14em] text-brand">Ofertar por un jugador</div>
+                        <div class="mb-2 font-mono text-[9px] uppercase tracking-[0.14em] text-brand">Proponer una operación</div>
 
                         <div class="flex flex-wrap items-center gap-2">
+                            {{-- La operación manda: decide de qué plantilla se
+                                 elige jugador y si lo que se pacta es dinero o
+                                 plazo. --}}
+                            <select wire:model.live="offerKind"
+                                    class="rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
+                                @foreach ($this->offerKinds() as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+
                             <select wire:model="offerPlayerId"
-                                    class="min-w-[12rem] flex-1 rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
-                                <option value="">Jugador…</option>
+                                    class="min-w-[11rem] flex-1 rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
+                                <option value="">{{ $this->asking() ? 'Su jugador…' : 'Tu jugador…' }}</option>
                                 @foreach ($this->offerableOptions() as $id => $name)
                                     <option value="{{ $id }}">{{ $name }}</option>
                                 @endforeach
                             </select>
 
-                            <input type="number" min="1" wire:model="offerAmount" placeholder="Importe"
-                                   class="w-32 rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
+                            @if ($this->free())
+                                <select wire:model="offerTerm"
+                                        class="w-36 rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
+                                    <option value="">Plazo…</option>
+                                    @foreach ($this->loanTerms() as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input type="number" min="1" wire:model="offerAmount" placeholder="Importe"
+                                       class="w-32 rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
+                            @endif
 
                             <button type="button" wire:click="sendOffer" x-on:click="offering = false"
                                     class="rounded-[4px] bg-brand px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] text-ink hover:opacity-90">
-                                Enviar oferta
+                                Enviar
                             </button>
                         </div>
 
                         <p class="mt-2 text-[11px] text-white/45">
-                            Aceptarla no mueve nada por sí sola: queda acordada y el administrador registra el traspaso.
+                            {{ $this->free()
+                                ? 'Una cesión no tiene coste: lo que se pacta es el plazo.'
+                                : 'Aceptarla no mueve nada por sí sola: queda acordada y el administrador la cierra.' }}
                         </p>
                     </div>
                 @endif
