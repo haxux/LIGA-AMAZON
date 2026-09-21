@@ -326,18 +326,28 @@ readable **separated by competition** — the league on its own, each cup on its
 everything together (owner's decision). A goal in the league and a goal in a cup are not the
 same figure, and adding them up without saying so hides which is which.
 
-The competition MUST travel in the URL (`?competicion=todo|liga|copa:{id}`), so that a
-filtered view is a shareable address. A key that names no competition of that season MUST fall
-back to everything, like a mistyped tab falls back to General: public URLs get typed by hand.
+The two read differently, so they separate differently:
 
-The choice MUST be offered only where there is something to choose. A season with no cup, or a
-club that plays in none, MUST see the page exactly as it was, with no selector — and MUST keep
-its points column, since with no cups "everything" and "the league" are the same screen.
+1. The **season-wide leaderboards** at `/estadisticas` rank a whole season and only one ranking
+   fits on a page, so they MUST offer a **choice**, and it MUST travel in the URL
+   (`?competicion=todo|liga|copa:{id}`) so that a filtered board is a shareable address. A key
+   that names no competition of that season MUST fall back to everything, like a mistyped tab
+   falls back to General: public URLs get typed by hand.
+2. A **club's Stats tab and a player's profile** MUST show every competition **at once**, one
+   block after another: first "General", the whole season, and then one block per competition
+   the club takes part in. What is wanted there is how much of the season's work is league and
+   how much is cup, and a selector makes that a matter of going back and forth remembering
+   figures.
+
+Only the competitions the club actually **takes part in** MUST be shown or offered: a cup it
+does not play is a screen of zeros. A season with no cup, or a club that plays in none, MUST
+see the page exactly as it was — one block, no headings, no selector — and MUST keep its points
+column, since with no cups "everything" and "the league" are the same figures.
 
 There MUST NOT be an "all cups" option: whoever reads a cup reads one, and the sum is already
 "Todo".
 
-**Points MUST be shown only for the league.** A knock-out cup awards none, and "everything"
+**Points MUST be shown only for the league block.** A knock-out cup awards none, and "General"
 would add up games that award none: a points figure in either place is a table that does not
 exist.
 
@@ -357,8 +367,14 @@ cups existed — left every cup goal, card and clean sheet out of every statisti
 - WHEN the board is read filtered to the league
 - THEN they show three
 
-#### Scenario: A club with no cup sees no selector
+#### Scenario: A club's Stats tab separates what it plays
+
+- GIVEN a club playing a league and one cup
+- WHEN its Stats tab is read
+- THEN General, Liga and that cup are shown one after another, and only Liga carries points
+
+#### Scenario: A club with no cup sees no separation
 
 - GIVEN a club entered in no cup
 - WHEN its Stats tab is read
-- THEN there is no competition selector and the points column is still there
+- THEN there is one block with no heading and the points column is still there

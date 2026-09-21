@@ -66,7 +66,7 @@
         </div>
 
         @if ($seasons->isNotEmpty())
-            <form method="GET" action="{{ route('site.players.show', $player) }}" class="ml-auto flex flex-wrap items-end">
+            <form method="GET" action="{{ route('site.players.show', $player) }}" class="ml-auto">
                 <label>
                     <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/50">TEMPORADA</span>
                     <select name="temporada" onchange="this.form.submit()"
@@ -77,20 +77,6 @@
                     </select>
                 </label>
 
-                {{-- En el mismo formulario que la temporada: así cambiar de una
-                     no pierde la otra, y la URL sigue diciendo las dos. --}}
-                @if (count($competitionOptions) > 2)
-                    <label class="ml-3">
-                        <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/50">COMPETICIÓN</span>
-                        <select name="competicion" onchange="this.form.submit()"
-                                class="rounded-[4px] border border-white/10 bg-surface px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white">
-                            @foreach ($competitionOptions as $value => $text)
-                                <option value="{{ $value }}" @selected($value === $competition->key)>{{ $text }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-                @endif
-
                 <noscript>
                     <button type="submit" class="mt-2 rounded-[4px] bg-brand px-4 py-2 font-display text-base font-bold uppercase tracking-[0.08em] text-ink">Ver</button>
                 </noscript>
@@ -98,23 +84,31 @@
         @endif
     </header>
 
-    <section class="mb-6">
-        <h2 class="mb-3 font-mono text-[10px] tracking-[0.14em] text-brand">
-            {{ $selectedSeason ? 'EN '.mb_strtoupper($selectedSeason->name) : 'ESTADÍSTICAS' }}
-            @unless ($competition->isAll()) · {{ mb_strtoupper($competition->label) }} @endunless
-        </h2>
+    {{-- Separadas por competición (Fase 15, decisión del propietario): primero
+         la temporada entera y después cada competición en la que está su
+         equipo. Sin copas no hay nada que separar, y va una tanda sola. --}}
+    <h2 class="mb-3 font-mono text-[10px] tracking-[0.14em] text-brand">
+        {{ $selectedSeason ? 'EN '.mb_strtoupper($selectedSeason->name) : 'ESTADÍSTICAS' }}
+    </h2>
 
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
-            @foreach ($labels as $type => $label)
-                <div class="rounded-[5px] bg-surface-alt p-4 text-center">
-                    <span class="block font-mono text-[9px] tracking-[0.14em] text-white/40">{{ mb_strtoupper($label) }}</span>
-                    <span class="font-display text-3xl font-bold {{ $type === \App\Models\GameEvent::TYPE_GOAL ? 'text-brand' : 'text-white' }}">
-                        {{ $seasonTotals[$type] ?? 0 }}
-                    </span>
-                </div>
-            @endforeach
-        </div>
-    </section>
+    @foreach ($statBlocks as $block)
+        <section class="mb-6">
+            @if ($block['title'])
+                <h3 class="mb-2 font-mono text-[10px] tracking-[0.14em] text-white/45">{{ mb_strtoupper($block['title']) }}</h3>
+            @endif
+
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                @foreach ($labels as $type => $label)
+                    <div class="rounded-[5px] bg-surface-alt p-4 text-center">
+                        <span class="block font-mono text-[9px] tracking-[0.14em] text-white/40">{{ mb_strtoupper($label) }}</span>
+                        <span class="font-display text-3xl font-bold {{ $type === \App\Models\GameEvent::TYPE_GOAL ? 'text-brand' : 'text-white' }}">
+                            {{ $block['totals'][$type] ?? 0 }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endforeach
 
     @if ($seasons->count() > 1)
         {{-- El desglose por temporada, con el club de cada una: con una cesión

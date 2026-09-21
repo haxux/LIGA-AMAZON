@@ -239,33 +239,63 @@ class CompetitionStatsTest extends TestCase
     }
 
     /**
-     * Los puntos sólo se cuentan donde hay tabla: en una copa no significan
-     * nada, y en «Todo» sumarían partidos que no dan puntos.
+     * Separadas y no filtradas: las tandas se ven todas a la vez, «General»
+     * primero y después cada competición. Los puntos sólo se cuentan donde hay
+     * tabla: en una copa no significan nada, y en «General» sumarían partidos
+     * que no dan puntos.
      */
-    public function test_the_club_stats_tab_filters_and_only_the_league_shows_points(): void
+    public function test_the_club_stats_tab_shows_one_block_per_competition(): void
     {
         $this->leagueGame(3, 1);
         $this->cupGame(1, 2);
 
-        $url = '/equipos/'.$this->team->club_id.'/stats?temporada='.$this->season->id;
+        $response = $this->get('/equipos/'.$this->team->club_id.'/stats?temporada='.$this->season->id);
 
-        $this->get($url.'&competicion='.Competition::LEAGUE)->assertOk()->assertSee('PTS');
-        $this->get($url.'&competicion=copa:'.$this->cup->id)->assertOk()->assertDontSee('PTS');
-        $this->get($url)->assertOk()->assertDontSee('PTS');
+        $response->assertOk()
+            ->assertSee('GENERAL')
+            ->assertSee('LIGA')
+            ->assertSee('COPA AMAZONAS')
+            // Una sola vez, la de la liga.
+            ->assertSeeInOrder(['GENERAL', 'LIGA', 'PTS', 'COPA AMAZONAS']);
+
+        $this->assertSame(1, substr_count($response->getContent(), '>PTS<'));
     }
 
     /**
-     * Un club que no juega ninguna copa no tiene filtro que elegir, y su
-     * pestaña tiene que quedar exactamente como estaba: con sus puntos.
+     * Un club que no juega ninguna copa no tiene nada que separar, y su pestaña
+     * tiene que quedar exactamente como estaba: con sus puntos y sin rótulos.
      */
-    public function test_a_club_without_a_cup_keeps_its_points(): void
+    public function test_a_club_without_a_cup_keeps_its_points_and_gets_no_blocks(): void
     {
         $solo = $this->teamNamed('Xingu Rangers');
 
         $this->get('/equipos/'.$solo->club_id.'/stats?temporada='.$this->season->id)
             ->assertOk()
             ->assertSee('PTS')
-            // El rótulo suelto no vale: el pie del sitio también lo lleva.
-            ->assertDontSee('name="competicion"', false);
+            ->assertDontSee('GENERAL');
+    }
+
+    public function test_the_player_page_shows_one_block_per_competition(): void
+    {
+        GameEvent::factory()->count(2)->for($this->leagueGame(2, 0))->for($this->player)->goal()->create();
+        GameEvent::factory()->for($this->cupGame(1, 0))->for($this->player)->goal()->create();
+
+        $this->get('/jugadores/'.$this->player->id.'?temporada='.$this->season->id)
+            ->assertOk()
+            ->assertSeeInOrder(['GENERAL', 'LIGA', 'COPA AMAZONAS']);
+    }
+
+    /**
+     * Las competiciones son las del equipo del jugador esa temporada: una copa
+     * que su club no juega sería una fila de ceros.
+     */
+    public function test_a_player_is_only_shown_the_cups_their_team_plays(): void
+    {
+        Cup::factory()->create(['season_id' => $this->season->id, 'name' => 'Copa del Río']);
+
+        $this->get('/jugadores/'.$this->player->id.'?temporada='.$this->season->id)
+            ->assertOk()
+            ->assertSee('COPA AMAZONAS')
+            ->assertDontSee('COPA DEL RÍO');
     }
 }

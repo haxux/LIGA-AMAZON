@@ -8,6 +8,7 @@ use App\Models\Season;
 use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Services\ClubSeasonService;
+use App\Services\ClubSeasonStats;
 use App\Services\Competition;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ class ClubProfileController extends SiteController
             'team' => $team,
             'tab' => $tab,
             'tabs' => self::TABS,
-        ] + $this->dataFor($tab, $club, $team, $clubSeason, $request));
+        ] + $this->dataFor($tab, $club, $team, $clubSeason));
     }
 
     /**
@@ -87,7 +88,7 @@ class ClubProfileController extends SiteController
      *
      * @return array<string, mixed>
      */
-    private function dataFor(string $tab, Club $club, ?Team $team, ClubSeasonService $clubSeason, Request $request): array
+    private function dataFor(string $tab, Club $club, ?Team $team, ClubSeasonService $clubSeason): array
     {
         if ($tab === 'trofeos') {
             // El palmarés ENTERO, no el de la temporada elegida: un título se
@@ -117,33 +118,52 @@ class ClubProfileController extends SiteController
             ],
             'partidos' => ['games' => $clubSeason->games($team)],
             'jugadores' => ['squad' => $this->squad($team)],
-            'stats' => $this->statsTab($team, $clubSeason, $request),
+            'stats' => $this->statsTab($team, $clubSeason),
             default => [],
         };
     }
 
     /**
-     * Las cifras del club, separadas por competición desde la Fase 15: la liga,
-     * cada copa que DISPUTA y la suma de todo. Un club que no juega ninguna copa
-     * no tiene nada que elegir, y su pestaña queda como estaba.
+     * Las cifras del club, separadas por competición desde la Fase 15: primero
+     * las de la temporada entera —«General»— y después una tanda por cada
+     * competición que el club DISPUTA, la liga y cada copa.
+     *
+     * Separadas y no filtradas (decisión del propietario): lo que se quiere ver
+     * de un vistazo es cuánto de lo hecho es de liga y cuánto de copa, y con un
+     * selector eso obliga a ir y volver recordando cifras.
+     *
+     * Un club que no juega ninguna copa no tiene nada que separar —«General» y
+     * «Liga» serían la misma tanda dos veces—, y su pestaña queda como estaba.
      *
      * @return array<string, mixed>
      */
-    private function statsTab(Team $team, ClubSeasonService $clubSeason, Request $request): array
+    private function statsTab(Team $team, ClubSeasonService $clubSeason): array
     {
         $competitions = Competition::forTeam($team);
 
-        // Sin copas, «Todo» y «Liga» son la misma pantalla, y entonces manda la
-        // liga: es la única que tiene puntos, y un club que no juega copa no
-        // debería perder su casilla de puntos por un filtro que no usa.
-        $competition = $competitions->count() > 2
-            ? Competition::resolve($competitions, $request->string('competicion')->toString())
-            : Competition::league();
+        // Sin copas manda la liga, que es la única con puntos: un club que no
+        // juega copa no debería perder su casilla de puntos.
+        if ($competitions->count() <= 2) {
+            return ['statBlocks' => collect([$this->statBlock($team, $clubSeason, Competition::league(), null)])];
+        }
 
+        return ['statBlocks' => $competitions->map(fn (Competition $competition) => $this->statBlock(
+            $team,
+            $clubSeason,
+            $competition,
+            $competition->isAll() ? 'General' : $competition->label,
+        ))];
+    }
+
+    /**
+     * @return array{competition: Competition, title: ?string, stats: ClubSeasonStats}
+     */
+    private function statBlock(Team $team, ClubSeasonService $clubSeason, Competition $competition, ?string $title): array
+    {
         return [
-            'stats' => $clubSeason->stats($team, $competition),
             'competition' => $competition,
-            'competitionOptions' => Competition::asSelectOptions($competitions),
+            'title' => $title,
+            'stats' => $clubSeason->stats($team, $competition),
         ];
     }
 
