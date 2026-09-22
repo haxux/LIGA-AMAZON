@@ -30,6 +30,8 @@ class StandingZone extends Model
         'amber' => ['label' => 'Amber', 'hex' => '#FFB800'],
         'purple' => ['label' => 'Purple', 'hex' => '#9B7BE0'],
         'grey' => ['label' => 'Grey', 'hex' => '#8A8A8A'],
+        'yellow' => ['label' => 'Yellow', 'hex' => '#F2D94E'],
+        'salmon' => ['label' => 'Salmon', 'hex' => '#F28C82'],
     ];
 
     protected function casts(): array
