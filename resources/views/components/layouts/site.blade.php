@@ -78,7 +78,7 @@
             }
         @endphp
 
-        <header class="sticky top-0 z-40 bg-ink text-white">
+        <header id="site-header" class="sticky top-0 z-40 bg-ink text-white transition-transform duration-300 will-change-transform">
             {{-- Tres zonas: marca, navegación y el club del técnico. La del
                  medio es la que cede —`min-w-0 flex-1`, y envuelve dentro de sí
                  misma— para que al entrar los enlaces del técnico el escudo no

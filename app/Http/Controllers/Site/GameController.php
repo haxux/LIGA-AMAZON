@@ -25,6 +25,7 @@ class GameController extends SiteController
             'homeTeam.club.stadium',
             'awayTeam.club',
             'events.player',
+            'events.assist.player',
         ]);
 
         return view('site.games.show', [
@@ -48,6 +49,12 @@ class GameController extends SiteController
         $awaySquad = $this->squadOf($game->away_team_id);
 
         return $game->events
+            // La portería a cero es una cifra de temporada, no un momento del
+            // partido: se queda en las estadísticas del club y del jugador.
+            // Una asistencia ya enlazada a su gol se enseña debajo de él y no
+            // como fila propia; las de antes de ese enlace siguen sueltas.
+            ->reject(fn (GameEvent $event) => $event->type === GameEvent::TYPE_CLEAN_SHEET)
+            ->reject(fn (GameEvent $event) => $event->type === GameEvent::TYPE_ASSIST && $event->related_event_id !== null)
             ->sortBy(fn (GameEvent $event) => [
                 // Una portería a cero no lleva minuto (lo borra el guard de
                 // GameEvent), así que cierra la lista en vez de abrirla.

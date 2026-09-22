@@ -119,10 +119,11 @@ class GamePageTest extends TestCase
     }
 
     /**
-     * Una portería a cero no lleva minuto —el guard de `GameEvent` lo borra—,
-     * así que va al final y sin número en lugar de con un minuto inventado.
+     * La portería a cero es una cifra de temporada, no un momento del
+     * partido: se cuenta en las estadísticas del club y del jugador, pero no
+     * aparece entre los eventos de este detalle.
      */
-    public function test_an_event_without_a_minute_still_shows(): void
+    public function test_a_clean_sheet_does_not_show_in_the_match_detail(): void
     {
         $game = $this->game(1, 0);
         $keeper = $this->squadPlayer($this->home, 'Portero Local', Player::POSITION_GOALKEEPER);
@@ -136,8 +137,32 @@ class GamePageTest extends TestCase
 
         $this->get(route('site.games.show', $game))
             ->assertOk()
-            ->assertSee('Portero Local')
-            ->assertSee('Portería a cero');
+            ->assertDontSee('Portería a cero')
+            ->assertSee('Sin eventos registrados');
+    }
+
+    /**
+     * La asistencia de un gol se enseña debajo de él y no como fila propia.
+     */
+    public function test_a_goals_assist_shows_nested_under_it(): void
+    {
+        $game = $this->game();
+        $scorer = $this->squadPlayer($this->home, 'Goleador Local');
+        $assister = $this->squadPlayer($this->home, 'Asistente Local');
+
+        $goal = GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $scorer->id, 'type' => GameEvent::TYPE_GOAL, 'minute' => 40]);
+        GameEvent::factory()->create([
+            'game_id' => $game->id,
+            'player_id' => $assister->id,
+            'type' => GameEvent::TYPE_ASSIST,
+            'minute' => 40,
+            'related_event_id' => $goal->id,
+        ]);
+
+        $this->get(route('site.games.show', $game))
+            ->assertOk()
+            ->assertSee('Goleador Local')
+            ->assertSeeInOrder(['Goleador Local', 'Asistente Local']);
     }
 
     public function test_a_game_without_events_shows_only_its_result(): void

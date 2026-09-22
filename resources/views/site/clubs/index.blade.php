@@ -22,12 +22,7 @@
                        class="flex items-center gap-3 rounded-[5px] border-l-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
                         <x-site.club-crest :club="$team->club" size="size-[34px]" />
 
-                        <span class="min-w-0">
-                            <span class="block truncate font-display text-lg font-semibold text-white">{{ $team->name }}</span>
-                            <span class="block font-mono text-[10px] tracking-[0.12em] text-white/45">
-                                {{ $team->short_name }}@if ($team->founded_year) · {{ $team->founded_year }}@endif
-                            </span>
-                        </span>
+                        <span class="min-w-0 truncate font-display text-lg font-semibold text-white">{{ $team->name }}</span>
                     </a>
                 @endforeach
             </div>

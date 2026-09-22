@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
 
-#[Fillable(['game_id', 'player_id', 'type', 'minute'])]
+#[Fillable(['game_id', 'player_id', 'type', 'minute', 'related_event_id'])]
 class GameEvent extends Model
 {
     /** @use HasFactory<GameEventFactory> */
@@ -82,5 +83,23 @@ class GameEvent extends Model
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);
+    }
+
+    /**
+     * El gol al que pertenece esta asistencia, cuando lo es.
+     */
+    public function relatedEvent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'related_event_id');
+    }
+
+    /**
+     * La asistencia de este gol, si el operador la registró. Nace junto al
+     * gol desde el formulario (GameEventsRelationManager) en lugar de como un
+     * evento suelto, para poder mostrarla debajo de él.
+     */
+    public function assist(): HasOne
+    {
+        return $this->hasOne(self::class, 'related_event_id')->where('type', self::TYPE_ASSIST);
     }
 }

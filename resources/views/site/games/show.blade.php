@@ -87,6 +87,11 @@
                     <span class="block font-mono text-[10px] tracking-[0.1em] {{ $colors[$event->type] ?? 'text-white/60' }}">
                         {{ $labels[$event->type] ?? $event->type }}
                     </span>
+                    @if ($event->type === \App\Models\GameEvent::TYPE_GOAL && $event->assist)
+                        <span class="block font-mono text-[10px] tracking-[0.1em] text-white/45">
+                            Asistencia: {{ $event->assist->player?->name ?? 'Jugador retirado' }}
+                        </span>
+                    @endif
                 </span>
             </div>
         @empty

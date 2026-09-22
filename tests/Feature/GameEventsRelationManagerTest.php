@@ -203,6 +203,66 @@ class GameEventsRelationManagerTest extends TestCase
         ]);
     }
 
+    /**
+     * El gol lleva la asistencia consigo: marcarla en el mismo formulario crea
+     * un segundo evento, enlazado al gol via `related_event_id`.
+     */
+    public function test_operator_records_a_goal_with_an_assist(): void
+    {
+        $game = $this->makeGame();
+        $scorer = Player::factory()->create(['team_id' => $game->home_team_id]);
+        $assister = Player::factory()->create(['team_id' => $game->home_team_id]);
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData([
+                'type' => GameEvent::TYPE_GOAL,
+                'player_id' => $scorer->id,
+                'minute' => 34,
+                'has_assist' => true,
+                'assist_player_id' => $assister->id,
+            ])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $goal = GameEvent::query()->where('player_id', $scorer->id)->where('type', GameEvent::TYPE_GOAL)->firstOrFail();
+
+        $this->assertDatabaseHas('game_events', [
+            'game_id' => $game->id,
+            'player_id' => $assister->id,
+            'type' => GameEvent::TYPE_ASSIST,
+            'minute' => 34,
+            'related_event_id' => $goal->id,
+        ]);
+    }
+
+    /**
+     * Un gol sin marcar la asistencia no crea ningún evento adicional.
+     */
+    public function test_operator_records_a_goal_without_an_assist(): void
+    {
+        $game = $this->makeGame();
+        $scorer = Player::factory()->create(['team_id' => $game->home_team_id]);
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData([
+                'type' => GameEvent::TYPE_GOAL,
+                'player_id' => $scorer->id,
+                'minute' => 12,
+            ])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(1, GameEvent::where('game_id', $game->id)->count());
+    }
+
     public function test_player_select_only_offers_players_from_the_two_teams_in_the_game(): void
     {
         $game = $this->makeGame();
