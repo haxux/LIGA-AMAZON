@@ -9,6 +9,7 @@ use App\Models\GameEvent;
 use App\Models\Matchday;
 use App\Models\Player;
 use App\Models\Season;
+use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,6 +39,69 @@ class GameEventsRelationManagerTest extends TestCase
             'home_team_id' => $homeTeam->id,
             'away_team_id' => $awayTeam->id,
         ]);
+    }
+
+    /**
+     * La columna «Team» salia vacia: nombraba `player.team`, que dejo de existir
+     * en la Fase 9 —un jugador pertenece a un club, no a un equipo—, y nadie se
+     * entero porque una columna vacia no rompe nada. Ahora dice el club y de que
+     * lado del partido jugaba.
+     */
+    public function test_the_team_column_names_the_side_the_event_belongs_to(): void
+    {
+        $game = $this->makeGame();
+
+        $local = Player::factory()->create([
+            'team_id' => $game->home_team_id,
+            'name' => 'Pedro Local',
+        ]);
+        $visitante = Player::factory()->create([
+            'team_id' => $game->away_team_id,
+            'name' => 'Luis Visita',
+        ]);
+
+        GameEvent::factory()->for($game)->for($local)->goal()->create();
+        GameEvent::factory()->for($game)->for($visitante)->goal()->create();
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->assertOk()
+            ->assertSee($game->homeTeam->short_name.' · local')
+            ->assertSee($game->awayTeam->short_name.' · visitante');
+    }
+
+    /**
+     * Un cedido juega para el equipo de su pertenencia, no para el club que lo
+     * posee: la columna tiene que decir donde jugo ese dia.
+     */
+    public function test_a_loaned_player_is_shown_under_the_team_he_played_for(): void
+    {
+        $game = $this->makeGame();
+
+        // Del club visitante por ficha, pero inscrito en la plantilla local.
+        $cedido = Player::factory()->create([
+            'team_id' => $game->awayTeam->id,
+            'name' => 'Marco Cedido',
+        ]);
+
+        $cedido->memberships()->delete();
+        SquadMembership::create([
+            'team_id' => $game->home_team_id,
+            'player_id' => $cedido->getKey(),
+            'shirt_number' => 77,
+            'type' => SquadMembership::TYPE_LOAN,
+        ]);
+
+        GameEvent::factory()->for($game)->for($cedido)->goal()->create();
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->assertOk()
+            ->assertSee($game->homeTeam->short_name.' · local');
     }
 
     public function test_relation_manager_renders(): void

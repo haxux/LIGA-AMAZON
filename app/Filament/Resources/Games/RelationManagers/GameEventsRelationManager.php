@@ -113,7 +113,21 @@ class GameEventsRelationManager extends RelationManager
     {
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query
-                ->with(['player.club', 'assist.player'])
+                ->with([
+                    'player.club',
+                    // La pertenencia acotada a los dos equipos de ESTE partido:
+                    // es lo que dice de qué lado jugaba, y con un cedido no
+                    // coincide con el club propietario.
+                    // Sin tipo en el parametro: una restriccion de carga previa
+                    // recibe la RELACION, no el builder, y tipar Builder revienta.
+                    'player.memberships' => fn ($memberships) => $memberships
+                        ->whereIn('team_id', [
+                            $this->getOwnerRecord()->home_team_id,
+                            $this->getOwnerRecord()->away_team_id,
+                        ])
+                        ->with('team.club'),
+                    'assist.player',
+                ])
                 // La asistencia enlazada a un gol se enseña debajo de él, no
                 // como una fila suelta; las de antes de este enlace (sin
                 // related_event_id) siguen viéndose tal cual.
@@ -126,7 +140,28 @@ class GameEventsRelationManager extends RelationManager
                     ->description(fn (GameEvent $record): ?string => $record->assist?->player
                         ? 'Asistencia: '.($record->assist->player->name ?? 'Jugador retirado')
                         : null),
-                TextColumn::make('player.team.short_name')->label('Team'),
+                // `player.team` no existe desde la Fase 9 —un jugador pertenece
+                // a un club, no a un equipo—, asi que esta columna llevaba
+                // tiempo saliendo vacia. El equipo se resuelve por la
+                // pertenencia de plantilla, y se dice de que lado del partido
+                // esta: es lo unico que hace util la columna.
+                TextColumn::make('team')
+                    ->label('Team')
+                    ->state(function (GameEvent $record): string {
+                        $team = $record->player?->memberships->first()?->team;
+
+                        if ($team === null) {
+                            return '—';
+                        }
+
+                        $game = $this->getOwnerRecord();
+                        $lado = (int) $team->getKey() === (int) $game->home_team_id ? 'local' : 'visitante';
+
+                        return ($team->club?->short_name ?? $team->name).' · '.$lado;
+                    })
+                    ->badge()
+                    ->color(fn (GameEvent $record): string => (int) ($record->player?->memberships->first()?->team_id ?? 0)
+                        === (int) $this->getOwnerRecord()->home_team_id ? 'primary' : 'gray'),
                 TextColumn::make('type')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => GameEvent::TYPES[$state] ?? $state)
