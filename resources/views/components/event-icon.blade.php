@@ -7,6 +7,10 @@
 @php
     use App\Models\GameEvent;
 
+    // El `clipPath` del balón necesita un id propio por cada vez que se pinta:
+    // en una ficha de partido hay varios goles, y repetir un id es HTML roto.
+    $uid = \Illuminate\Support\Str::random(6);
+
     // El nombre viaja con el icono: es el `aria-label` y el `title`, que es lo
     // que lee un lector de pantalla y lo que sale al pasar el ratón. Un icono
     // sin nombre obliga a adivinar, y aquí hay dos rojas que se parecen.
@@ -22,32 +26,61 @@
 @endphp
 
 {{--
-    El balón y el pase van en trazo con `currentColor`, no en relleno claro: este
-    icono se pinta en el sitio, que es OSCURO, y en el panel, que es CLARO. Un
-    balón blanco se evapora sobre el blanco del panel. Heredando el color del
-    texto se ve en los dos.
+    Estos iconos se pintan en DOS fondos: el oscuro del sitio y el claro del
+    panel de Filament. Cada uno resuelve su contraste como le toca:
 
-    Las tarjetas sí llevan su color literal —amarillo y rojo— porque el color ES
-    el dato: una tarjeta gris no dice nada. Lo mismo el verde de la portería a
-    cero.
+    - El balón lleva relleno claro con trazo oscuro, como un balón de verdad, y
+      así se recorta contra los dos fondos. Su estela, en cambio, va en
+      `currentColor`: pintada en negro desaparecería sobre el sitio.
+    - El pase va en trazo con `currentColor`, que hereda el color del texto.
+    - Las tarjetas llevan su color literal —amarillo y rojo— porque ahí el color
+      ES el dato: una tarjeta gris no dice nada. Lo mismo el verde de la
+      portería a cero.
 --}}
 <span {{ $attributes->merge(['class' => 'inline-flex shrink-0 items-center justify-center '.$size]) }}
       role="img" aria-label="{{ $nombre }}" title="{{ $nombre }}">
     @if ($type === GameEvent::TYPE_GOAL)
-        {{-- Balón de trazo: círculo, pentágono central y las cinco costuras que
-             salen de sus vértices. A 24 px es lo único que se lee como balón —
-             el relleno con pentágono oscuro salía un molinillo. --}}
-        <svg viewBox="0 0 24 24" class="size-full" fill="none" stroke="currentColor"
-             stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="9.2" stroke-width="1.7" />
-            <path d="M12 8.4 L15.42 10.89 L14.12 14.91 L9.88 14.91 L8.58 10.89 Z" stroke-width="1.5" />
-            <g stroke-width="1.4">
-                <path d="M12 8.4 V3.1" />
-                <path d="M15.42 10.89 L20.46 9.25" />
-                <path d="M14.12 14.91 L17.23 19.2" />
-                <path d="M9.88 14.91 L6.77 19.2" />
-                <path d="M8.58 10.89 L3.54 9.25" />
+        {{-- El balón en vuelo con su estela, como la imagen que pidió el
+             propietario: pelota grande arriba a la derecha y la cola de
+             velocidad saliendo hacia abajo a la izquierda.
+
+             Pentágonos MACIZOS y ninguna costura radial. Se probaron las
+             costuras tres veces y a 24 px convierten el balón en una estrella:
+             son líneas que salen del centro, y el ojo lee un asterisco antes
+             que una pelota. Con los pentágonos recortados por el círculo se lee
+             balón a 20 px.
+
+             La pelota lleva relleno claro y trazo oscuro —se ve sobre los dos
+             fondos, el oscuro del sitio y el claro del panel— y la estela va en
+             `currentColor`, porque en negro desaparecería sobre el sitio. --}}
+        <svg viewBox="0 0 24 24" class="size-full">
+            <g fill="currentColor">
+                <path d="M7.6 14.6 C4.6 16.9 2.2 19.6 0.6 22.9 C4.3 21.3 7.6 19.1 10.9 16.4 Z" />
+                <path d="M13.2 18.6 C11.2 19.9 9.6 21.2 8.2 23.2 C10.6 22.6 12.6 21.6 14.6 20.2 Z" />
             </g>
+
+            <clipPath id="balon-{{ $uid }}">
+                <circle cx="15" cy="9.4" r="8.4" />
+            </clipPath>
+
+            <circle cx="15" cy="9.4" r="8.4" fill="#f8fafc" />
+
+            <g clip-path="url(#balon-{{ $uid }})" fill="#0f172a">
+                <path d="M15 6.5 L17.76 8.5 L16.7 11.75 L13.3 11.75 L12.24 8.5 Z" />
+                <path d="M18.29 4.87 L17.24 1.63 L20 -0.38 L22.75 1.63 L21.7 4.87 Z" />
+                <path d="M20.33 11.13 L23.08 9.13 L25.84 11.13 L24.79 14.37 L21.38 14.37 Z" />
+                <path d="M15 15 L17.76 17 L16.7 20.25 L13.3 20.25 L12.24 17 Z" />
+                <path d="M9.67 11.13 L8.62 14.37 L5.21 14.37 L4.16 11.13 L6.92 9.13 Z" />
+                <path d="M11.71 4.87 L8.3 4.87 L7.25 1.63 L10 -0.38 L12.76 1.63 Z" />
+            </g>
+
+            {{-- El contorno va ENCIMA del patrón y en `currentColor`. Los
+                 pentágonos del borde son oscuros y tocan el canto: sobre el
+                 fondo oscuro del sitio se fundían con él y mordían la silueta,
+                 y el balón se leía como un engranaje. Cerrando el círculo por
+                 arriba con el color del texto, la pelota vuelve a ser redonda
+                 sobre cualquier fondo. --}}
+            <circle cx="15" cy="9.4" r="8.4" fill="none" stroke="currentColor" stroke-width="1.5" />
         </svg>
     @elseif ($type === GameEvent::TYPE_ASSIST)
         {{-- El pase: el balón que sale y la flecha de a dónde va. --}}
