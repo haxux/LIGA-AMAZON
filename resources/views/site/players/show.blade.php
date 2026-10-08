@@ -155,16 +155,16 @@
         @forelse ($events as $event)
             <a href="{{ route('site.games.show', $event->game) }}"
                class="mb-2 flex items-center gap-3 rounded-[5px] bg-surface-alt px-4 py-2 hover:bg-surface-muted">
-                <span class="w-10 shrink-0 font-mono text-xs text-white/50">
-                    {{ $event->minute ? $event->minute."'" : '—' }}
-                </span>
+                {{-- El icono en lugar del minuto, igual que en la ficha del
+                     partido: un solo lenguaje visual en todo el sitio. --}}
+                <x-event-icon :type="$event->type" :second-yellow="$event->isSecondYellow()" size="size-6" />
 
                 <span class="min-w-0 flex-1">
                     <span class="block truncate font-display text-base font-semibold text-white">
                         {{ $event->game?->homeTeam?->name }} – {{ $event->game?->awayTeam?->name }}
                     </span>
                     <span class="block font-mono text-[10px] tracking-[0.1em] text-white/45">
-                        {{ $eventLabels[$event->type] ?? $event->type }}
+                        {{ $event->isSecondYellow() ? 'Doble amarilla · expulsado' : ($eventLabels[$event->type] ?? $event->type) }}
                         @if ($event->game) · {{ mb_strtoupper($event->game->competitionLabel()) }} @endif
                     </span>
                 </span>

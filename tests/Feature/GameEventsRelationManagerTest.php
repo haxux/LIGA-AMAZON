@@ -104,6 +104,46 @@ class GameEventsRelationManagerTest extends TestCase
             ->assertSee($game->homeTeam->short_name.' · local');
     }
 
+    /**
+     * El tipo se pinta como icono y no como etiqueta de color (decision del
+     * propietario), y el minuto dejo de existir: ni columna ni campo.
+     */
+    public function test_the_type_is_shown_as_an_icon_and_no_minute_is_asked(): void
+    {
+        $game = $this->makeGame();
+        $jugador = Player::factory()->create(['team_id' => $game->home_team_id, 'name' => 'Pedro Gol']);
+
+        GameEvent::factory()->for($game)->for($jugador)->goal()->create();
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->assertOk()
+            ->assertSee('aria-label="Gol"', false)
+            ->assertDontSee('minute');
+    }
+
+    /**
+     * Dos amarillas del mismo jugador son una expulsion, deducida de ellas.
+     */
+    public function test_a_second_yellow_is_shown_as_a_sending_off(): void
+    {
+        $game = $this->makeGame();
+        $jugador = Player::factory()->create(['team_id' => $game->home_team_id, 'name' => 'Luis Expulsado']);
+
+        GameEvent::factory()->for($game)->for($jugador)->create(['type' => GameEvent::TYPE_YELLOW_CARD]);
+        GameEvent::factory()->for($game)->for($jugador)->create(['type' => GameEvent::TYPE_YELLOW_CARD]);
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->assertOk()
+            ->assertSee('aria-label="Doble amarilla: expulsado"', false)
+            ->assertSee('Doble amarilla · expulsado');
+    }
+
     public function test_relation_manager_renders(): void
     {
         $game = $this->makeGame();
@@ -128,7 +168,6 @@ class GameEventsRelationManagerTest extends TestCase
                 ->setTableActionData([
                     'type' => $type,
                     'player_id' => $player->id,
-                    'minute' => 61,
                 ])
                 ->callMountedTableAction()
                 ->assertHasNoTableActionErrors();
@@ -137,7 +176,6 @@ class GameEventsRelationManagerTest extends TestCase
                 'game_id' => $game->id,
                 'player_id' => $player->id,
                 'type' => $type,
-                'minute' => 61,
             ]);
         }
     }
@@ -166,7 +204,6 @@ class GameEventsRelationManagerTest extends TestCase
             'game_id' => $game->id,
             'player_id' => $keeper->id,
             'type' => GameEvent::TYPE_CLEAN_SHEET,
-            'minute' => null,
         ]);
     }
 
@@ -220,7 +257,6 @@ class GameEventsRelationManagerTest extends TestCase
             ->setTableActionData([
                 'type' => GameEvent::TYPE_GOAL,
                 'player_id' => $striker->id,
-                'minute' => 12,
             ])
             ->callMountedTableAction()
             ->assertHasNoTableActionErrors();
@@ -254,7 +290,6 @@ class GameEventsRelationManagerTest extends TestCase
             ->setTableActionData([
                 'player_id' => $player->id,
                 'type' => GameEvent::TYPE_GOAL,
-                'minute' => 23,
             ])
             ->callMountedTableAction()
             ->assertHasNoTableActionErrors();
@@ -263,7 +298,6 @@ class GameEventsRelationManagerTest extends TestCase
             'game_id' => $game->id,
             'player_id' => $player->id,
             'type' => GameEvent::TYPE_GOAL,
-            'minute' => 23,
         ]);
     }
 
@@ -285,7 +319,6 @@ class GameEventsRelationManagerTest extends TestCase
             ->setTableActionData([
                 'type' => GameEvent::TYPE_GOAL,
                 'player_id' => $scorer->id,
-                'minute' => 34,
                 'has_assist' => true,
                 'assist_player_id' => $assister->id,
             ])
@@ -298,7 +331,6 @@ class GameEventsRelationManagerTest extends TestCase
             'game_id' => $game->id,
             'player_id' => $assister->id,
             'type' => GameEvent::TYPE_ASSIST,
-            'minute' => 34,
             'related_event_id' => $goal->id,
         ]);
     }
@@ -319,7 +351,6 @@ class GameEventsRelationManagerTest extends TestCase
             ->setTableActionData([
                 'type' => GameEvent::TYPE_GOAL,
                 'player_id' => $scorer->id,
-                'minute' => 12,
             ])
             ->callMountedTableAction()
             ->assertHasNoTableActionErrors();
@@ -342,7 +373,6 @@ class GameEventsRelationManagerTest extends TestCase
             ->setTableActionData([
                 'player_id' => $otherPlayer->id,
                 'type' => GameEvent::TYPE_GOAL,
-                'minute' => 10,
             ])
             ->callMountedTableAction()
             ->assertHasTableActionErrors(['player_id']);
@@ -359,7 +389,6 @@ class GameEventsRelationManagerTest extends TestCase
             ->setTableActionData([
                 'player_id' => $homePlayer->id,
                 'type' => GameEvent::TYPE_GOAL,
-                'minute' => 10,
             ])
             ->callMountedTableAction()
             ->assertHasNoTableActionErrors();

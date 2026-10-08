@@ -102,4 +102,31 @@ class GameEvent extends Model
     {
         return $this->hasOne(self::class, 'related_event_id')->where('type', self::TYPE_ASSIST);
     }
+
+    /**
+     * Si esta amarilla es la SEGUNDA de su jugador en este partido, y por tanto
+     * una expulsión.
+     *
+     * Se deduce en vez de guardarse (decisión del propietario): el operador
+     * carga las dos amarillas, que es lo que pasó, y la expulsión sale de ahí.
+     * Un tipo de evento nuevo habría que elegirlo a mano y se puede olvidar; dos
+     * amarillas del mismo jugador en el mismo partido no significan otra cosa.
+     *
+     * «Segunda» por orden de carga, que es el orden en que se leen los eventos
+     * desde que el minuto dejó de registrarse: la de id mayor es la posterior.
+     */
+    public function isSecondYellow(): bool
+    {
+        if ($this->type !== self::TYPE_YELLOW_CARD) {
+            return false;
+        }
+
+        return self::query()
+            ->where('game_id', $this->game_id)
+            ->where('player_id', $this->player_id)
+            ->where('type', self::TYPE_YELLOW_CARD)
+            ->whereKeyNot($this->getKey())
+            ->where('id', '<', $this->getKey())
+            ->exists();
+    }
 }

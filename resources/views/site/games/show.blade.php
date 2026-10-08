@@ -80,16 +80,16 @@
             {{-- El local a la izquierda y el visitante a la derecha, como en el
                  marcador: quién lo hizo se lee del lado, no de una etiqueta. --}}
             <div class="mb-2 flex items-center gap-3 rounded-[5px] bg-surface-alt px-4 py-2 {{ $isHome ? '' : 'flex-row-reverse text-right' }}">
-                <span class="w-10 shrink-0 font-mono text-xs text-white/50 {{ $isHome ? '' : 'text-right' }}">
-                    {{ $event->minute ? $event->minute."'" : '—' }}
-                </span>
+                {{-- El icono en lugar del minuto: el minuto ya no se registra, y
+                     un balón o una tarjeta se leen de un vistazo. --}}
+                <x-event-icon :type="$event->type" :second-yellow="$event->isSecondYellow()" size="size-6" />
 
                 <span class="min-w-0 flex-1">
                     <span class="block truncate font-display text-base font-semibold text-white">
                         {{ $event->player?->name ?? 'Jugador retirado' }}
                     </span>
-                    <span class="block font-mono text-[10px] tracking-[0.1em] {{ $colors[$event->type] ?? 'text-white/60' }}">
-                        {{ $labels[$event->type] ?? $event->type }}
+                    <span class="block font-mono text-[10px] tracking-[0.1em] {{ $event->isSecondYellow() ? 'text-rose-400' : ($colors[$event->type] ?? 'text-white/60') }}">
+                        {{ $event->isSecondYellow() ? 'Doble amarilla · expulsado' : ($labels[$event->type] ?? $event->type) }}
                     </span>
                     @if ($event->type === \App\Models\GameEvent::TYPE_GOAL && $event->assist)
                         <span class="block font-mono text-[10px] tracking-[0.1em] text-white/45">

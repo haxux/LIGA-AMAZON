@@ -6,6 +6,7 @@ use App\Models\Game;
 use App\Models\Message;
 use App\Models\PushSubscription;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Minishlink\WebPush\Subscription;
@@ -42,7 +43,7 @@ class PushNotificationService
     }
 
     /**
-     * @param  array{0: string, 1: string}  $window ['days_3'|'days_2'|'days_1'|'kickoff', copy]
+     * @param  array{0: string, 1: string}  $window  ['days_3'|'days_2'|'days_1'|'kickoff', copy]
      */
     public function gameReminder(Game $game, string $title): void
     {
@@ -100,7 +101,7 @@ class PushNotificationService
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, PushSubscription>  $subscriptions
+     * @param  Collection<int, PushSubscription>  $subscriptions
      */
     private function broadcast($subscriptions, string $title, string $body, string $url): void
     {

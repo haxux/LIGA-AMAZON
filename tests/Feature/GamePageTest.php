@@ -83,39 +83,96 @@ class GamePageTest extends TestCase
             ->assertSee('JORNADA 1');
     }
 
-    public function test_it_lists_the_events_with_their_minute_and_player(): void
+    /**
+     * El minuto dejó de registrarse (decisión del propietario): en su sitio va
+     * un icono, y el nombre del evento sigue escrito debajo del jugador.
+     */
+    public function test_it_lists_the_events_with_an_icon_instead_of_a_minute(): void
     {
         $game = $this->game();
         $scorer = $this->squadPlayer($this->home, 'Goleador Local');
         $assister = $this->squadPlayer($this->away, 'Asistente Visitante');
 
-        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $scorer->id, 'type' => GameEvent::TYPE_GOAL, 'minute' => 23]);
-        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $assister->id, 'type' => GameEvent::TYPE_ASSIST, 'minute' => 67]);
+        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $scorer->id, 'type' => GameEvent::TYPE_GOAL]);
+        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $assister->id, 'type' => GameEvent::TYPE_ASSIST]);
 
         $this->get(route('site.games.show', $game))
             ->assertOk()
             ->assertSee('Goleador Local')
             ->assertSee('Asistente Visitante')
-            ->assertSee("23'")
-            ->assertSee("67'")
             ->assertSee('Gol')
-            ->assertSee('Asistencia');
+            ->assertSee('Asistencia')
+            // El icono lleva su nombre, que es lo que lee un lector de pantalla.
+            ->assertSee('aria-label="Gol"', false)
+            ->assertSee('aria-label="Asistencia"', false);
+    }
+
+    public function test_no_minute_is_shown_even_when_the_column_still_holds_one(): void
+    {
+        $game = $this->game();
+        $scorer = $this->squadPlayer($this->home, 'Goleador Local');
+
+        GameEvent::factory()->create([
+            'game_id' => $game->id,
+            'player_id' => $scorer->id,
+            'type' => GameEvent::TYPE_GOAL,
+            'minute' => 23,
+        ]);
+
+        $this->get(route('site.games.show', $game))
+            ->assertOk()
+            ->assertDontSee("23'");
     }
 
     /**
-     * Los eventos se leen en el orden del partido, no en el que se cargaron.
+     * Por orden de CARGA, que desde que no hay minuto es el único orden que
+     * significa algo: el relato del partido tal como lo apuntó el operador.
      */
-    public function test_the_events_read_in_minute_order(): void
+    public function test_the_events_read_in_the_order_they_were_entered(): void
     {
         $game = $this->game();
-        $late = $this->squadPlayer($this->home, 'Gol Tardio');
-        $early = $this->squadPlayer($this->home, 'Gol Temprano');
+        $primero = $this->squadPlayer($this->home, 'Gol Primero');
+        $segundo = $this->squadPlayer($this->home, 'Gol Segundo');
 
-        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $late->id, 'type' => GameEvent::TYPE_GOAL, 'minute' => 88]);
-        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $early->id, 'type' => GameEvent::TYPE_GOAL, 'minute' => 5]);
+        // Con el minuto al revés del orden de carga, para que sólo pueda pasar
+        // si manda la carga.
+        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $primero->id, 'type' => GameEvent::TYPE_GOAL, 'minute' => 88]);
+        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $segundo->id, 'type' => GameEvent::TYPE_GOAL, 'minute' => 5]);
 
         $this->get(route('site.games.show', $game))
-            ->assertSeeInOrder(['Gol Temprano', 'Gol Tardio']);
+            ->assertSeeInOrder(['Gol Primero', 'Gol Segundo']);
+    }
+
+    /**
+     * Dos amarillas al mismo jugador son una expulsión, y se deduce de ellas en
+     * vez de registrarse aparte.
+     */
+    public function test_a_second_yellow_reads_as_a_sending_off(): void
+    {
+        $game = $this->game();
+        $expulsado = $this->squadPlayer($this->home, 'Doble Amarilla');
+
+        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $expulsado->id, 'type' => GameEvent::TYPE_YELLOW_CARD]);
+        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $expulsado->id, 'type' => GameEvent::TYPE_YELLOW_CARD]);
+
+        $this->get(route('site.games.show', $game))
+            ->assertOk()
+            ->assertSee('Tarjeta amarilla')
+            ->assertSee('Doble amarilla · expulsado')
+            ->assertSee('aria-label="Doble amarilla: expulsado"', false);
+    }
+
+    public function test_a_direct_red_is_not_read_as_a_second_yellow(): void
+    {
+        $game = $this->game();
+        $expulsado = $this->squadPlayer($this->home, 'Roja Directa');
+
+        GameEvent::factory()->create(['game_id' => $game->id, 'player_id' => $expulsado->id, 'type' => GameEvent::TYPE_RED_CARD]);
+
+        $this->get(route('site.games.show', $game))
+            ->assertOk()
+            ->assertSee('aria-label="Tarjeta roja directa"', false)
+            ->assertDontSee('Doble amarilla');
     }
 
     /**

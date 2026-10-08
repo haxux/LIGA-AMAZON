@@ -27,7 +27,7 @@ class CronController extends Controller
         $secret = config('services.cron.secret');
 
         if (blank($secret) || $request->bearerToken() !== $secret) {
-            throw new AccessDeniedHttpException();
+            throw new AccessDeniedHttpException;
         }
 
         return response()->json([

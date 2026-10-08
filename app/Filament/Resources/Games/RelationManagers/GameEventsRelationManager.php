@@ -10,13 +10,13 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -37,8 +37,8 @@ class GameEventsRelationManager extends RelationManager
         return $schema
             ->components([
                 // Type leads the form now: the player list narrows to the
-                // goalkeepers for a clean sheet, and the minute disappears
-                // entirely, so both depend on this field being live.
+                // goalkeepers for a clean sheet, so it depends on this field
+                // being live.
                 Select::make('type')
                     // La asistencia ya no se elige aquí como tipo suelto: nace
                     // junto al gol, con el toggle de más abajo.
@@ -77,12 +77,6 @@ class GameEventsRelationManager extends RelationManager
                     ->required()
                     ->searchable()
                     ->preload(),
-                TextInput::make('minute')
-                    ->numeric()
-                    ->minValue(1)
-                    ->maxValue(130)
-                    // A clean sheet is the whole game, not a moment in it.
-                    ->visible(fn (Get $get): bool => $get('type') !== GameEvent::TYPE_CLEAN_SHEET),
                 Toggle::make('has_assist')
                     ->label('¿Hubo asistencia?')
                     ->live()
@@ -162,19 +156,19 @@ class GameEventsRelationManager extends RelationManager
                     ->badge()
                     ->color(fn (GameEvent $record): string => (int) ($record->player?->memberships->first()?->team_id ?? 0)
                         === (int) $this->getOwnerRecord()->home_team_id ? 'primary' : 'gray'),
-                TextColumn::make('type')
-                    ->badge()
-                    ->formatStateUsing(fn (string $state): string => GameEvent::TYPES[$state] ?? $state)
-                    ->color(fn (string $state): string => match ($state) {
-                        GameEvent::TYPE_GOAL => 'success',
-                        GameEvent::TYPE_ASSIST => 'info',
-                        GameEvent::TYPE_YELLOW_CARD => 'warning',
-                        GameEvent::TYPE_RED_CARD => 'danger',
-                        default => 'gray',
-                    }),
-                TextColumn::make('minute'),
+                // El tipo como icono y no como etiqueta de color (decision del
+                // propietario): un balon se entiende sin leer, y una roja
+                // directa y una doble amarilla se distinguen de un vistazo, que
+                // es lo que dos insignias del mismo rojo no hacian.
+                //
+                // Ya no hay columna de minuto: dejo de registrarse.
+                ViewColumn::make('type')
+                    ->label('Evento')
+                    ->view('filament.tables.columns.event-icon'),
             ])
-            ->defaultSort('minute')
+            // Por orden de CARGA: sin minuto, el orden en que el operador los
+            // apunto es el relato del partido.
+            ->defaultSort('id')
             ->headerActions([
                 CreateAction::make()
                     ->after(fn (array $data, GameEvent $record) => $this->syncAssist($record, $data)),
@@ -227,7 +221,6 @@ class GameEventsRelationManager extends RelationManager
             'game_id' => $goal->game_id,
             'player_id' => $data['assist_player_id'],
             'type' => GameEvent::TYPE_ASSIST,
-            'minute' => $goal->minute,
             'related_event_id' => $goal->getKey(),
         ];
 

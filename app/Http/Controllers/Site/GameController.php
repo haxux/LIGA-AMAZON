@@ -55,12 +55,10 @@ class GameController extends SiteController
             // como fila propia; las de antes de ese enlace siguen sueltas.
             ->reject(fn (GameEvent $event) => $event->type === GameEvent::TYPE_CLEAN_SHEET)
             ->reject(fn (GameEvent $event) => $event->type === GameEvent::TYPE_ASSIST && $event->related_event_id !== null)
-            ->sortBy(fn (GameEvent $event) => [
-                // Una portería a cero no lleva minuto (lo borra el guard de
-                // GameEvent), así que cierra la lista en vez de abrirla.
-                $event->minute ?? PHP_INT_MAX,
-                $event->getKey(),
-            ])
+            // Por orden de CARGA, no por minuto (decisión del propietario): el
+            // minuto dejó de registrarse, y el orden en que el operador los
+            // apuntó es el relato del partido tal como lo vio.
+            ->sortBy(fn (GameEvent $event) => $event->getKey())
             ->map(fn (GameEvent $event) => [
                 'event' => $event,
                 'side' => match (true) {
