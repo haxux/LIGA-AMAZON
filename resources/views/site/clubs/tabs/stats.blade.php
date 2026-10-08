@@ -36,7 +36,7 @@
         {{-- Sin copas no hay nada que separar, y entonces tampoco hay rótulo que
              poner: la pestaña queda exactamente como era. --}}
         @if ($block['title'])
-            <h2 class="mb-3 font-mono text-[10px] tracking-[0.14em] text-brand">
+            <h2 class="mb-3 inline-block rounded-[4px] bg-surface-alt px-3 py-1.5 font-mono text-[10px] tracking-[0.14em] text-brand">
                 {{ mb_strtoupper($block['title']) }}
             </h2>
         @endif

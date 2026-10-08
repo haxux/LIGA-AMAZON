@@ -33,10 +33,10 @@
         @endif
     </header>
 
-    <nav class="mb-6 flex flex-wrap gap-1 border-b border-white/10">
+    <nav class="mb-6 flex flex-wrap gap-1 rounded-[6px] bg-surface-alt p-1">
         @foreach ($tabs as $key => $label)
             <a href="{{ route('site.clubs.show', array_filter(['club' => $club->id, 'tab' => $key, 'temporada' => $selectedSeason?->id])) }}"
-               class="border-b-[3px] px-4 py-2 font-display text-base font-semibold uppercase tracking-[0.08em] {{ $tab === $key ? 'border-brand text-brand' : 'border-transparent text-ink/60 hover:text-ink' }}">
+               class="rounded-[4px] border-b-[3px] px-4 py-2 font-display text-base font-semibold uppercase tracking-[0.08em] {{ $tab === $key ? 'border-brand bg-surface text-brand' : 'border-transparent text-white/60 hover:text-white' }}">
                 {{ $label }}
             </a>
         @endforeach

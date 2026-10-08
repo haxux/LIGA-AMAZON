@@ -67,7 +67,7 @@
     </section>
 
     <section>
-        <h2 class="mb-3 font-mono text-[10px] tracking-[0.14em] text-brand">EVENTOS</h2>
+        <h2 class="mb-3 inline-block rounded-[4px] bg-surface-alt px-3 py-1.5 font-mono text-[10px] tracking-[0.14em] text-brand">EVENTOS</h2>
 
         @forelse ($events as $entry)
             @php($event = $entry['event'])
