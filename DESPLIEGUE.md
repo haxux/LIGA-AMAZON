@@ -78,6 +78,22 @@ En orden. Los pasos marcados **⚠** dependen de decisiones de §3.
 1. Copiar `.env.production.example` a `.env` **en el servidor**. Nunca subir el
    `.env` de desarrollo.
 2. Rellenar `APP_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`.
+2 bis. Notificaciones push (partido terminado, recordatorios de calendario y
+   chat) y el cron diario que anula partidos vencidos:
+   - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: generar UNA VEZ con
+     `php artisan tinker` → `Minishlink\WebPush\VAPID::createVapidKeys()`.
+     Cambiarlas invalida todas las suscripciones ya guardadas en los
+     navegadores — no se regeneran en cada despliegue.
+   - `VAPID_SUBJECT`: un `mailto:` de contacto real, que es lo que exige el
+     protocolo VAPID.
+   - `CRON_SECRET`: una cadena aleatoria larga (`openssl rand -hex 32`).
+     Declararla TAMBIÉN como variable de entorno del proyecto en Vercel con
+     este mismo nombre — Vercel la reconoce por el nombre y manda
+     `Authorization: Bearer <valor>` en cada llamada programada.
+   - En el panel de Vercel, confirmar que el proyecto tiene **Cron Jobs**
+     habilitado (en el plan Hobby, como máximo una vez al día — que es
+     justo lo que `vercel.json` pide, `0 6 * * *`). Sin esto, `/cron/tick`
+     existe pero nada lo llama, y los partidos vencidos nunca se anulan.
 3. `php artisan key:generate` — **clave nueva**, jamás la de desarrollo.
 4. `composer install --no-dev --optimize-autoloader`
 5. `npm ci && npm run build`

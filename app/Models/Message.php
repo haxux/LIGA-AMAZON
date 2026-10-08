@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Observers\MessageObserver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
@@ -11,6 +13,7 @@ use Illuminate\Validation\ValidationException;
  * Un mensaje de texto del chat. Sin adjuntos (decisión cerrada).
  */
 #[Fillable(['conversation_id', 'user_id', 'body'])]
+#[ObservedBy(MessageObserver::class)]
 class Message extends Model
 {
     protected static function booted(): void

@@ -175,6 +175,31 @@ class StandingsServiceTest extends TestCase
         }
     }
 
+    public function test_a_voided_game_counts_as_played_but_awards_no_points_or_result(): void
+    {
+        $season = Season::factory()->create();
+        $matchday = Matchday::factory()->for($season)->create();
+        $home = Team::factory()->for($season)->create();
+        $away = Team::factory()->for($season)->create();
+
+        $game = $this->playGame($matchday, $home, $away, 0, 0);
+        $game->update(['voided_at' => now()]);
+
+        $rows = (new StandingsService)->forSeason($season);
+        $homeRow = $rows->firstWhere(fn (StandingRow $r) => $r->team->is($home));
+        $awayRow = $rows->firstWhere(fn (StandingRow $r) => $r->team->is($away));
+
+        foreach ([$homeRow, $awayRow] as $row) {
+            $this->assertSame(1, $row->played);
+            $this->assertSame(0, $row->won);
+            $this->assertSame(0, $row->drawn);
+            $this->assertSame(0, $row->lost);
+            $this->assertSame(0, $row->goals_for);
+            $this->assertSame(0, $row->goals_against);
+            $this->assertSame(0, $row->points);
+        }
+    }
+
     public function test_games_from_another_season_do_not_affect_this_seasons_table(): void
     {
         $seasonA = Season::factory()->create();

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\GameObserver;
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,8 +15,9 @@ use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'matchday_id', 'cup_tie_id', 'cup_group_id', 'group_matchday',
-    'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score',
+    'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score', 'voided_at',
 ])]
+#[ObservedBy(GameObserver::class)]
 class Game extends Model
 {
     /** @use HasFactory<GameFactory> */
@@ -26,7 +29,18 @@ class Game extends Model
             'kickoff_at' => 'datetime',
             'home_score' => 'integer',
             'away_score' => 'integer',
+            'voided_at' => 'datetime',
         ];
+    }
+
+    public function isPlayed(): bool
+    {
+        return $this->home_score !== null && $this->away_score !== null;
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
     }
 
     /**

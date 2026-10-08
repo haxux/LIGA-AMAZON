@@ -84,7 +84,7 @@ final class StandingsService
             ->whereNotNull('home_score')
             ->whereNotNull('away_score')
             ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $seasonId))
-            ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score']);
+            ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score', 'voided_at']);
 
         return $this->fold($rows, $games);
     }
@@ -119,8 +119,9 @@ final class StandingsService
     private function fold(array $rows, Collection $games): Collection
     {
         foreach ($games as $game) {
-            $this->accumulate($rows, $game->home_team_id, $game->home_score, $game->away_score);
-            $this->accumulate($rows, $game->away_team_id, $game->away_score, $game->home_score);
+            $voided = $game->voided_at !== null;
+            $this->accumulate($rows, $game->home_team_id, $game->home_score, $game->away_score, $voided);
+            $this->accumulate($rows, $game->away_team_id, $game->away_score, $game->home_score, $voided);
         }
 
         return collect($rows)
@@ -131,14 +132,24 @@ final class StandingsService
 
     /**
      * @param  array<int, array{team: Team, played: int, won: int, drawn: int, lost: int, goals_for: int, goals_against: int}>  $rows
+     *
+     * Un partido anulado (`Game::isVoided()`) cuenta para jugados y para nada
+     * más: ni gana, ni empata, ni pierde, ni mueve goles ni puntos. Es la
+     * regla de "pasó de fecha sin jugarse" — se cuenta como jugado, pero no
+     * reparte nada a ninguno de los dos.
      */
-    private function accumulate(array &$rows, int $teamId, int $for, int $against): void
+    private function accumulate(array &$rows, int $teamId, int $for, int $against, bool $voided = false): void
     {
         if (! isset($rows[$teamId])) {
             return; // team is not on this season's roster — see D5
         }
 
         $rows[$teamId]['played']++;
+
+        if ($voided) {
+            return;
+        }
+
         $rows[$teamId]['goals_for'] += $for;
         $rows[$teamId]['goals_against'] += $against;
 

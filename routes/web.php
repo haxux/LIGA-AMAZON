@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CronController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\Site\ChatController;
 use App\Http\Controllers\Site\ClubProfileController;
 use App\Http\Controllers\Site\ClubsController;
@@ -45,4 +47,16 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/chat', ChatController::class)->name('site.chat');
     Route::get('/noticias', [NewsController::class, 'index'])->name('site.news.index');
     Route::get('/noticias/{slug}', [NewsController::class, 'show'])->name('site.news.show');
+
+    // Activar/desactivar notificaciones push desde el navegador (ver
+    // PushSubscriptionController): "partidos" es anónimo, "chat" pide la
+    // misma sesión que /chat.
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+    Route::delete('/push/subscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
 });
+
+// GET y no POST: así lo invoca Vercel Cron, y así evita la verificación CSRF
+// del grupo 'web' —pensada para formularios de navegador, no para esto—, que
+// un POST sin cookie de sesión siempre fallaría. Se autentica con el secreto
+// compartido (ver CronController), no con una cookie.
+Route::get('/cron/tick', [CronController::class, 'tick'])->name('cron.tick');

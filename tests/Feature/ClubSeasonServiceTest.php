@@ -153,6 +153,24 @@ class ClubSeasonServiceTest extends TestCase
         $this->assertSame(1, $stats->clean_sheets);
     }
 
+    public function test_a_voided_game_counts_as_played_but_adds_no_result_or_points(): void
+    {
+        $rival = $this->teamNamed('Tapajós SC');
+        $won = $this->game($rival, for: 3, against: 1, number: 1);
+        $voided = $this->game($rival, for: 0, against: 0, number: 2);
+        $voided->update(['voided_at' => now()]);
+
+        $stats = $this->service->stats($this->team);
+
+        $this->assertSame(2, $stats->played);
+        $this->assertSame(1, $stats->won);
+        $this->assertSame(0, $stats->drawn);
+        $this->assertSame(0, $stats->lost);
+        $this->assertSame(3, $stats->goals_for);
+        $this->assertSame(1, $stats->goals_against);
+        $this->assertSame(3, $stats->points);
+    }
+
     private function squadPlayer(Team $team, string $position): Player
     {
         $player = Player::factory()->create(['club_id' => $team->club_id, 'position' => $position]);

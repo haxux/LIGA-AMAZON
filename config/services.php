@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    'webpush' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT'),
+    ],
+
+    // El secreto que Vercel Cron manda de vuelta como cabecera Authorization
+    // (ver App\Http\Controllers\CronController y vercel.json). Cualquiera que
+    // lo conozca puede disparar la anulación de partidos y los recordatorios
+    // a demanda, así que no es opcional en producción.
+    'cron' => [
+        'secret' => env('CRON_SECRET'),
+    ],
+
 ];

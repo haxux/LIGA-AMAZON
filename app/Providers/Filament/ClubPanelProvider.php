@@ -14,6 +14,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -76,6 +77,8 @@ class ClubPanelProvider extends PanelProvider
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->sort(-1),
             ])
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => view('filament.push-head')->render())
+            ->renderHook(PanelsRenderHook::BODY_END, fn (): string => view('filament.push-chat-prompt')->render())
 
             ->middleware([
                 EncryptCookies::class,

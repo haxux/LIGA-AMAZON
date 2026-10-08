@@ -15,6 +15,12 @@
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        {{-- Notificaciones push de partidos: ver public/js/push.js y
+             App\Http\Controllers\PushSubscriptionController. --}}
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="vapid-public-key" content="{{ config('services.webpush.public_key') }}">
+        <script src="{{ asset('js/push.js') }}" defer></script>
     </head>
     <body class="min-h-screen bg-brand-weave font-sans text-ink">
         @php
@@ -170,5 +176,22 @@
                 &copy; {{ now()->year }} AMAZON TOERNOOIEN
             </div>
         </footer>
+
+        <script>
+            {{-- Al primer visitante, y sólo una vez: el navegador pregunta
+                 por su cuenta (ver public/js/push.js), sin botón que lo pida. --}}
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof window.LigaPush === 'undefined') {
+                    return;
+                }
+
+                var vapidKey = document.querySelector('meta[name="vapid-public-key"]')?.content;
+                var csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+
+                if (vapidKey) {
+                    window.LigaPush.autoPrompt('matches', vapidKey, csrf);
+                }
+            });
+        </script>
     </body>
 </html>

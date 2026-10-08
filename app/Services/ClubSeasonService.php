@@ -123,6 +123,13 @@ final class ClubSeasonService
         $counters = ['won' => 0, 'drawn' => 0, 'lost' => 0, 'goals_for' => 0, 'goals_against' => 0];
 
         foreach ($played as $game) {
+            // Anulado por fecha vencida: cuenta como jugado (ver $played->count()
+            // más abajo) y nada más — ni resultado ni goles, mismo criterio que
+            // `StandingsService::accumulate()`.
+            if ($game->isVoided()) {
+                continue;
+            }
+
             $atHome = (int) $game->home_team_id === (int) $team->getKey();
             $for = (int) ($atHome ? $game->home_score : $game->away_score);
             $against = (int) ($atHome ? $game->away_score : $game->home_score);

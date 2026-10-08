@@ -9,5 +9,8 @@
   },
   "rewrites": [
     { "source": "/(.*)", "destination": { "service": "app" } }
+  ],
+  "crons": [
+    { "path": "/cron/tick", "schedule": "0 6 * * *" }
   ]
 }

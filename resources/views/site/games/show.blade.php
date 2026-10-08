@@ -59,7 +59,11 @@
         </div>
 
         <div class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 border-t border-white/10 pt-3 font-mono text-[10px] tracking-[0.12em] text-white/45">
-            <span>{{ $isPlayed ? 'JUGADO' : 'POR JUGAR' }}</span>
+            @if ($game->isVoided())
+                <span class="text-rose-400">ANULADO POR INCOMPARECENCIA</span>
+            @else
+                <span>{{ $isPlayed ? 'JUGADO' : 'POR JUGAR' }}</span>
+            @endif
             @if ($game->kickoff_at) <span>{{ $game->kickoff_at->format('d/m/Y H:i') }}</span>
             @elseif ($matchday?->date) <span>{{ $matchday->date->format('d/m/Y') }}</span> @endif
             @if ($stadium) <span>{{ mb_strtoupper($stadium->name) }}</span> @endif

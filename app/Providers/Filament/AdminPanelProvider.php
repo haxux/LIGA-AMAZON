@@ -12,6 +12,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -54,6 +55,8 @@ class AdminPanelProvider extends PanelProvider
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->sort(-1),
             ])
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => view('filament.push-head')->render())
+            ->renderHook(PanelsRenderHook::BODY_END, fn (): string => view('filament.push-chat-prompt')->render())
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
