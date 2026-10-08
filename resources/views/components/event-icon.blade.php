@@ -29,9 +29,10 @@
     Estos iconos se pintan en DOS fondos: el oscuro del sitio y el claro del
     panel de Filament. Cada uno resuelve su contraste como le toca:
 
-    - El balón lleva relleno claro con trazo oscuro, como un balón de verdad, y
-      así se recorta contra los dos fondos. Su estela, en cambio, va en
-      `currentColor`: pintada en negro desaparecería sobre el sitio.
+    - El balón lleva relleno claro y su contorno en `currentColor`, que lo cierra
+      contra los dos fondos. La estela es blanca siempre, por decisión del
+      propietario: luce sobre el fondo oscuro del sitio, que es donde se mira, y
+      sobre el claro del panel no se ve.
     - El pase va en trazo con `currentColor`, que hereda el color del texto.
     - Las tarjetas llevan su color literal —amarillo y rojo— porque ahí el color
       ES el dato: una tarjeta gris no dice nada. Lo mismo el verde de la
@@ -54,7 +55,11 @@
              fondos, el oscuro del sitio y el claro del panel— y la estela va en
              `currentColor`, porque en negro desaparecería sobre el sitio. --}}
         <svg viewBox="0 0 24 24" class="size-full">
-            <g fill="currentColor">
+            {{-- La estela, blanca (decisión del propietario), del mismo blanco
+                 que la pelota para que el icono sea una pieza. Sobre el fondo
+                 claro del panel no se ve: ahí queda el balón solo, que sigue
+                 leyéndose porque su contorno va en `currentColor`. --}}
+            <g fill="#f8fafc">
                 <path d="M7.6 14.6 C4.6 16.9 2.2 19.6 0.6 22.9 C4.3 21.3 7.6 19.1 10.9 16.4 Z" />
                 <path d="M13.2 18.6 C11.2 19.9 9.6 21.2 8.2 23.2 C10.6 22.6 12.6 21.6 14.6 20.2 Z" />
             </g>
