@@ -1,0 +1,4557 @@
+{
+    "exportado_el": "2026-10-08",
+    "temporadas": [
+        {
+            "nombre": "Temporada 2025-1",
+            "vigente": false,
+            "inicio": "2025-03-12",
+            "fin": "2025-11-09"
+        },
+        {
+            "nombre": "Temporada 2025-II",
+            "vigente": false,
+            "inicio": "2025-04-11",
+            "fin": "2025-10-31"
+        },
+        {
+            "nombre": "Temporada 2026-I",
+            "vigente": true,
+            "inicio": "2026-05-19",
+            "fin": null
+        }
+    ],
+    "divisiones": [
+        {
+            "temporada": "Temporada 2026-I",
+            "nombre": "Amazon Super League",
+            "zonas": [
+                {
+                    "etiqueta": "Campeón y UEFA Champions League",
+                    "color": "blue",
+                    "desde": 1,
+                    "hasta": 1
+                },
+                {
+                    "etiqueta": "UEFA Conference League",
+                    "color": "green",
+                    "desde": 2,
+                    "hasta": 2
+                },
+                {
+                    "etiqueta": "Promoción",
+                    "color": "yellow",
+                    "desde": 5,
+                    "hasta": 5
+                },
+                {
+                    "etiqueta": "Descenso",
+                    "color": "red",
+                    "desde": 6,
+                    "hasta": 6
+                }
+            ]
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "nombre": "Amazon Tweede Divisie",
+            "zonas": [
+                {
+                    "etiqueta": "Ascenso",
+                    "color": "green",
+                    "desde": 1,
+                    "hasta": 1
+                },
+                {
+                    "etiqueta": "Promoción",
+                    "color": "yellow",
+                    "desde": 2,
+                    "hasta": 2
+                }
+            ]
+        }
+    ],
+    "clubes": [
+        {
+            "nombre": "Atlético Viagrés",
+            "nombre_corto": "Atlético Viagrés",
+            "escudo": "crests/01M33BMFQFJQ7B7450YP81X9FT.png",
+            "fundado": 2025,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "Bluey FC",
+            "nombre_corto": "Bluey FC",
+            "escudo": "crests/01M33CSG3JWWKSWBXB7BVYFV09.png",
+            "fundado": 2025,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "CA Serna",
+            "nombre_corto": "Club Atlético Serna",
+            "escudo": "crests/01M33CX18TASTTZ0SMY6YB8YPV.png",
+            "fundado": 2026,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "Deportivo Dominus",
+            "nombre_corto": "Dep. Dominus",
+            "escudo": "crests/01M33CY2FM14CWBT79CJWBY5CD.png",
+            "fundado": 2026,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "Deportivo La Colita",
+            "nombre_corto": "Dep. La Colita",
+            "escudo": "crests/01M33CYS89Y0H50ZDS55847K00.png",
+            "fundado": 2025,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "Deportivo La Redada",
+            "nombre_corto": "Dep. La Redada",
+            "escudo": "crests/01M33CZ8CQP0TABK9H82J16323.png",
+            "fundado": 2025,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "Enginners FC",
+            "nombre_corto": "Enginners FC",
+            "escudo": "crests/01M33CZV5ZRYQDM4XBEKTY1X8N.png",
+            "fundado": 2026,
+            "saldo_inicial": 2050000
+        },
+        {
+            "nombre": "La Fábrica FC",
+            "nombre_corto": "La Fabrica",
+            "escudo": "crests/01M33D45EHB8WRAJE3K6J5SD4P.png",
+            "fundado": 2025,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "Olympique Laurienté",
+            "nombre_corto": "Olympique Laurienté",
+            "escudo": "crests/01M33D8C7KDA52FWRVJF65K2B4.png",
+            "fundado": 2026,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "RB Victoria",
+            "nombre_corto": "RB Victoria",
+            "escudo": "crests/01M33D2ATCAW3JVFCA0CNJ70HM.png",
+            "fundado": 2025,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "Real Drakukeo Balompié",
+            "nombre_corto": "Real Drakukeo",
+            "escudo": "crests/01M33D35CBFEFKGNG68V3KPJ02.png",
+            "fundado": 2025,
+            "saldo_inicial": 0
+        },
+        {
+            "nombre": "SV Apoera",
+            "nombre_corto": "SV Apoera",
+            "escudo": "crests/01M33D7PGA3C2C2XEK7JP6TCS4.png",
+            "fundado": 2026,
+            "saldo_inicial": 0
+        }
+    ],
+    "equipos": [
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Real Drakukeo Balompié",
+            "division": "Amazon Super League"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Deportivo La Colita",
+            "division": "Amazon Tweede Divisie"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "La Fábrica FC",
+            "division": "Amazon Super League"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "RB Victoria",
+            "division": "Amazon Super League"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Deportivo La Redada",
+            "division": "Amazon Super League"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Bluey FC",
+            "division": "Amazon Super League"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Atlético Viagrés",
+            "division": "Amazon Tweede Divisie"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Enginners FC",
+            "division": "Amazon Super League"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Deportivo Dominus",
+            "division": "Amazon Tweede Divisie"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "Olympique Laurienté",
+            "division": "Amazon Tweede Divisie"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "CA Serna",
+            "division": "Amazon Tweede Divisie"
+        },
+        {
+            "temporada": "Temporada 2026-I",
+            "club": "SV Apoera",
+            "division": "Amazon Tweede Divisie"
+        }
+    ],
+    "jugadores": [
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Mattia Perin",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 10500000,
+            "nacimiento": "1992-11-10",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Alessio Cragno",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 1200000,
+            "nacimiento": "1994-06-28",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Micky van de Ven",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 30500000,
+            "nacimiento": "2001-04-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Álex Suárez",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 1400000,
+            "nacimiento": "1993-03-18",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Ola Aina",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 17000000,
+            "nacimiento": "1996-10-08",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Daniel Muñoz",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 26500000,
+            "nacimiento": "1996-05-26",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Nordi Mukiele Mulere",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 23500000,
+            "nacimiento": "1997-11-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Kobbie Mainoo",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MDD",
+            "valor": 38000000,
+            "nacimiento": "2005-04-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Danilo Cataldi",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 11500000,
+            "nacimiento": "1994-08-06",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "James Ward Prowse",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 7000000,
+            "nacimiento": "1997-11-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Héctor Herrera",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 2600000,
+            "nacimiento": "1990-04-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Pedro Gonçalves",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 33500000,
+            "nacimiento": "1998-06-28",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Konstantinos Karetsas",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 17500000,
+            "nacimiento": "2007-11-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Lennart Karl",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 22000000,
+            "nacimiento": "2008-02-22",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Rio Ngumoha",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 13000000,
+            "nacimiento": "2008-08-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Gianluca Prestianni",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 13500000,
+            "nacimiento": "2006-01-31",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Yan Diomande",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 64000000,
+            "nacimiento": "2006-11-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Sebastián Palacios",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 1900000,
+            "nacimiento": "1992-01-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Raúl Guerrón",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 875000,
+            "nacimiento": "2003-04-13",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Antonio Bordușanu",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 350000,
+            "nacimiento": "2004-08-10",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Tawanda Maswanhise",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 6000000,
+            "nacimiento": "2002-04-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Lucas Cepeda",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 4200000,
+            "nacimiento": "2002-10-31",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Igor Matanović",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 15500000,
+            "nacimiento": "2003-03-31",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Thiago Borbas",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 2500000,
+            "nacimiento": "2002-04-07",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Memphis Depay",
+            "posicion": "Forward",
+            "posicion_especifica": "SD",
+            "valor": 7000000,
+            "nacimiento": "1994-02-13",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Pablo Durán",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 6000000,
+            "nacimiento": "2001-05-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Sandro Ramirez",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 3800000,
+            "nacimiento": "1995-07-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Real Drakukeo Balompié",
+            "nombre": "Eduardo Sasha",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 3000000,
+            "nacimiento": "1992-02-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Gianluca Scamacca",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 17500000,
+            "nacimiento": "1999-01-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Marc André Ter Stegen",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 37500000,
+            "nacimiento": "1992-04-30",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Gianluigi Donnarumma",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 88000000,
+            "nacimiento": "1999-02-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Camilo Andrés Vargas Gil",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 2400000,
+            "nacimiento": "1989-03-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Kim Min Jae",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 33500000,
+            "nacimiento": "1996-11-15",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Lukas Klostermann",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 7000000,
+            "nacimiento": "1996-06-03",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Tsuyoshi Watanabe",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 13000000,
+            "nacimiento": "1997-02-05",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Marvin Friedrich",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 2900000,
+            "nacimiento": "1995-12-13",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Cristian Franco Lema",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 625000,
+            "nacimiento": "1990-03-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Melvin Michel Maxence Bard",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 95000000,
+            "nacimiento": "2000-11-06",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": " Alessandro Florenzi",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 2900000,
+            "nacimiento": "1991-03-11",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Lukas Kübler",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 2900000,
+            "nacimiento": "1992-08-30",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Dominik Kohr",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 4500000,
+            "nacimiento": "1994-01-31",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Rodrigo Román Villagra",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 6000000,
+            "nacimiento": "2001-02-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Luis Gerardo Chávez Magallón",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 6000000,
+            "nacimiento": "1996-01-15",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Matteo Pessina",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 9000000,
+            "nacimiento": "1997-04-21",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Carlos Eduardo de Oliveira",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 600000,
+            "nacimiento": "1989-10-17",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Juan Miguel Jiménez López",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 3200000,
+            "nacimiento": "1993-05-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Michael Olise",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 155000000,
+            "nacimiento": "2001-12-12",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Shea Lacey",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 1800000,
+            "nacimiento": "2007-04-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Mads Kristian Hansen",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 3200000,
+            "nacimiento": "2002-07-28",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Sérgio Pereira Andrade",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 2800000,
+            "nacimiento": "2001-01-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Thierry Mikael Gale",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 1100000,
+            "nacimiento": "2002-05-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Kevin Jensen",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 925000,
+            "nacimiento": "2001-06-05",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Miguel Ángel Borja Hernández",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 2300000,
+            "nacimiento": "1993-01-26",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Andrea Belotti",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 4400000,
+            "nacimiento": "1993-12-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Atlético Viagrés",
+            "nombre": "Petar Musa",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 11000000,
+            "nacimiento": "1998-03-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Khvicha Kvaratskhelia",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 136500000,
+            "nacimiento": "2001-02-12",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Kees Smit",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 13500000,
+            "nacimiento": "2006-01-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Yann Sommer",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 13500000,
+            "nacimiento": "1988-12-17",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Ferdi Kadıoğlu",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 24000000,
+            "nacimiento": "1999-10-07",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Giovani Lo Celso",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 25000000,
+            "nacimiento": "1996-04-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Luis Javier Suárez",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 31000000,
+            "nacimiento": "1997-12-02",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Estêvão",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MD",
+            "valor": 45500000,
+            "nacimiento": "2007-04-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Hugo Ekitiké",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 74500000,
+            "nacimiento": "2002-06-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Niklas Süle",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 12000000,
+            "nacimiento": "1995-09-03",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Mario Gila Fuentes",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 30500000,
+            "nacimiento": "2000-08-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Rico Henry",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 8000000,
+            "nacimiento": "1997-07-08",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Carlos Romero Serrano",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 28000000,
+            "nacimiento": "2001-10-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Jesús Daniel Gallardo",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 8500000,
+            "nacimiento": "1994-08-15",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Kealey Otieno Adamson",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 875000,
+            "nacimiento": "2003-02-17",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Aníbal Moreno",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 13000000,
+            "nacimiento": "1999-05-13",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Jefferson Lerma ",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 8000000,
+            "nacimiento": "1994-10-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Iván Martín Núñez",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 13500000,
+            "nacimiento": "1999-02-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Mateus Uribe",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 5500000,
+            "nacimiento": "1991-03-21",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Paul Nebel",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 16500000,
+            "nacimiento": "2002-10-10",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Chris Führich",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCI",
+            "valor": 15500000,
+            "nacimiento": "1998-01-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Tomás Uriel Porra",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 3600000,
+            "nacimiento": "2004-01-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Raoul Bellanova",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MD",
+            "valor": 14000000,
+            "nacimiento": "2000-05-17",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Ludovic Blas",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 9000000,
+            "nacimiento": "1997-12-31",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Jérémy Doku",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 57700000,
+            "nacimiento": "2002-05-27",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Marcus Rafferty",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 2300000,
+            "nacimiento": "2004-10-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Roony Bardghji",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 9500000,
+            "nacimiento": "2005-11-15",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Gustavo Sauer",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MDD",
+            "valor": 1800000,
+            "nacimiento": "1993-04-30",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Adedire Awokoya-Mebude",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MDD",
+            "valor": 180000,
+            "nacimiento": "2004-05-28",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Lorenzo Lucca",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 8000000,
+            "nacimiento": "2000-09-10",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo Dominus",
+            "nombre": "Mauro Icardi",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 3000000,
+            "nacimiento": "1993-02-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Marcos Rojo\t\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 3800000,
+            "nacimiento": "1990-03-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Roger Ibañez\t ",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 38500000,
+            "nacimiento": "1998-11-23",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Mathias Ross\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 1100000,
+            "nacimiento": "2001-01-15",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Jeremiah St. Juste",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 4400000,
+            "nacimiento": "1996-10-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Robin Gosens\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 15000000,
+            "nacimiento": "1994-07-05",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Noah Persson",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 2200000,
+            "nacimiento": "2003-07-16",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Stefan Medina\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 1200000,
+            "nacimiento": "1992-06-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Nicolas Höfler",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 300000,
+            "nacimiento": "1990-03-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Marc Bernal",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 28500000,
+            "nacimiento": "2007-05-26",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Joelinton",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 23500000,
+            "nacimiento": "1996-08-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Jacob Ramsey\t",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 19500000,
+            "nacimiento": "2001-05-28",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Federico Zaracho",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 4300000,
+            "nacimiento": "1998-03-10",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Joao Victor\t",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 2500000,
+            "nacimiento": "1994-03-27",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Jaider Asprilla\t",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 700000,
+            "nacimiento": "2003-05-08",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Tony Springett",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 1200000,
+            "nacimiento": "2002-09-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Lucas Chávez\t",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 1200000,
+            "nacimiento": "2003-03-17",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Sebastián Villa\t",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 11000000,
+            "nacimiento": "1996-05-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "La Fábrica FC",
+            "nombre": "Lionel Messi",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 70500000,
+            "nacimiento": "1987-06-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Michele Di Gregorio",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 19500000,
+            "nacimiento": "1997-07-27",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Fer Pérez",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 30000,
+            "nacimiento": "2004-04-28",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Abdukodir Khusanov",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 42500000,
+            "nacimiento": "2004-02-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Timo Hübers",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 2800000,
+            "nacimiento": "1996-02-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Davinson Sánchez",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 23000000,
+            "nacimiento": "1996-06-12",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Jesús Orozco Chiquete",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 4400000,
+            "nacimiento": "2002-02-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Alberto Moreno",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 4500000,
+            "nacimiento": "1992-07-05",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Srđan Kuzmić",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 2600000,
+            "nacimiento": "2004-01-16",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Alan Mozo",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 2100000,
+            "nacimiento": "1997-04-05",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Fermín López",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 73500000,
+            "nacimiento": "2003-05-11",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Alexis Claude-Maurice",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 11500000,
+            "nacimiento": "1998-06-06",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Ayoze Pérez",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 21500000,
+            "nacimiento": "1993-07-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "David Neres",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 25500000,
+            "nacimiento": "1997-03-03",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Daniel José Rodríguez Vázquez",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 1800000,
+            "nacimiento": "1988-06-06",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Stanley Mills",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MD",
+            "valor": 2700000,
+            "nacimiento": "2003-10-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Bruno Henrique",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 2500000,
+            "nacimiento": "1990-12-30",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Charlie Kirk",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 67000,
+            "nacimiento": "1997-12-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Deportivo La Redada",
+            "nombre": "Momodou Lamin Sonko",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 2300000,
+            "nacimiento": "2005-01-31",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Warner Lloyd Hahn",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 750000,
+            "nacimiento": "1992-06-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Marko Dmitrović",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 5500000,
+            "nacimiento": "1992-01-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Etienne Vaessen",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 1600000,
+            "nacimiento": "1995-07-26",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Shaquille Riley Pinas",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 1900000,
+            "nacimiento": "1998-03-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Stefano Denswil",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 900000,
+            "nacimiento": "1993-05-07",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Myenty Abena",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 1000000,
+            "nacimiento": "1994-12-12",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Liam van Gelderen",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 1000000,
+            "nacimiento": "2001-03-23",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Kenneth Paal",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 1400000,
+            "nacimiento": "1997-06-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Ridgeciano Delano Leandro Haps",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 2200000,
+            "nacimiento": "1993-06-12",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Anfernee Dijksteel",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 1500000,
+            "nacimiento": "1996-10-27",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Guido Herrera\t",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 2200000,
+            "nacimiento": "1992-02-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Melayro Bogarde",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 2600000,
+            "nacimiento": "2002-05-28",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Ousmane Diomande\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 37500000,
+            "nacimiento": "2003-12-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Donnevan Rellum",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": null,
+            "nacimiento": "2000-01-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Victor Cuesta\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 1400000,
+            "nacimiento": "1988-11-19",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Serfinjo Pinas",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": null,
+            "nacimiento": "2006-09-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Immanuel Pherai",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 2000000,
+            "nacimiento": "2001-04-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Tjaronn Chery",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 2600000,
+            "nacimiento": "1998-06-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Jean-Paul Boëtius",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 1100000,
+            "nacimiento": "1994-03-22",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Mika Mármol",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 10000000,
+            "nacimiento": "2001-07-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Yasin Özcan",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 3600000,
+            "nacimiento": "2006-04-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Virgil Misidjan",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 1200000,
+            "nacimiento": "1993-07-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Djavan Anderson",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MD",
+            "valor": 825000,
+            "nacimiento": "1995-04-21",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Thierry Small\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 3400000,
+            "nacimiento": "2004-08-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Sheraldo Becker",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 4800000,
+            "nacimiento": "1995-02-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Jahnoah Markelo",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 1900000,
+            "nacimiento": "2003-01-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Rasmus Kristensen\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 17500000,
+            "nacimiento": "1997-07-11",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Gyrano Kerk",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 2800000,
+            "nacimiento": "1995-12-02",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Jermaine Rijssel",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 500000,
+            "nacimiento": "2005-03-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Manuel Lazzari\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 6500000,
+            "nacimiento": "1993-11-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Gleofilo Vlijter",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 600000,
+            "nacimiento": "1999-09-17",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Diego Demme",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 300000,
+            "nacimiento": "1991-11-21",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Jay-Roy Grot",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 1000000,
+            "nacimiento": "1998-03-13",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "SV Apoera",
+            "nombre": "Joël Piroe",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 5500000,
+            "nacimiento": "1999-08-21",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Edson Álvarez\t",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 12000000,
+            "nacimiento": "1997-10-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Richard Ríos",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MC",
+            "valor": 18000000,
+            "nacimiento": "2000-02-02",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Valentín Barco\t",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 27000000,
+            "nacimiento": "2004-07-23",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Matheus Cunha",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 48500000,
+            "nacimiento": "1999-05-27",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Dodi Lukébakio",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MD",
+            "valor": 24500000,
+            "nacimiento": "1997-02-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Edwuin Cetré\t",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MD",
+            "valor": 4600000,
+            "nacimiento": "1998-01-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Andreas Hountondji\t",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 3800000,
+            "nacimiento": "2002-09-11",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Giovani Henrique\t",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 8000000,
+            "nacimiento": "2004-01-01",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Allan Saint-Maximin\t",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 10000000,
+            "nacimiento": "1997-03-12",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Kyliane Dong\t",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 1900000,
+            "nacimiento": "2004-11-26",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Julián Quiñonez\t",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 42000000,
+            "nacimiento": "1997-05-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Philipp Hofmann\t",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 2000000,
+            "nacimiento": "1993-07-30",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Bluey FC",
+            "nombre": "Yira Sor\t",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 5500000,
+            "nacimiento": "2000-05-02",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Pietro Terracciano ",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 2400000,
+            "nacimiento": "1990-03-08",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Marco Silvestri\t",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 400000,
+            "nacimiento": "1991-03-02",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Kevin Mac Allister\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 15000000,
+            "nacimiento": "1997-11-07",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Nicolò Casale\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 6500000,
+            "nacimiento": "1998-02-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Waldemar Anton\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 17000000,
+            "nacimiento": "1996-07-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Maicon\t",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 3100000,
+            "nacimiento": "1981-09-14",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "David Raum\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 38000000,
+            "nacimiento": "1998-04-22",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Samuel Dahl\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 10000000,
+            "nacimiento": "2003-03-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Juan Foyth\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 16500000,
+            "nacimiento": "1998-01-12",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Álvaro Montero",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 4000000,
+            "nacimiento": "1995-03-29",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "David de Gea",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 43000000,
+            "nacimiento": "1990-11-07",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Rodrigo Rey",
+            "posicion": "Goalkeeper",
+            "posicion_especifica": "POR",
+            "valor": 1800000,
+            "nacimiento": "1991-03-08",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Maxence Lacroix",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 35500000,
+            "nacimiento": "2000-04-06",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Saúl Coco",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 8500000,
+            "nacimiento": "1999-02-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Pablo Marí",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 2100000,
+            "nacimiento": "1993-08-31",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Loïc Badé",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 12000000,
+            "nacimiento": "2000-04-11",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Reinildo",
+            "posicion": "Defender",
+            "posicion_especifica": "LI",
+            "valor": 16500000,
+            "nacimiento": "1994-12-11",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Enrico Delprato",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 6500000,
+            "nacimiento": "1999-10-10",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Alexander Bah",
+            "posicion": "Defender",
+            "posicion_especifica": "DFC",
+            "valor": 14000000,
+            "nacimiento": "1997-12-09",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Juan Angulo",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 50000,
+            "nacimiento": "1988-09-26",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Angelo Stiller",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCD",
+            "valor": 43500000,
+            "nacimiento": "2001-04-04",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Merlin Röhl",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": null,
+            "nacimiento": "2002-07-05",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Andrea Colpani",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MCO",
+            "valor": 9500000,
+            "nacimiento": "1999-05-11",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Álvaro García Rivera",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 16000000,
+            "nacimiento": "1992-10-27",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Yéremy Pino",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MI",
+            "valor": 26500000,
+            "nacimiento": "2002-10-20",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Bruno Tabata",
+            "posicion": "Midfielder",
+            "posicion_especifica": "MD",
+            "valor": 7500000,
+            "nacimiento": "1997-03-30",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Alexis Vega",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 11500000,
+            "nacimiento": "1997-11-25",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Dudu",
+            "posicion": "Forward",
+            "posicion_especifica": "EI",
+            "valor": 800000,
+            "nacimiento": "1992-10-07",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Florian Thauvin",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 23500000,
+            "nacimiento": "1993-01-26",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Anan Khalaili",
+            "posicion": "Forward",
+            "posicion_especifica": "ED",
+            "valor": 31500000,
+            "nacimiento": "2004-09-03",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Chimy Ávila",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 5000000,
+            "nacimiento": "1994-02-06",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "Enginners FC",
+            "nombre": "Youssef Chermiti",
+            "posicion": "Forward",
+            "posicion_especifica": "DC",
+            "valor": 7000000,
+            "nacimiento": "2004-05-24",
+            "salio_el": null,
+            "salio_a": null
+        },
+        {
+            "club": "RB Victoria",
+            "nombre": "Andoni Gorosabel\t",
+            "posicion": "Defender",
+            "posicion_especifica": "LD",
+            "valor": 7000000,
+            "nacimiento": "1996-08-04",
+            "salio_el": null,
+            "salio_a": null
+        }
+    ],
+    "plantillas": [
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Mattia Perin",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Alessio Cragno",
+            "dorsal": 94,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Micky van de Ven",
+            "dorsal": 3,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Álex Suárez",
+            "dorsal": 30,
+            "tipo": "loan",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Ola Aina",
+            "dorsal": 4,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Daniel Muñoz",
+            "dorsal": 21,
+            "tipo": "owned",
+            "capitan": true
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Nordi Mukiele Mulere",
+            "dorsal": 2,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Kobbie Mainoo",
+            "dorsal": 5,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Danilo Cataldi",
+            "dorsal": 15,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "James Ward Prowse",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Héctor Herrera",
+            "dorsal": 16,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Pedro Gonçalves",
+            "dorsal": 11,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Konstantinos Karetsas",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Lennart Karl",
+            "dorsal": 42,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Rio Ngumoha",
+            "dorsal": 73,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Gianluca Prestianni",
+            "dorsal": 12,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Yan Diomande",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Sebastián Palacios",
+            "dorsal": 17,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Raúl Guerrón",
+            "dorsal": 99,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Antonio Bordușanu",
+            "dorsal": 98,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Tawanda Maswanhise",
+            "dorsal": 97,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Lucas Cepeda",
+            "dorsal": 22,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Igor Matanović",
+            "dorsal": 29,
+            "tipo": "loan",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Thiago Borbas",
+            "dorsal": 32,
+            "tipo": "loan",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Memphis Depay",
+            "dorsal": 10,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Pablo Durán",
+            "dorsal": 14,
+            "tipo": "loan",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Sandro Ramirez",
+            "dorsal": 9,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "jugador": "Eduardo Sasha",
+            "dorsal": 19,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Marc André Ter Stegen",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Gianluca Scamacca",
+            "dorsal": 14,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Gianluigi Donnarumma",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Camilo Andrés Vargas Gil",
+            "dorsal": 99,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Kim Min Jae",
+            "dorsal": 3,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Lukas Klostermann",
+            "dorsal": 16,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Tsuyoshi Watanabe",
+            "dorsal": 4,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Cristian Franco Lema",
+            "dorsal": 5,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Melvin Michel Maxence Bard",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": " Alessandro Florenzi",
+            "dorsal": 42,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Lukas Kübler",
+            "dorsal": 11,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Dominik Kohr",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Rodrigo Román Villagra",
+            "dorsal": 13,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Luis Gerardo Chávez Magallón",
+            "dorsal": 24,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Matteo Pessina",
+            "dorsal": 32,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Carlos Eduardo de Oliveira",
+            "dorsal": 33,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Juan Miguel Jiménez López",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Michael Olise",
+            "dorsal": 14,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Shea Lacey",
+            "dorsal": 67,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Mads Kristian Hansen",
+            "dorsal": 21,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Sérgio Pereira Andrade",
+            "dorsal": 17,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Thierry Mikael Gale",
+            "dorsal": 50,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Kevin Jensen",
+            "dorsal": 23,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Miguel Ángel Borja Hernández",
+            "dorsal": 19,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Andrea Belotti",
+            "dorsal": 9,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Atlético Viagrés"
+            },
+            "jugador": "Petar Musa",
+            "dorsal": 30,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Kees Smit",
+            "dorsal": 17,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Khvicha Kvaratskhelia",
+            "dorsal": 10,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Yann Sommer",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Ferdi Kadıoğlu",
+            "dorsal": 2,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Giovani Lo Celso",
+            "dorsal": 14,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Estêvão",
+            "dorsal": 11,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Luis Javier Suárez",
+            "dorsal": 9,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Hugo Ekitiké",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Niklas Süle",
+            "dorsal": 2,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Mario Gila Fuentes",
+            "dorsal": 5,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Rico Henry",
+            "dorsal": 4,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Carlos Romero Serrano",
+            "dorsal": 3,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Jesús Daniel Gallardo",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Kealey Otieno Adamson",
+            "dorsal": 21,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Aníbal Moreno",
+            "dorsal": 20,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Jefferson Lerma ",
+            "dorsal": 16,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Iván Martín Núñez",
+            "dorsal": 76,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Mateus Uribe",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Paul Nebel",
+            "dorsal": 56,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Chris Führich",
+            "dorsal": 57,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Tomás Uriel Porra",
+            "dorsal": 58,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Raoul Bellanova",
+            "dorsal": 59,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Ludovic Blas",
+            "dorsal": 60,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Jérémy Doku",
+            "dorsal": 11,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Marcus Rafferty",
+            "dorsal": 26,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Roony Bardghji",
+            "dorsal": 17,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Gustavo Sauer",
+            "dorsal": 81,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Adedire Awokoya-Mebude",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Lorenzo Lucca",
+            "dorsal": 45,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "jugador": "Mauro Icardi",
+            "dorsal": 9,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Marcos Rojo\t\t",
+            "dorsal": 2,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Mathias Ross\t",
+            "dorsal": 80,
+            "tipo": "loan",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Jeremiah St. Juste",
+            "dorsal": 25,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Robin Gosens\t",
+            "dorsal": 5,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Noah Persson",
+            "dorsal": 27,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Stefan Medina\t",
+            "dorsal": 4,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Nicolas Höfler",
+            "dorsal": 40,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Marc Bernal",
+            "dorsal": 75,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Joelinton",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Jacob Ramsey\t",
+            "dorsal": 32,
+            "tipo": "loan",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Federico Zaracho",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Joao Victor\t",
+            "dorsal": 12,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Jaider Asprilla\t",
+            "dorsal": 13,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Tony Springett",
+            "dorsal": 20,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Lionel Messi",
+            "dorsal": 21,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Lucas Chávez\t",
+            "dorsal": 30,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Sebastián Villa\t",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Michele Di Gregorio",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Fer Pérez",
+            "dorsal": 99,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Abdukodir Khusanov",
+            "dorsal": 77,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Timo Hübers",
+            "dorsal": 3,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Davinson Sánchez",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Jesús Orozco Chiquete",
+            "dorsal": 4,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Alberto Moreno",
+            "dorsal": 66,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Srđan Kuzmić",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Alan Mozo",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Fermín López",
+            "dorsal": 12,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Alexis Claude-Maurice",
+            "dorsal": 18,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Ayoze Pérez",
+            "dorsal": 19,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "David Neres",
+            "dorsal": 10,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Daniel José Rodríguez Vázquez",
+            "dorsal": 55,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Stanley Mills",
+            "dorsal": 35,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Bruno Henrique",
+            "dorsal": 78,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Charlie Kirk",
+            "dorsal": 30,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "jugador": "Momodou Lamin Sonko",
+            "dorsal": 76,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Warner Lloyd Hahn",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Etienne Vaessen",
+            "dorsal": 13,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Shaquille Riley Pinas",
+            "dorsal": 19,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Stefano Denswil",
+            "dorsal": 4,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Myenty Abena",
+            "dorsal": 12,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Liam van Gelderen",
+            "dorsal": 20,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Kenneth Paal",
+            "dorsal": 22,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Ridgeciano Delano Leandro Haps",
+            "dorsal": 5,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Anfernee Dijksteel",
+            "dorsal": 2,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Melayro Bogarde",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Donnevan Rellum",
+            "dorsal": 16,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Serfinjo Pinas",
+            "dorsal": 28,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Immanuel Pherai",
+            "dorsal": 14,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Tjaronn Chery",
+            "dorsal": 10,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Jean-Paul Boëtius",
+            "dorsal": 15,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Virgil Misidjan",
+            "dorsal": 93,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Djavan Anderson",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Sheraldo Becker",
+            "dorsal": 17,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Jahnoah Markelo",
+            "dorsal": 47,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Gyrano Kerk",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Jermaine Rijssel",
+            "dorsal": 29,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Gleofilo Vlijter",
+            "dorsal": 21,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Jay-Roy Grot",
+            "dorsal": 11,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "SV Apoera"
+            },
+            "jugador": "Joël Piroe",
+            "dorsal": 9,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Marko Dmitrović",
+            "dorsal": 41,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Guido Herrera\t",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Ousmane Diomande\t",
+            "dorsal": 2,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Victor Cuesta\t",
+            "dorsal": 5,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Mika Mármol",
+            "dorsal": 3,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Yasin Özcan",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Thierry Small\t",
+            "dorsal": 44,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Rasmus Kristensen\t",
+            "dorsal": 20,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Manuel Lazzari\t",
+            "dorsal": 13,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Diego Demme",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Edson Álvarez\t",
+            "dorsal": 4,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Richard Ríos",
+            "dorsal": 12,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Valentín Barco\t",
+            "dorsal": 15,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Matheus Cunha",
+            "dorsal": 22,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Dodi Lukébakio",
+            "dorsal": 7,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Edwuin Cetré\t",
+            "dorsal": 21,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Andreas Hountondji\t",
+            "dorsal": 23,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Giovani Henrique\t",
+            "dorsal": 11,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Allan Saint-Maximin\t",
+            "dorsal": 10,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Kyliane Dong\t",
+            "dorsal": 18,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Julián Quiñonez\t",
+            "dorsal": 9,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Philipp Hofmann\t",
+            "dorsal": 14,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "jugador": "Yira Sor\t",
+            "dorsal": 47,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Youssef Chermiti",
+            "dorsal": 99,
+            "tipo": "loan",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Álvaro Montero",
+            "dorsal": 1,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "David de Gea",
+            "dorsal": 43,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Rodrigo Rey",
+            "dorsal": 50,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Maxence Lacroix",
+            "dorsal": 3,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Saúl Coco",
+            "dorsal": 44,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Pablo Marí",
+            "dorsal": 2,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Loïc Badé",
+            "dorsal": 6,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Reinildo",
+            "dorsal": 27,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Enrico Delprato",
+            "dorsal": 25,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Alexander Bah",
+            "dorsal": 19,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Juan Angulo",
+            "dorsal": 37,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Angelo Stiller",
+            "dorsal": 16,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Merlin Röhl",
+            "dorsal": 77,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Andrea Colpani",
+            "dorsal": 28,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Álvaro García Rivera",
+            "dorsal": 33,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Yéremy Pino",
+            "dorsal": 34,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Bruno Tabata",
+            "dorsal": 21,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Alexis Vega",
+            "dorsal": 17,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Dudu",
+            "dorsal": 8,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Florian Thauvin",
+            "dorsal": 29,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Anan Khalaili",
+            "dorsal": 42,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "jugador": "Chimy Ávila",
+            "dorsal": 9,
+            "tipo": "owned",
+            "capitan": false
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "jugador": "Roger Ibañez\t ",
+            "dorsal": 23,
+            "tipo": "owned",
+            "capitan": false
+        }
+    ],
+    "jornadas": [
+        {
+            "temporada": "Temporada 2026-I",
+            "division": "Amazon Super League",
+            "numero": 1,
+            "fecha": "2026-05-31"
+        }
+    ],
+    "copas": [
+        {
+            "temporada": "Temporada 2026-I",
+            "nombre": "Copa Amazon",
+            "con_grupos": true,
+            "grupos": [
+                "A",
+                "B",
+                "C",
+                "Mejores terceros"
+            ],
+            "participantes": [
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Real Drakukeo Balompié"
+                    },
+                    "grupo": "A"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "RB Victoria"
+                    },
+                    "grupo": "A"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Olympique Laurienté"
+                    },
+                    "grupo": "A"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "SV Apoera"
+                    },
+                    "grupo": "A"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Deportivo La Redada"
+                    },
+                    "grupo": "B"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Bluey FC"
+                    },
+                    "grupo": "B"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Atlético Viagrés"
+                    },
+                    "grupo": "B"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Deportivo Dominus"
+                    },
+                    "grupo": "B"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "La Fábrica FC"
+                    },
+                    "grupo": "C"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Enginners FC"
+                    },
+                    "grupo": "C"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "Deportivo La Colita"
+                    },
+                    "grupo": "C"
+                },
+                {
+                    "equipo": {
+                        "temporada": "Temporada 2026-I",
+                        "club": "CA Serna"
+                    },
+                    "grupo": "C"
+                }
+            ],
+            "rondas": [
+                {
+                    "nombre": "Cuartos de final",
+                    "orden": 1,
+                    "partidos": 2
+                },
+                {
+                    "nombre": "Semifinales",
+                    "orden": 2,
+                    "partidos": 2
+                },
+                {
+                    "nombre": "Final",
+                    "orden": 3,
+                    "partidos": 1
+                }
+            ],
+            "cruces": []
+        }
+    ],
+    "partidos": [
+        {
+            "local": {
+                "temporada": "Temporada 2026-I",
+                "club": "RB Victoria"
+            },
+            "visitante": {
+                "temporada": "Temporada 2026-I",
+                "club": "La Fábrica FC"
+            },
+            "hora": "2026-05-30 20:00:00",
+            "goles_local": 0,
+            "goles_visitante": 2,
+            "anulado_el": null,
+            "competicion": "jornada",
+            "jornada": {
+                "temporada": "Temporada 2026-I",
+                "division": "Amazon Super League",
+                "numero": 1
+            }
+        },
+        {
+            "local": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "visitante": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo La Redada"
+            },
+            "hora": "2026-06-01 20:43:00",
+            "goles_local": 3,
+            "goles_visitante": 3,
+            "anulado_el": null,
+            "competicion": "jornada",
+            "jornada": {
+                "temporada": "Temporada 2026-I",
+                "division": "Amazon Super League",
+                "numero": 1
+            }
+        },
+        {
+            "local": {
+                "temporada": "Temporada 2026-I",
+                "club": "Enginners FC"
+            },
+            "visitante": {
+                "temporada": "Temporada 2026-I",
+                "club": "Bluey FC"
+            },
+            "hora": "2026-06-05 14:51:00",
+            "goles_local": 4,
+            "goles_visitante": 0,
+            "anulado_el": null,
+            "competicion": "jornada",
+            "jornada": {
+                "temporada": "Temporada 2026-I",
+                "division": "Amazon Super League",
+                "numero": 1
+            }
+        }
+    ],
+    "eventos": [
+        {
+            "partido": 0,
+            "jugador": "Gianluca Scamacca",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 0,
+            "jugador": "Khvicha Kvaratskhelia",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 0,
+            "jugador": "Yann Sommer",
+            "tipo": "clean_sheet",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 0,
+            "jugador": "Kees Smit",
+            "tipo": "assist",
+            "minuto": null,
+            "relacionado_con": 1
+        },
+        {
+            "partido": 1,
+            "jugador": "Pedro Gonçalves",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 1,
+            "jugador": "Memphis Depay",
+            "tipo": "assist",
+            "minuto": null,
+            "relacionado_con": 4
+        },
+        {
+            "partido": 1,
+            "jugador": "Ferdi Kadıoğlu",
+            "tipo": "yellow_card",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 1,
+            "jugador": "Luis Javier Suárez",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 1,
+            "jugador": "Giovani Lo Celso",
+            "tipo": "assist",
+            "minuto": null,
+            "relacionado_con": 7
+        },
+        {
+            "partido": 1,
+            "jugador": "Estêvão",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 1,
+            "jugador": "Sandro Ramirez",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 1,
+            "jugador": "Memphis Depay",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 2,
+            "jugador": "Hugo Ekitiké",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 2,
+            "jugador": "Hugo Ekitiké",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        },
+        {
+            "partido": 2,
+            "jugador": "Hugo Ekitiké",
+            "tipo": "goal",
+            "minuto": null,
+            "relacionado_con": null
+        }
+    ],
+    "onces": [
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Deportivo Dominus"
+            },
+            "formacion": "4-4-2",
+            "puestos": [
+                {
+                    "puesto": 1,
+                    "jugador": "Marc André Ter Stegen"
+                }
+            ]
+        },
+        {
+            "equipo": {
+                "temporada": "Temporada 2026-I",
+                "club": "Real Drakukeo Balompié"
+            },
+            "formacion": "4-1-4-1",
+            "puestos": [
+                {
+                    "puesto": 1,
+                    "jugador": "Mattia Perin"
+                },
+                {
+                    "puesto": 2,
+                    "jugador": "Ola Aina"
+                },
+                {
+                    "puesto": 3,
+                    "jugador": "Micky van de Ven"
+                },
+                {
+                    "puesto": 4,
+                    "jugador": "Nordi Mukiele Mulere"
+                },
+                {
+                    "puesto": 5,
+                    "jugador": "Daniel Muñoz"
+                },
+                {
+                    "puesto": 6,
+                    "jugador": "Danilo Cataldi"
+                },
+                {
+                    "puesto": 7,
+                    "jugador": "Memphis Depay"
+                },
+                {
+                    "puesto": 8,
+                    "jugador": "Pedro Gonçalves"
+                },
+                {
+                    "puesto": 9,
+                    "jugador": "Kobbie Mainoo"
+                },
+                {
+                    "puesto": 10,
+                    "jugador": "Yan Diomande"
+                },
+                {
+                    "puesto": 11,
+                    "jugador": "Sandro Ramirez"
+                }
+            ]
+        }
+    ],
+    "movimientos": [
+        {
+            "club": "Real Drakukeo Balompié",
+            "temporada": "Temporada 2026-I",
+            "tipo": "ingreso",
+            "importe": 3045000,
+            "motivo": "Saldo Actual de el club",
+            "estado": "aprobado"
+        },
+        {
+            "club": "Deportivo Dominus",
+            "temporada": "Temporada 2025-II",
+            "tipo": "ingreso",
+            "importe": 1800000,
+            "motivo": "Saldo Actual de el club",
+            "estado": "aprobado"
+        },
+        {
+            "club": "Atlético Viagrés",
+            "temporada": "Temporada 2025-II",
+            "tipo": "ingreso",
+            "importe": 3850000,
+            "motivo": "Saldo Actual de el club",
+            "estado": "aprobado"
+        },
+        {
+            "club": "SV Apoera",
+            "temporada": "Temporada 2025-II",
+            "tipo": "ingreso",
+            "importe": 1000000,
+            "motivo": "Saldo Actual de el club",
+            "estado": "aprobado"
+        },
+        {
+            "club": "Deportivo La Redada",
+            "temporada": "Temporada 2025-II",
+            "tipo": "ingreso",
+            "importe": 18895000,
+            "motivo": "Saldo Actual de el club",
+            "estado": "aprobado"
+        },
+        {
+            "club": "Bluey FC",
+            "temporada": "Temporada 2025-II",
+            "tipo": "ingreso",
+            "importe": 14700000,
+            "motivo": "Saldo Actual de el club",
+            "estado": "aprobado"
+        }
+    ],
+    "noticias": [
+        {
+            "equipo": null,
+            "titulo": "Muchas Gracias Icardi",
+            "slug": "muchas-gracias-icardi",
+            "cuerpo": "16 fechas entre liga y copa, 16 partidos siendo titular, 15 goles y 4 asistencias \n\nTemporada de verano ensueño total, el club en su inicio pisó firme con su cabecilla .,\n\nQueremos dar la triste noticia de la despedida de el líder del club , jugador que dio tantas alegrías , llenó el estadio de coros y dejó a sus aficionados con el corazón roto y en la mano ,  esperamos te vaya muy bien en tu nuevo club , ahora una transferencia es lo que la federación ah decretado como sanción para el dueño del equipo que terminó en desgracia y un cambio total en el frente de ataque del  club deportivo dominus,.\n\nNos queda agradecerte capitán ",
+            "portada": "news/01M2YDNYNQ9E1NPJJHASWNN94E.jpeg",
+            "publicado_el": "2026-09-19 21:42:14"
+        }
+    ]
+}
