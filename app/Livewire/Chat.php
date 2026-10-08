@@ -86,9 +86,9 @@ class Chat extends Component
 
         return Conversation::query()
             ->whereHas('participants', fn (Builder $query) => $query->whereKey($user->getKey()))
-            ->with(['participants.club', 'messages' => fn ($query) => $query->latest('id')->limit(1)])
+            ->with(['participants.club', 'latestMessage'])
             ->get()
-            ->sortByDesc(fn (Conversation $conversation) => $conversation->messages->first()?->created_at ?? $conversation->created_at)
+            ->sortByDesc(fn (Conversation $conversation) => $conversation->latestMessage?->created_at ?? $conversation->created_at)
             ->values();
     }
 
@@ -344,6 +344,27 @@ class Chat extends Component
         $user = $this->user();
 
         return $user !== null && app(OfferService::class)->mayAnswer($offer, $user);
+    }
+
+    /**
+     * Si un mensaje MÍO ya lo vio el otro: cuando abrió el hilo por última vez
+     * fue en o después de que se enviara. No hace falta una marca por mensaje
+     * —`last_read_at` de la pertenencia ya distingue antes/después—.
+     */
+    public function messageSeen(Message $message): bool
+    {
+        $conversation = $this->conversation();
+        $me = $this->user();
+
+        if ($conversation === null || $me === null) {
+            return false;
+        }
+
+        $other = $conversation->other($me);
+        $lastRead = $other === null ? null : $conversation->participants
+            ->firstWhere(fn (User $participant) => $participant->is($other))?->pivot?->last_read_at;
+
+        return $lastRead !== null && $message->created_at !== null && $message->created_at->lessThanOrEqualTo($lastRead);
     }
 
     public function unreadTotal(): int

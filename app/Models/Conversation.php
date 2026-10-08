@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 
 /**
@@ -24,6 +25,23 @@ class Conversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+
+    /**
+     * El último mensaje del hilo, para la lista de conversaciones.
+     *
+     * `->latest('id')->limit(1)` dentro de un `with()` sobre varias
+     * conversaciones a la vez NO da uno por conversación: Eloquent lo
+     * convierte en una única consulta `WHERE conversation_id IN (...) ORDER BY
+     * id DESC LIMIT 1`, que recorta la combinación entera a una sola fila. El
+     * resultado era que sólo un hilo de la lista mostraba su último mensaje; el
+     * resto veía el suyo vacío y la vista caía al primero que sí tenía algo
+     * cargado. `latestOfMany()` genera la subconsulta correlacionada que sí
+     * aísla cada padre.
+     */
+    public function latestMessage(): HasOne
+    {
+        return $this->hasOne(Message::class)->latestOfMany('id');
     }
 
     public function offers(): HasMany

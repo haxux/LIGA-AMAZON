@@ -40,7 +40,7 @@
             @forelse ($this->conversations() as $thread)
                 @php($with = $thread->other($me))
                 @php($unread = $thread->unreadFor($me))
-                @php($last = $thread->messages->first())
+                @php($last = $thread->latestMessage)
                 @php($isOpen = $conversation?->is($thread))
 
                 <button type="button" wire:click="open({{ $thread->id }})" wire:key="hilo-{{ $thread->id }}"
@@ -185,8 +185,11 @@
                             <div class="max-w-[75%] rounded-[8px] px-3 py-2
                                         {{ $mine ? 'rounded-br-none bg-brand text-ink' : 'rounded-bl-none bg-surface-alt text-white' }}">
                                 <div class="whitespace-pre-line text-sm leading-snug">{{ $entry->body }}</div>
-                                <div class="mt-1 text-right font-mono text-[9px] {{ $mine ? 'text-ink/60' : 'text-white/40' }}">
-                                    {{ $entry->created_at?->format('H:i') }}
+                                <div class="mt-1 flex items-center justify-end gap-1 text-right font-mono text-[9px] {{ $mine ? 'text-ink/60' : 'text-white/40' }}">
+                                    <span>{{ $entry->created_at?->format('H:i') }}</span>
+                                    @if ($mine)
+                                        <span>{{ $this->messageSeen($entry) ? 'Visto' : 'Enviado' }}</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
