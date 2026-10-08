@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use App\Models\User;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
@@ -57,6 +58,21 @@ class UserForm
                     ->required(fn (Get $get): bool => $get('role') === User::ROLE_COACH)
                     // Un club tiene un técnico y un técnico un club (design D8).
                     ->unique(ignoreRecord: true),
+                FileUpload::make('photo_path')
+                    ->label('Foto')
+                    ->image()
+                    // Mismo riesgo y misma defensa que `ClubForm::crest_path`:
+                    // ->image() admite image/svg+xml, que en el disco 'public'
+                    // se serviría same-origin y ejecutaría como script. La
+                    // lista explícita, raster-only, tiene que ir después de
+                    // ->image().
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+                    ->maxSize(2048)
+                    ->disk(config('filesystems.uploads'))
+                    ->directory('coaches')
+                    ->visibility('public')
+                    ->visible(fn (Get $get): bool => $get('role') === User::ROLE_COACH)
+                    ->helperText('Se publica en la ficha del club, pestaña «Técnico».'),
             ]);
     }
 }
