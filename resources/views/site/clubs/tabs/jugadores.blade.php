@@ -37,6 +37,9 @@
                     <span class="min-w-0">
                         <span class="block truncate font-display text-base font-semibold text-white">
                             {{ $membership->player?->name }}
+                            @if ($membership->is_captain)
+                                <span class="ml-1 rounded-full bg-brand px-1.5 py-0.5 font-mono text-[9px] font-bold text-ink" title="Capitán">C</span>
+                            @endif
                         </span>
                         <span class="block font-mono text-[10px] tracking-[0.1em] text-white/45">
                             {{ $membership->player?->specific_position ?? '—' }}

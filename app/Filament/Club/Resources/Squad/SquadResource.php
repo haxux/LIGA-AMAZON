@@ -8,6 +8,7 @@ use App\Models\Player;
 use App\Models\SquadMembership;
 use App\Services\SeasonResolver;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -99,7 +100,13 @@ class SquadResource extends Resource
                     ->state(fn (Player $record): ?int => static::currentShirtNumber($record))
                     ->placeholder('—')
                     ->alignCenter(),
-                TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
+                TextColumn::make('name')
+                    ->label('Nombre')
+                    ->searchable()
+                    ->sortable()
+                    ->formatStateUsing(fn (Player $record, string $state): string => static::currentMembership($record)?->is_captain
+                        ? $state.' (C)'
+                        : $state),
                 TextColumn::make('birth_date')
                     ->label('Edad')
                     ->state(fn (Player $record): ?int => $record->birth_date?->age)
@@ -126,6 +133,20 @@ class SquadResource extends Resource
                     ->options(array_combine(Player::POSITIONS, Player::POSITIONS)),
             ])
             ->recordActions([
+                Action::make('captain')
+                    ->label(fn (Player $record): string => static::currentMembership($record)?->is_captain ? 'Quitar capitanía' : 'Hacer capitán')
+                    ->icon(fn (Player $record): string => static::currentMembership($record)?->is_captain ? 'heroicon-s-star' : 'heroicon-o-star')
+                    ->color('warning')
+                    ->visible(fn (Player $record): bool => static::currentMembership($record) !== null)
+                    ->action(function (Player $record): void {
+                        $membership = static::currentMembership($record);
+
+                        if ($membership === null) {
+                            return;
+                        }
+
+                        $membership->update(['is_captain' => ! $membership->is_captain]);
+                    }),
                 EditAction::make()->label('Editar'),
             ]);
     }
@@ -134,6 +155,16 @@ class SquadResource extends Resource
      * El dorsal de la temporada vigente, si el jugador está inscrito en ella.
      */
     private static function currentShirtNumber(Player $player): ?int
+    {
+        return static::currentMembership($player)?->shirt_number;
+    }
+
+    /**
+     * La pertenencia del jugador en la temporada vigente: de ahí salen el
+     * dorsal y la capitanía, que cambian cada año y no pertenecen a la ficha
+     * del jugador.
+     */
+    private static function currentMembership(Player $player): ?SquadMembership
     {
         $season = app(SeasonResolver::class)->active();
 
@@ -144,7 +175,7 @@ class SquadResource extends Resource
         return SquadMembership::query()
             ->where('player_id', $player->getKey())
             ->whereHas('team', fn (Builder $query) => $query->where('season_id', $season->getKey()))
-            ->value('shirt_number');
+            ->first();
     }
 
     public static function getPages(): array

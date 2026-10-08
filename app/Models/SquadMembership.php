@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * llevó y a qué título estuvo. Una cesión es una pertenencia de tipo `loan`
  * cuyo club propietario (`Player::club`) no es el del equipo donde juega.
  */
-#[Fillable(['team_id', 'player_id', 'shirt_number', 'type'])]
+#[Fillable(['team_id', 'player_id', 'shirt_number', 'type', 'is_captain'])]
 class SquadMembership extends Model
 {
     /** @use HasFactory<SquadMembershipFactory> */
@@ -36,7 +36,25 @@ class SquadMembership extends Model
     {
         return [
             'shirt_number' => 'integer',
+            'is_captain' => 'boolean',
         ];
+    }
+
+    /**
+     * Un único capitán por equipo y temporada: al marcar a uno, se desmarca a
+     * quien lo era. Vive aquí y no en el formulario porque es un invariante del
+     * dato, no un detalle de la pantalla que lo cambia.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $membership): void {
+            if ($membership->is_captain) {
+                static::query()
+                    ->where('team_id', $membership->team_id)
+                    ->when($membership->exists, fn ($query) => $query->whereKeyNot($membership->getKey()))
+                    ->update(['is_captain' => false]);
+            }
+        });
     }
 
     public function team(): BelongsTo
