@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Cup;
 use App\Models\CupGroup;
 use App\Models\CupTie;
 use App\Models\Game;
@@ -100,5 +101,32 @@ final class CupService
             ->get();
 
         return $this->standings->fromGames($teams, $group->games()->get());
+    }
+
+    /**
+     * Los mejores terceros entre los grupos de una copa: el tercero de cada
+     * grupo, comparados entre sí por el mismo criterio que una tabla —puntos,
+     * diferencia de goles, goles a favor—. Es una lectura sobre las tablas que
+     * `groupTable()` ya calcula, no una competición aparte: ningún partido
+     * nuevo que cargar, ningún equipo que inscribir dos veces.
+     *
+     * Sólo con 3 grupos o más (decisión del propietario): con 1 o 2, "mejores
+     * terceros" serían todos los terceros que hay, no una criba.
+     *
+     * @return Collection<int, array{group: CupGroup, row: StandingRow}>
+     */
+    public function bestThirds(Cup $cup): Collection
+    {
+        if ($cup->groups->count() < 3) {
+            return collect();
+        }
+
+        return $cup->groups
+            ->map(fn (CupGroup $group) => ['group' => $group, 'table' => $this->groupTable($group)])
+            // Un grupo con menos de tres equipos no tiene tercero del que hablar.
+            ->filter(fn (array $entry) => $entry['table']->count() >= 3)
+            ->map(fn (array $entry) => ['group' => $entry['group'], 'row' => $entry['table']->get(2)])
+            ->sortBy([['row.points', 'desc'], ['row.goal_difference', 'desc'], ['row.goals_for', 'desc']])
+            ->values();
     }
 }

@@ -52,6 +52,51 @@
         </div>
     @endif
 
+    {{-- Los mejores terceros, sólo con 3 grupos o más: con menos serían todos
+         los terceros que hay, no una criba. No es una tabla propia —es el
+         tercero de cada grupo de arriba, puesto a competir con los demás—, así
+         que no lleva PJ/G/E/P propios: ya están en su grupo. --}}
+    @if ($bestThirds->isNotEmpty())
+        <h2 class="font-display mb-3 text-lg uppercase tracking-wide text-ink/70">Mejores terceros</h2>
+
+        <section class="mb-10 overflow-hidden rounded-md bg-surface">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
+                        <th class="px-4 py-2">#</th>
+                        <th class="px-2 py-2">EQUIPO</th>
+                        <th class="px-2 py-2">GRUPO</th>
+                        @foreach (['PJ', 'G', 'E', 'P', 'DG', 'PTS'] as $head)
+                            <th class="px-2 py-2 text-center">{{ $head }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/[0.055]">
+                    @foreach ($bestThirds as $index => $entry)
+                        @php($row = $entry['row'])
+                        <tr class="font-display text-sm text-white">
+                            <td class="px-4 py-2 text-white/40">{{ $index + 1 }}</td>
+                            <td class="truncate px-2 py-2">
+                                <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id]) }}" class="hover:text-brand">
+                                    {{ $row->team->name }}
+                                </a>
+                            </td>
+                            <td class="px-2 py-2 font-mono text-[10px] tracking-[0.1em] text-white/45">
+                                {{ mb_strtoupper($entry['group']->name) }}
+                            </td>
+                            <td class="px-2 py-2 text-center">{{ $row->played }}</td>
+                            <td class="px-2 py-2 text-center">{{ $row->won }}</td>
+                            <td class="px-2 py-2 text-center">{{ $row->drawn }}</td>
+                            <td class="px-2 py-2 text-center">{{ $row->lost }}</td>
+                            <td class="px-2 py-2 text-center">{{ $row->goal_difference }}</td>
+                            <td class="px-2 py-2 text-center font-bold text-brand">{{ $row->points }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </section>
+    @endif
+
     {{-- El cuadro. Cada cruce enseña su global y quién pasó; si pasó por una
          decisión, se dice por qué, que es lo que nadie recuerda después. --}}
     <h2 class="font-display mb-3 text-lg uppercase tracking-wide text-ink/70">Cuadro</h2>

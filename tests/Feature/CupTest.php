@@ -292,6 +292,117 @@ class CupTest extends TestCase
     }
 
     /**
+     * El grupo de un equipo en la tabla, el que casa con `$group->name` que ya
+     * conocemos del test de arriba.
+     */
+    private function groupOf(Cup $cup, string $groupName, Team $one, Team $two, Team $three, array $results): CupGroup
+    {
+        $group = CupGroup::create(['cup_id' => $cup->id, 'name' => $groupName]);
+
+        foreach ([$one, $two, $three] as $team) {
+            CupTeam::create(['cup_id' => $cup->id, 'team_id' => $team->id, 'cup_group_id' => $group->id]);
+        }
+
+        foreach ($results as $number => [$home, $away, $homeScore, $awayScore]) {
+            Game::create([
+                'cup_group_id' => $group->id,
+                'group_matchday' => $number + 1,
+                'home_team_id' => $home->id,
+                'away_team_id' => $away->id,
+                'home_score' => $homeScore,
+                'away_score' => $awayScore,
+            ]);
+        }
+
+        return $group->fresh();
+    }
+
+    /**
+     * No hay criba con menos de tres grupos: con uno o dos, "mejores
+     * terceros" serían todos los terceros que hay.
+     */
+    public function test_best_thirds_is_empty_with_fewer_than_three_groups(): void
+    {
+        $cup = Cup::factory()->withGroups()->create(['season_id' => $this->season->id, 'name' => 'Copa Terceros 1']);
+        $this->groupOf($cup, 'A', $this->team('A1'), $this->team('A2'), $this->team('A3'), [
+            [$this->team('x'), $this->team('y'), 1, 0],
+        ]);
+
+        $this->assertTrue($this->cups->bestThirds($cup->fresh())->isEmpty());
+    }
+
+    /**
+     * El tercero de cada grupo, ordenado entre sí por el mismo criterio que
+     * una tabla — sin volver a cargar ni un partido.
+     */
+    public function test_best_thirds_ranks_the_third_of_each_group(): void
+    {
+        $cup = Cup::factory()->withGroups()->create(['season_id' => $this->season->id, 'name' => 'Copa Terceros 2']);
+
+        // Grupo A: los tres empatan a puntos (ciclo a1>a2>a3>a1) y se
+        // desempatan por diferencia de goles. El tercero, A3, llega con 3
+        // puntos — tantos como el primero y el segundo.
+        $a1 = $this->team('A1');
+        $a2 = $this->team('A2');
+        $a3 = $this->team('A3');
+        $groupA = $this->groupOf($cup, 'A', $a1, $a2, $a3, [
+            [$a1, $a2, 3, 0],
+            [$a2, $a3, 2, 0],
+            [$a3, $a1, 1, 0],
+        ]);
+
+        // Grupo B: el tercero, B3, no ganó ni empató nada (0 puntos).
+        $b1 = $this->team('B1');
+        $b2 = $this->team('B2');
+        $b3 = $this->team('B3');
+        $groupB = $this->groupOf($cup, 'B', $b1, $b2, $b3, [
+            [$b1, $b2, 2, 0],
+            [$b1, $b3, 2, 0],
+        ]);
+
+        // Grupo C: el tercero, C3, empató su único partido jugado (1 punto).
+        $c1 = $this->team('C1');
+        $c2 = $this->team('C2');
+        $c3 = $this->team('C3');
+        $groupC = $this->groupOf($cup, 'C', $c1, $c2, $c3, [
+            [$c1, $c2, 2, 0],
+            [$c1, $c3, 1, 1],
+            [$c2, $c3, 1, 0],
+        ]);
+
+        $bestThirds = $this->cups->bestThirds($cup->fresh());
+
+        $this->assertCount(3, $bestThirds);
+        $this->assertSame([$groupA->name, $groupC->name, $groupB->name], $bestThirds->pluck('group.name')->all());
+        $this->assertSame([3, 1, 0], $bestThirds->pluck('row.points')->all());
+        $this->assertTrue($bestThirds->first()['row']->team->is($a3));
+    }
+
+    /**
+     * Un grupo con menos de tres equipos no tiene tercero del que hablar, y no
+     * entra en la comparación.
+     */
+    public function test_a_group_with_fewer_than_three_teams_is_skipped(): void
+    {
+        $cup = Cup::factory()->withGroups()->create(['season_id' => $this->season->id, 'name' => 'Copa Terceros 3']);
+
+        $groupA = CupGroup::create(['cup_id' => $cup->id, 'name' => 'A']);
+        $a1 = $this->team('A1');
+        $a2 = $this->team('A2');
+        foreach ([$a1, $a2] as $team) {
+            CupTeam::create(['cup_id' => $cup->id, 'team_id' => $team->id, 'cup_group_id' => $groupA->id]);
+        }
+
+        $this->groupOf($cup, 'B', $this->team('B1'), $this->team('B2'), $this->team('B3'), []);
+        $this->groupOf($cup, 'C', $this->team('C1'), $this->team('C2'), $this->team('C3'), []);
+
+        $bestThirds = $this->cups->bestThirds($cup->fresh());
+
+        $this->assertCount(2, $bestThirds);
+        $this->assertNotContains('A', $bestThirds->pluck('group.name')->all());
+    }
+
+    /**
      * Y los partidos de copa no cuentan para la tabla de ninguna división: son
      * de otra competición.
      */

@@ -29,6 +29,7 @@ class CupController extends SiteController
         return view('site.cups.show', [
             'cup' => $cup,
             'groups' => $this->groups($cups, $cup),
+            'bestThirds' => $cups->bestThirds($cup),
             'rounds' => $this->rounds($cups, $cup),
         ]);
     }
