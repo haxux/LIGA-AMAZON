@@ -45,7 +45,11 @@ return [
     | may even configure multiple disks for the same driver. Examples for
     | most supported storage drivers are configured here for reference.
     |
-    | Supported drivers: "local", "ftp", "sftp", "s3"
+    | Supported drivers: "local", "ftp", "sftp"
+    |
+    | No hay disco de objetos: se retiro con el bucket de R2 al mudarse a
+    | Hostinger, y con el el paquete league/flysystem-aws-s3-v3. Si algun dia
+    | hiciera falta, vuelve a instalarse y se declara aqui.
     |
     */
 
@@ -65,25 +69,6 @@ return [
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
-            'report' => false,
-        ],
-
-        // Queda el disco s3 estándar de Laravel, sin usar: las subidas van al
-        // disco del servidor. Está aquí por si algún día hace falta
-        // almacenamiento de objetos, no porque hoy se use.
-        's3' => [
-            'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            // true, a diferencia de los demás: una escritura rechazada devuelve
-            // false en vez de levantar, y el panel guardaría la ficha con la
-            // ruta de un fichero que nunca se escribió.
-            'throw' => true,
             'report' => false,
         ],
 

@@ -106,15 +106,37 @@ class ProductionEnvTemplateTest extends TestCase
     }
 
     /**
-     * El bucket se abandonó al mudarse: ninguna credencial suya debe seguir
-     * pidiéndose, o el próximo que despliegue creerá que hace falta.
+     * El almacenamiento de objetos se abandonó al mudarse: fuera el bucket,
+     * fuera el disco y fuera el paquete que lo leía. Ninguna credencial suya
+     * debe seguir pidiéndose, o el próximo que despliegue creerá que hace falta
+     * conseguirla.
      */
-    public function test_no_object_storage_credentials_remain(): void
+    public function test_no_object_storage_remains(): void
     {
-        $contents = file_get_contents(self::PATH);
+        $plantilla = file_get_contents(self::PATH);
 
         foreach (['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'AWS_BUCKET', 'AWS_ENDPOINT'] as $clave) {
-            $this->assertStringNotContainsString($clave, $contents);
+            $this->assertStringNotContainsString($clave, $plantilla);
         }
+
+        // Y que no vuelva por la puerta de atrás: sin el paquete no hay driver,
+        // así que usar un disco de objetos reventaría al primer fichero.
+        $this->assertStringNotContainsString(
+            'league/flysystem-aws-s3-v3',
+            file_get_contents(base_path('composer.json')),
+        );
+
+        // Se mira el FICHERO de configuración, no `config()`: desde Laravel 11
+        // el framework trae su propio config/filesystems.php y lo fusiona por
+        // debajo del nuestro, así que la clave 's3' sigue ahí hagamos lo que
+        // hagamos. Lo que está en nuestra mano es no declararla.
+        $this->assertStringNotContainsString(
+            "'s3' => [",
+            file_get_contents(config_path('filesystems.php')),
+        );
+
+        // El disco de subidas tiene que ser uno local: es lo que hace que una
+        // imagen subida desde el panel siga ahí mañana.
+        $this->assertSame('local', config('filesystems.disks.'.config('filesystems.uploads').'.driver'));
     }
 }
