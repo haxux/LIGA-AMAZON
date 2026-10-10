@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * La puerta que Vercel Cron usa para disparar lo que, en este despliegue sin
+ * La puerta que el cron del servidor usa para disparar lo que, en este despliegue sin
  * worker, nada más dispararía solo (ver GameSchedulingService).
  */
 class CronControllerTest extends TestCase

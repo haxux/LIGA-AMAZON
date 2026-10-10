@@ -1,458 +1,227 @@
 # Despliegue — Liga Amazon
 
-Estado: **el destino de hosting aún no está decidido.** Este documento separa
-deliberadamente lo que ya está resuelto en el código de lo que no puede
-resolverse hasta elegir servidor. Nada de lo pendiente se ha perdido: si está
-en §3 es porque depende del hosting, no porque se haya olvidado.
+El sitio vive en **Hostinger**, alojamiento compartido con hPanel, en el dominio
+`ligaamazon.com`. Se mudó aquí desde Vercel el **2026-10-10**.
+
+Este documento describe el despliegue tal como está hecho y verificado, no como
+se imagina. Lo que no se ha probado se dice que no se ha probado.
 
 ---
 
-## 1. Qué protege ya la aplicación
+## 1. La máquina
 
-Implementado y cubierto por tests automáticos (Fase 7):
-
-| Control | Dónde | Test |
-|---|---|---|
-| El panel funciona con `APP_ENV=production` | `User::canAccessPanel()` | `PanelAccessTest` |
-| No existe ninguna vía de alta de usuarios fuera del CLI | panel sin registro, sin ruta `register` | `PanelAccessTest` |
-| Subidas limitadas a jpeg/png/webp/gif, máx. 2 MB — **SVG rechazado** | `TeamForm`, `NewsForm` | `UploadValidationTest` |
-| Cabeceras de seguridad en todas las respuestas, panel incluido | `SecurityHeaders` (stack global) | `SecurityHeadersTest` |
-| HSTS sólo sobre HTTPS, sin `preload` | `SecurityHeaders` | `SecurityHeadersTest` |
-| Rutas públicas limitadas a 60 req/min por IP | `routes/web.php` | `SecurityHeadersTest` |
-| `APP_FORCE_HTTPS` como interruptor propio, apagado por defecto | `config/app.php` | `SecurityHeadersTest` |
-| Plantilla de producción segura por construcción | `.env.production.example` | `ProductionEnvTemplateTest` |
-| `/admin` excluido de indexación | `public/robots.txt` | — |
-
-Heredado del framework, verificado en su código fuente durante la auditoría:
-login con límite de 5 intentos (Filament), CSRF, cookies cifradas, invalidación
-de sesión al cambiar contraseña, contraseñas con bcrypt coste 12, consultas
-parametrizadas vía Eloquent, escapado automático de Blade, asignación masiva
-cerrada con `#[Fillable]` en los 10 modelos.
-
----
-
-## 1 bis. CORS del bucket de objetos
-
-En un host sin disco propio, las subidas **temporales** de Livewire van tambien
-al bucket (`LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=s3`). El motivo no es el disco
-efimero sino que hay varias instancias: Livewire escribe el temporal en una
-peticion y lo lee en la siguiente, que puede caer en otra instancia. Con disco
-local el sintoma es
-
-```
-Unable to retrieve the file_size for file at location: livewire-tmp/....jpeg
-```
-
-Con disco s3 Livewire firma una URL y **el navegador sube directo al bucket**.
-Eso es una peticion entre origenes, asi que el bucket necesita esta regla CORS,
-o el navegador la bloquea antes de enviarla — y entonces no queda ni rastro en
-los logs del servidor, porque el servidor nunca se entera.
-
-```json
-[
-  {
-    "AllowedOrigins": ["https://liga-amazon.vercel.app"],
-    "AllowedMethods": ["PUT", "GET", "HEAD"],
-    "AllowedHeaders": ["*"],
-    "ExposeHeaders": ["ETag"],
-    "MaxAgeSeconds": 3600
-  }
-]
-```
-
-`AllowedOrigins` debe coincidir con `APP_URL`. Al cambiar de dominio hay que
-actualizarla, o las subidas dejan de funcionar sin error visible en servidor.
-
-Se aplica con `./scripts/configure-r2-cors.sh`, que **necesita un token de R2
-con Admin Read & Write**: el de `Object Read & Write` sube y borra ficheros pero
-no puede tocar la configuracion del bucket, y devuelve 403. La alternativa es
-pegarla a mano en el panel de Cloudflare: R2 -> el bucket -> Settings -> CORS
-Policy.
-
----
-
-## 2. Pasos de despliegue
-
-En orden. Los pasos marcados **⚠** dependen de decisiones de §3.
-
-1. Copiar `.env.production.example` a `.env` **en el servidor**. Nunca subir el
-   `.env` de desarrollo.
-2. Rellenar `APP_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`.
-2 bis. Notificaciones push (partido terminado, recordatorios de calendario y
-   chat) y el cron diario que anula partidos vencidos:
-   - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: generar UNA VEZ con
-     `php artisan tinker` → `Minishlink\WebPush\VAPID::createVapidKeys()`.
-     Cambiarlas invalida todas las suscripciones ya guardadas en los
-     navegadores — no se regeneran en cada despliegue.
-   - `VAPID_SUBJECT`: un `mailto:` de contacto real, que es lo que exige el
-     protocolo VAPID.
-   - `CRON_SECRET`: una cadena aleatoria larga (`openssl rand -hex 32`).
-     Declararla TAMBIÉN como variable de entorno del proyecto en Vercel con
-     este mismo nombre — Vercel la reconoce por el nombre y manda
-     `Authorization: Bearer <valor>` en cada llamada programada.
-   - En el panel de Vercel, confirmar que el proyecto tiene **Cron Jobs**
-     habilitado (en el plan Hobby, como máximo una vez al día — que es
-     justo lo que `vercel.json` pide, `0 6 * * *`). Sin esto, `/cron/tick`
-     existe pero nada lo llama, y los partidos vencidos nunca se anulan.
-3. `php artisan key:generate` — **clave nueva**, jamás la de desarrollo.
-4. `composer install --no-dev --optimize-autoloader`
-5. `npm ci && npm run build`
-6. `php artisan migrate --force` — **sin `--seed`**. Los datos se cargan desde
-   el panel. En el contenedor de Vercel este paso **ya no es manual**: lo hace
-   el entrypoint en cada arranque (§5.1).
-7. `php artisan storage:link` — obligatorio. El symlink del repo apunta a
-   `/var/www/html/...` (ruta absoluta del contenedor) y queda roto en cualquier
-   otro sitio. Sin esto no se ve ningún escudo ni portada.
-8. `php artisan config:cache && php artisan route:cache && php artisan view:cache`
-9. `php artisan make:filament-user` — interactivo. Ningún seeder crea usuarios.
-10. **⚠** Verificar que el certificado TLS funciona **antes** de que llegue
-    tráfico: `APP_FORCE_HTTPS=true` y `SESSION_SECURE_COOKIE=true` asumen HTTPS
-    operativo, y la cabecera HSTS se emitirá en cuanto la primera petición
-    llegue por HTTPS.
-11. Comprobar permisos de escritura de `storage/` y `bootstrap/cache/` para el
-    usuario del servidor web.
-
-### Arranques en frio: lo que cuesta levantar el contenedor
-
-Medido el 2026-09-21 contra el mismo clúster de TiDB (base desechable), con la
-imagen de produccion:
-
-| Paso del entrypoint | Coste |
+| | |
 |---|---|
-| `config:cache` | 0,42 s |
-| `route:cache` | 0,38 s |
-| `migrate:status` | 1,7 s |
-| `migrate --force --isolated` | 2,5 s |
-| **Total antes de servir** | **~5 s** |
+| Host | `us-imm-web487.main-hosting.eu` — `212.85.29.1` |
+| Usuario | `u406031460` |
+| SSH | puerto **65002**, sólo por clave |
+| PHP | **8.4** — se elige en hPanel → Avanzado → Configuración PHP |
+| Base de datos | **MariaDB 11.8**, en la misma máquina |
+| Composer | 2.9.8, en `/usr/local/bin/composer` |
+| Git | 2.47.3 |
+| Node / npm | **no hay** — ver §3 |
 
-Y con la base **fria** —TiDB se suspende sola tras un rato sin uso— la misma
-secuencia llego a **44 s**, de los que 37 se los llevo `migrate --isolated`
-esperando a que la base despertara para darle el cerrojo.
+Hay instaladas de PHP 5.2 a 8.6, pero **la que sirve la web es la que diga
+hPanel**, no la del `$PATH` de SSH. Son cosas distintas y se han visto
+discrepar: por SSH respondía 8.3 mientras los binarios de 8.4 estaban ahí. Para
+cualquier comando de Artisan conviene nombrar el binario explícitamente:
 
-Desde entonces el entrypoint pregunta primero barato (`migraciones-aplicadas.php`:
-conectar y contar filas, 0,6 s) y solo arranca el migrador cuando el numero no
-cuadra con el horneado en la imagen. El arranque baja de ~5 s a ~1,4 s, y el
-caso malo —base fria— deja de pagar el cerrojo.
+```bash
+/opt/alt/php84/usr/bin/php artisan ...
+```
 
-Medido desde fuera, contra produccion: peticion en frio 4,6 s, en caliente
-0,7 s. Una de cada varias se quedaba colgada mas de 60 s, que es el caso de la
-base fria descrito arriba.
+### Dónde está cada cosa
 
-**Lo que NO arregla esto**: el host escala a cero tras cinco minutos sin
-trafico, y volver a levantarlo sigue costando lo que cuesta traerse la imagen.
-Eso solo se quita manteniendolo caliente: el plan Pro de Vercel levanta a uno
-en vez de a cero para el despliegue de produccion, o un ping externo cada pocos
-minutos.
+```
+~/domains/ligaamazon.com/
+├── app/                      # el repositorio, con vendor/ y .env
+├── public_html -> app/public # ENLACE SIMBÓLICO, ver §2
+└── public_html.hostinger-original/   # lo que Hostinger dejó puesto, intacto
+```
+
+---
+
+## 2. El document root, que es lo único delicado
+
+Hostinger sirve el dominio desde `public_html`. Laravel **tiene que** servirse
+desde su carpeta `public/`: si se sirviera la raíz del proyecto, el `.env` con
+las contraseñas quedaría descargable desde el navegador.
+
+La solución aplicada es que `public_html` sea un **enlace simbólico** a
+`app/public`:
+
+```bash
+cd ~/domains/ligaamazon.com
+mv public_html public_html.hostinger-original      # una sola vez
+ln -sfn ~/domains/ligaamazon.com/app/public public_html
+```
+
+**Apache lo sigue** — comprobado el 2026-10-10 sirviendo la página de
+clasificación. Se eligió esto frente a la alternativa habitual (dejar en
+`public_html` el contenido de `public/` y reapuntar su `index.php`) porque no
+toca ningún fichero del repositorio y no hay que repetirlo en cada despliegue.
+
+El directorio original se conserva: si algún día el enlace deja de funcionar, se
+vuelve atrás renombrándolo.
+
+---
+
+## 3. Los assets se compilan FUERA del servidor
+
+**No hay Node ni npm en Hostinger.** `public/build` está en `.gitignore`, así
+que no viaja con el repositorio: hay que compilarlo en local y subirlo.
+
+```bash
+npm ci
+npm run build
+rsync -az --delete -e "ssh -i ~/.ssh/liga_hostinger -p 65002" \
+  public/build/ u406031460@212.85.29.1:~/domains/ligaamazon.com/app/public/build/
+```
+
+Vite 8 exige **Node ≥ 20**. Con Node 18 falla con un error que no menciona la
+versión por ningún lado:
+
+```
+SyntaxError: The requested module 'node:util' does not provide an export named 'styleText'
+```
+
+**Olvidar este paso no rompe el sitio, lo deja sin estilos**, que es peor:
+responde 200 y parece que funciona.
+
+---
+
+## 4. Lo que corre solo
+
+No hay worker ni scheduler en proceso. Lo único programado es `/cron/tick`, que
+anula partidos vencidos y manda recordatorios. Se configura en hPanel →
+Avanzado → Trabajos cron, **una vez al día**:
+
+```bash
+cd /home/u406031460/domains/ligaamazon.com/app && curl -s \
+  -H "Authorization: Bearer $(grep '^CRON_SECRET=' .env | cut -d= -f2)" \
+  -H "Host: ligaamazon.com" http://127.0.0.1/cron/tick > /dev/null
+```
+
+El secreto se lee del `.env` al ejecutarse, así que **no queda escrito en el
+panel**. Sin la cabecera, la ruta responde 403 — comprobado.
+
+---
+
+## 5. Desplegar un cambio
+
+```bash
+ssh -i ~/.ssh/liga_hostinger -p 65002 u406031460@212.85.29.1
+cd ~/domains/ligaamazon.com/app
+P=/opt/alt/php84/usr/bin/php
+
+git pull --ff-only
+$P /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction
+$P artisan migrate --force
+$P artisan config:cache && $P artisan route:cache && $P artisan view:cache
+```
+
+Y desde local, **si cambió algo de `resources/`**, los assets (§3).
 
 ### Antes de cada despliegue
 
 ```bash
-composer audit      # debe reportar cero advisories
-npm audit           # ver nota en §3.9
+composer audit      # cero advisories
 php artisan test    # suite completa en verde
 ```
 
----
+### Por qué `route:cache` aquí sí y en Vercel no
 
-## 3. Pendiente — falta elegir hosting
-
-Cada punto tiene una respuesta distinta según el servidor. Fijar una ahora
-sería fijar la equivocada.
-
-**3.1 Terminación TLS y certificado.** Quién termina HTTPS: ¿Caddy, nginx con
-Certbot, un balanceador gestionado, Cloudflare? Determina 3.2 y 3.3.
-
-**3.2 `->trustProxies()` en `bootstrap/app.php`. ⚠ Más crítico de lo que
-parece — tiene DOS consecuencias, no una.**
-
-*(a) URLs.* Es la pareja de `APP_FORCE_HTTPS`. Sin él, detrás de un proxy que
-termina TLS, Laravel no ve `X-Forwarded-Proto`, genera URLs `http://` y puede
-entrar en bucle de redirección. Aplicar uno sin el otro es un arreglo a medias.
-
-*(b) Límite de peticiones — riesgo de autobloqueo.* Para un visitante anónimo,
-`ThrottleRequests` deriva su clave de `$request->ip()`
-(`vendor/laravel/framework/src/Illuminate/Routing/Middleware/ThrottleRequests.php:229`).
-Sin proxies de confianza, `$request->ip()` devuelve la IP del proxy, **no la del
-visitante**. Es decir: detrás de un proxy o CDN, los 60 req/min dejarían de ser
-*por visitante* y pasarían a ser **un tope global para todo el sitio**. Con
-tráfico modesto el sitio empezaría a devolver 429 a todo el mundo. No es un
-riesgo teórico: es el comportamiento por defecto en cuanto haya un proxy
-delante.
-
-Su valor correcto (la IP del proxy, o `'*'` en una red privada) sólo se sabe
-con el host elegido. **Si se despliega detrás de proxy, esto se configura
-ANTES de abrir al público, o se sube el límite de `routes/web.php`.**
-
-**3.3 Configuración nginx de producción.** El `docker/nginx/default.conf`
-actual es de desarrollo. Faltan dos reglas:
-
-```nginx
-location ~ \.php$ {
-    try_files $uri =404;        # no pasar a FPM rutas .php inexistentes
-    # ...
-}
-location ^~ /storage/ {         # /storage es el destino de las subidas
-    location ~ \.php$ { deny all; }   # nunca ejecutar PHP ahí
-}
-```
-
-Irrelevante si el host acaba siendo Apache o un PaaS.
-
-**3.4 `php.ini` de producción.** El actual (`docker/php/php.ini`) es de
-desarrollo: `display_errors = On` y `opcache.validate_timestamps = 1`. En
-producción: `display_errors = Off`, `opcache.validate_timestamps = 0`.
-
-**3.5 `docker-compose.prod.yml`.** El compose actual publica MySQL en el puerto
-`33061` del host. En producción **no puede quedar expuesto**: el servicio `db`
-no debe mapear puertos. También sobra el servicio `node`.
-
-**3.6 Copias de seguridad de la base de datos.** Hay procedimiento, probado el
-2026-09-20 contra la base real; falta decidir la frecuencia y un destino fuera
-de esta máquina.
-
-Volcado (se guarda en `storage/backups/`, ignorado por git y excluido de la
-imagen — son datos reales, incluidos los hashes de contraseña de los usuarios):
-
-```bash
-stamp=$(date +%Y%m%d-%H%M)
-docker run --rm -v "$PWD:/work" -w /work --user "$(id -u):$(id -g)" mysql:8.0 sh -c "
-set -a; . ./.env.tidb; set +a
-export MYSQL_PWD=\"\$DB_PASSWORD\"
-mysqldump -h \"\$DB_HOST\" -P \"\$DB_PORT\" -u \"\$DB_USERNAME\" \
-  --ssl-mode=VERIFY_IDENTITY --ssl-ca=/etc/pki/tls/certs/ca-bundle.crt \
-  --default-character-set=utf8mb4 --skip-lock-tables --set-gtid-purged=OFF \
-  --no-tablespaces --column-statistics=0 --hex-blob --complete-insert \
-  liga_amazon | gzip -9 > storage/backups/liga_amazon-$stamp.sql.gz
-"
-```
-
-**Sin `--single-transaction`**, y no por descuido: mysqldump la implementa con
-*savepoints* entre tabla y tabla, TiDB no los admite, y el volcado sale
-**truncado con un error fácil de pasar por alto** (`ROLLBACK TO SAVEPOINT sp:
-SAVEPOINT sp does not exist`). El precio es que el volcado no es una
-instantánea atómica: con esta liga —un solo administrador cargando datos a
-mano— el riesgo es despreciable, pero conviene hacerlo cuando nadie esté
-escribiendo. Si algún día importa de verdad, la herramienta correcta es
-Dumpling, de TiDB.
-
-`--column-statistics=0` también es obligatorio: sin él, el cliente de MySQL 8
-consulta una tabla de `information_schema` que TiDB no tiene.
-
-Restauración y comprobación (la base desechable de `.env.tidb` sirve de
-ensayo; ojo: `./scripts/test-tidb.sh` la borra en cada ejecución):
-
-```bash
-docker run --rm -v "$PWD:/work" -w /work --user "$(id -u):$(id -g)" mysql:8.0 sh -c "
-set -a; . ./.env.tidb; set +a
-export MYSQL_PWD=\"\$DB_PASSWORD\"
-gunzip -c storage/backups/<fichero>.sql.gz | mysql -h \"\$DB_HOST\" -P \"\$DB_PORT\" \
-  -u \"\$DB_USERNAME\" --ssl-mode=VERIFY_IDENTITY \
-  --ssl-ca=/etc/pki/tls/certs/ca-bundle.crt -D liga_amazon_test
-"
-```
-
-Una copia que no se ha restaurado no es una copia: **la comprobación es parte
-del procedimiento**, no un extra. Se comparan los recuentos de cada tabla entre
-`liga_amazon` y `liga_amazon_test`, y unos cuantos valores (nombres de equipos,
-jugadores con dorsal y fecha, partidos). En la prueba del 2026-09-20 las 19
-tablas se restauraron y los 12 equipos, 29 jugadores, 1 partido, 1 noticia, 2
-temporadas, 3 divisiones y 2 usuarios coincidieron uno a uno.
-
-Lo que sigue pendiente: **frecuencia** y **destino fuera de esta máquina**. Un
-volcado que vive en el mismo portátil que lo generó protege de un error en la
-base, no de perder el portátil.
-
-**3.7 SMTP real.** Hoy `MAIL_MAILER=log`. No hay ningún flujo de correo, así
-que no bloquea. Pero si algún día se activa el restablecimiento de contraseña,
-hay que configurar SMTP **antes**: con `log`, el enlace de reseteo se escribe
-en texto plano en el archivo de log.
-
-**3.8 Content-Security-Policy.** Excluida a propósito, no olvidada. Filament y
-Livewire emiten `<script>` y `<style>` en línea; una CSP correcta exige
-propagar nonces por el pipeline de assets de Filament, y una incorrecta rompe
-el panel en silencio. Retomar cuando haya margen para probarlo en serio.
-
-**3.9 `npm audit` quedó sin ejecutar.** No es un defecto del repo: el endpoint
-`quick` de npm 10 está retirado (400) y el endpoint `bulk` de npm 11 devuelve
-`503 — "We are currently performing maintenance"`. Se confirmó reproduciendo el
-mismo fallo en un proyecto de prueba limpio. **Volver a intentarlo antes de
-desplegar.** (`composer audit` sí se ejecutó: cero advisories.)
+Livewire deriva el prefijo de sus endpoints de `APP_KEY`
+(`EndpointResolver::prefix()`). En Vercel el caché se horneaba en el build,
+donde `APP_KEY` todavía no existía, y el panel se quedaba sin JavaScript en
+silencio. Aquí el `.env` ya existe cuando se cachea, así que no se da el
+problema. Comprobado: `livewire.min.js` responde 200.
 
 ---
 
-## 4. Pendiente — trabajo ya decidido
+## 6. La base de datos
 
-No depende del hosting. Son compromisos adquiridos, con su disparador.
+MariaDB en `localhost`. La conexión es `mariadb`, no `mysql`: Laravel trae un
+driver propio desde la 11 que conoce sus diferencias.
 
-**4.1 Políticas por registro y visibilidad por recurso. ✅ Resuelto en la Fase 9.**
+**Se pobló con migraciones y seeder, no restaurando un volcado** — y a
+propósito: el volcado venía de TiDB, con su sintaxis, y las migraciones generan
+el DDL que corresponda al motor de destino.
 
-*Disparador cumplido: llegó el rol `técnico`.*
+```bash
+$P artisan migrate --force
+$P artisan db:seed --class=DatosBaseSeeder --force
+```
 
-Hasta la Fase 9, cualquier usuario del panel podía editar cualquier fila —
-inofensivo con un único operador, y no en cuanto entra alguien que sólo debe
-tocar su club. Quedó cerrado con dos cerraduras, no una:
+`DatosBaseSeeder` siembra la liga entera desde
+`database/seeders/data/liga-base.json`, nombrando todo por su clave natural. No
+trae usuarios: el administrador se crea pasándole `SEED_ADMIN_EMAIL` y
+`SEED_ADMIN_PASSWORD`, y los técnicos se dan de alta en `/admin`.
 
-| Capa | Pregunta | Estado |
+### Copias de seguridad
+
+**No hay copias automáticas todavía.** Es lo primero pendiente de §8. A mano:
+
+```bash
+cd ~/domains/ligaamazon.com/app
+MYSQL_PWD=$(grep '^DB_PASSWORD=' .env | cut -d= -f2- | tr -d "'") \
+mysqldump -h localhost -u "$(grep '^DB_USERNAME=' .env | cut -d= -f2)" \
+  --single-transaction --default-character-set=utf8mb4 --complete-insert --hex-blob \
+  "$(grep '^DB_DATABASE=' .env | cut -d= -f2)" | gzip -9 > ~/respaldo-$(date +%Y%m%d).sql.gz
+```
+
+Bájalo de la máquina: una copia que vive en el mismo disco que el original no es
+una copia.
+
+---
+
+## 7. Lo que protege la aplicación
+
+Implementado y cubierto por tests:
+
+| Control | Dónde | Test |
 |---|---|---|
-| `canAccessPanel()` | ¿qué panel puede abrir? | hecho — decide por panel: `admin` sólo para el rol administrador, `club` sólo para el técnico |
-| Visibilidad de recursos | ¿qué ve en su navegación? | hecho — son **dos paneles distintos**: los recursos del administrador no están registrados en `/club`, así que allí no existen |
-| Policies (`view`, `update`, `delete`…) | ¿puede tocar *este* registro? | hecho — `ClubScopedPolicy` y sus cinco descendientes: el administrador pasa siempre, el técnico sólo sobre lo de su club |
+| Sin alta de usuarios fuera del CLI y del panel | panel sin registro | `PanelAccessTest` |
+| Subidas limitadas a jpeg/png/webp/gif, 2 MB — **SVG rechazado** | `TeamForm`, `NewsForm` | `UploadValidationTest` |
+| Cabeceras de seguridad en todas las respuestas | `SecurityHeaders` | `SecurityHeadersTest` |
+| HSTS sólo sobre HTTPS, sin `preload` | `SecurityHeaders` | `SecurityHeadersTest` |
+| Rutas públicas a 60 req/min por IP | `routes/web.php` | `SecurityHeadersTest` |
+| Plantilla de producción segura por construcción | `.env.production.example` | `ProductionEnvTemplateTest` |
+| `/admin` fuera de los buscadores | `public/robots.txt` | — |
 
-Dos matices que conviene no perder:
-
-- La nota de la Fase 7 decía que `canAccessPanel()` no debía convertirse en un
-  `is_admin`. Sigue siendo cierta y por eso no se hizo: lo que decide ahora no
-  es *si* alguien entra en el panel, sino **en cuál**. El permiso real vive una
-  capa más abajo, donde siempre debió estar.
-- Esconder un recurso dentro de un mismo panel no habría bastado: la ruta
-  seguiría viva y bastaría teclear la URL. Por eso son dos paneles, y las
-  policies cubren lo que aquello no puede — una URL a mano dentro del panel
-  propio del técnico, apuntando al club de otro.
-
-**4.2 Rangos de validación** (`fix(validation)`, aparte). Huecos de integridad
-de datos, ninguno explotable: `founded_year` sin rango, `capacity` de estadio
-admite negativos, `matchdays.number` sin mínimo, ningún campo de texto con
-`maxLength` frente al `varchar(255)` de la base de datos.
-
-**4.3 `players.birth_date`.** Hoy no se usa, no se cifra y no se muestra en
-ninguna vista pública. Cuando algo le dé un uso, decidir entonces si hace falta
-guardarlo.
-
-**4.4 Caché de la clasificación.** `StandingsService` recalcula la tabla entera
-en cada petición. El límite de 60 req/min acota el daño; no lo elimina.
-
-**4.5 2FA en el panel.** Filament v5 lo soporta de fábrica.
+Del framework: login con límite de intentos, CSRF, cookies cifradas, bcrypt
+coste 12, Eloquent parametrizado, Blade escapado, `#[Fillable]` en los modelos.
 
 ---
 
-## 5. Descartado a propósito
+## 8. Pendiente
 
-Registrado para que no se vuelva a plantear sin saber que ya se decidió.
-
-| Descartado | Razón |
-|---|---|
-| Cifrar columnas (`players.birth_date`) | Los datos de jugadores son públicos por naturaleza. Cifrar haría la columna no ordenable ni filtrable a cambio de ninguna amenaza que este proyecto enfrente. |
-| Captcha / protección anti-bot en el login | El sitio público **no tiene ni un formulario**. El único del proyecto es el login del panel, ya limitado a 5 intentos, con un solo usuario legítimo. |
-| Purgar secretos del historial de git | **No hay nada que purgar** — verificado sobre todo el historial. Reescribirlo cambiaría todos los hashes de commit a cambio de nada. |
-| Row-level security / "public DB key" | Conceptos de Supabase/Firebase. Aquí el navegador nunca habla con MySQL, y MySQL 8 no tiene RLS. El equivalente real es 4.1. |
-| Ocultar API keys | El proyecto no consume ninguna API de terceros. |
+1. **Copias de seguridad automáticas** y fuera de la máquina. Hoy no hay
+   ninguna.
+2. **HTTPS**: hPanel emite certificado gratis en cuanto el dominio resuelva.
+   Mientras tanto `APP_FORCE_HTTPS=true` genera URLs `https://` que todavía no
+   sirven.
+3. **Los escudos de los clubes**. Vivían en un bucket de Cloudflare R2 y no se
+   migraron: la base guarda sus rutas pero los ficheros no están, así que salen
+   rotos hasta que se vuelvan a subir desde `/admin`.
+4. **Un `git pull` no reinicia nada**, pero tampoco limpia el OPcache del
+   servidor web. Si un cambio de PHP no se refleja, es eso; no se ha dado
+   todavía, y la forma de forzarlo en este host está sin averiguar.
 
 ---
 
-## 6. Operativa del host de contenedores (Vercel)
+## 9. Lo que se dejó atrás
 
-El hosting ya está decidido (contenedor en Vercel, `Dockerfile.vercel`). Estos
-dos puntos salieron al desplegar el cambio de jornadas por división el
-2026-09-20; ambos están tratados, con lo que queda fuera del alcance de la
-aplicación señalado como tal.
+Del despliegue en Vercel, retirado el 2026-10-10:
 
-**5.1 Las migraciones se aplican al arrancar el contenedor.** El entrypoint
-ejecuta ahora, en este orden: `config:cache`, y después las migraciones.
-Cubierto por `ContainerDeployTest`.
+- `vercel.json`, `Dockerfile.vercel`, `Caddyfile` y `docker/vercel/`.
+- El bucket **Cloudflare R2** y sus credenciales. Existía porque el disco de
+  Vercel era efímero y cada despliegue se llevaba las imágenes; aquí hay disco
+  propio, así que las subidas van a `storage/app/public` vía `storage:link`.
+- **TiDB Cloud** y su CA de SSL.
+- La sonda barata de migraciones del entrypoint, que existía porque el
+  contenedor escalaba a cero y arrancaba decenas de veces al día. Aquí el
+  proceso no se apaga.
 
-Se usa `migrate --force --isolated`. El cerrojo de `--isolated` vive en el
-almacén de caché, y producción lo tiene en la base de datos
-(`CACHE_STORE=database`), así que es un cerrojo **compartido entre instancias**:
-si el host levanta varias a la vez, una migra y el resto sigue sin tocar el
-esquema. La rama sin cerrojo del entrypoint existe sólo para una base recién
-creada, que aún no tiene tabla `cache_locks`.
-
-Lo que esto compra: el fallo que motivó el cambio era **silencioso**. Con
-`matchdays.division_id` sin crear, Eloquent leyó la columna como null en cada
-jornada en vez de reventar, así que `/partidos` devolvía 200 sin un solo
-partido y en los logs no había nada.
-
-El paso se reintenta tres veces antes de rendirse. El motivo es el escalado a
-cero: el contenedor arranca muchas veces al día, y sin reintentos un parpadeo
-de la base gestionada durante un arranque en frío no sería una página con
-error, sería el sitio entero caído hasta el siguiente intento. Agotados los
-tres, el contenedor sale con código 1 a propósito.
-
-Verificado con la imagen construida en local, contra el MySQL de desarrollo:
-
-| Caso | Resultado |
-|---|---|
-| Base recién creada, sin tabla `migrations` | Rama sin cerrojo: migra las 16 desde cero y el sitio responde (404, que es lo correcto sin temporadas cargadas) |
-| Base ya migrada | `migrate --force --isolated` toma el cerrojo y no hay nada que aplicar |
-| Base inalcanzable | Tres intentos, mensaje `entrypoint: no se pudieron aplicar las migraciones` y salida con código 1 |
-
-Cada intento contra una base inalcanzable tarda lo que tarde PDO en rendirse
-(~40 s midiendo con un host inexistente), así que el peor caso son un par de
-minutos antes de que el contenedor muera. Con la base caída el sitio está roto
-de todos modos.
-
-Lo que esto cuesta, y conviene tener presente: una migración destructiva se
-aplica sola en cuanto se despliega, y **volver atrás el código no vuelve atrás
-el esquema**. Para una reversión hay que ejecutar el rollback a mano:
-
-```bash
-docker compose exec -T app sh -c 'set -a; . ./.env.tidb; set +a; \
-  DB_DATABASE=liga_amazon php artisan migrate:rollback --step=1 --force'
-```
-
-(`.env.tidb` trae el usuario administrador; su `DB_DATABASE` apunta a la base
-desechable de tests, de ahí que se sobrescriba.)
-
-**5.2 Arranque en frío.** El host escala a cero tras 5 minutos sin tráfico, así
-que la primera petición después de un rato de calma paga el arranque entero.
-Medido el 2026-09-20:
-
-| Tramo | Medida |
-|---|---|
-| Primera petición tras 8 minutos de silencio | **sin respuesta en 180 s** (se agotó el `--max-time`; las peticiones inmediatamente posteriores fueron 200 en ~1 s) |
-| Primeras peticiones durante una ventana de despliegue | 60–95 s |
-| Estado asentado, huecos de 1 minuto entre peticiones | 0,3–0,7 s |
-| Contenedor local, imagen ya presente: `docker run` → primer 200 | 4,2 s |
-| Entrypoint completo contra el TiDB de producción | 4,6 s (`config:cache` 0,75 · `migrate:status` 1,62 · `migrate --isolated` 2,26) |
-| Lo mismo, migrando una base vacía desde cero | ~45 s (una sola vez en la vida de la base) |
-
-La lectura: **la aplicación aporta unos 8 s** del arranque (4,2 de contenedor más
-4,6 de entrypoint). El resto —más de dos minutos y medio— es aprovisionamiento
-del host y descarga de la imagen (~340 MB en amd64: 203 MB la aplicación con su
-`vendor`, 60 MB las extensiones de PHP, 58 MB el binario de FrankenPHP). Se
-descartó una a una cada sospecha propia:
-
-- No es la ruta: se colgaban `/`, `/partidos`, `/goleadores` o `/noticias`
-  indistintamente, según cuál cayera en una instancia nueva.
-- No es PHP arrancando: en una instancia ya levantada, `/up` (PHP sin base) y
-  `/partidos` (PHP con base) responden igual de rápido, 0,32 s y 0,56 s.
-- No son las migraciones del entrypoint: 4,6 s contra el TiDB real, medidos con
-  las credenciales de producción.
-- No son los permisos del usuario de la aplicación: su rol incluye `CREATE`,
-  `ALTER`, `DROP` e `INDEX`, así que puede migrar.
-
-Aplicado por nuestra parte: **sólo** `view:cache` se hornea en la imagen. Blade
-no lee entorno, así que compilar las plantillas en el build es ahorro limpio en
-cada arranque. Son ~0,6 s menos; no mueve la aguja de los tres minutos, y decir
-lo contrario sería mentir sobre la medición.
-
-**`route:cache` se intentó hornear también, y fue un error que rompió el panel
-en producción durante dos horas** (2026-09-20). El razonamiento era "las rutas no
-leen entorno". Livewire sí: `EndpointResolver::prefix()` construye el prefijo de
-sus endpoints con `sha256(config('app.key').'livewire-endpoint')`. Durante el
-build no existe `APP_KEY`, así que las rutas quedaron cacheadas bajo un hash que
-ninguna página servida vuelve a generar, y tanto `livewire.min.js` como el
-endpoint `/update` —por donde Livewire envía cada interacción— devolvían 404.
-
-El síntoma es cruel: el panel se queda **sin JavaScript pero sin error visible**.
-El formulario de login envía como formulario HTML normal, la dirección pasa a
-`/admin/login?` y nada indica la causa. El sitio público no usa Livewire, así que
-siguió funcionando perfectamente y ninguna comprobación de las que hicimos lo
-detectó. `ContainerDeployTest` vigila ahora que `route:cache` viva en el
-entrypoint, y fija además la dependencia de Livewire con `APP_KEY` que lo
-explica.
-
-Lo que sí la movería está fuera de la aplicación y necesita una decisión. Con
-tres minutos de espera, un visitante que llegue tras un rato de calma se va
-antes de ver nada, así que esto **no es cosmético**:
-
-- Mantener una instancia caliente: configuración de escalado del proyecto en
-  Vercel, o un cron externo golpeando el sitio cada pocos minutos. Es la única
-  solución real al escalado a cero, y se paga en cómputo permanente.
-
-**Decidido el 2026-09-20: se acepta tal cual.** El sitio lo usa un grupo reducido
-que ya cuenta con ello, así que pagar cómputo permanente no compensa. Esto no es
-un pendiente olvidado; es una decisión tomada con el número delante. Si algún día
-el público deja de ser reducido, lo de arriba es por dónde se retoma.
-- Seguir adelgazando la imagen. El grueso es `vendor` con Filament dentro;
-  recortar ahí es trabajo de horas para ganar decenas de MB.
+Nada de eso vuelve. Si algún día hiciera falta almacenamiento de objetos, el
+disco `s3` sigue declarado en `config/filesystems.php`, sin usar.

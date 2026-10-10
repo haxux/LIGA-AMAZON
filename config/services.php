@@ -41,8 +41,8 @@ return [
         'subject' => env('VAPID_SUBJECT'),
     ],
 
-    // El secreto que Vercel Cron manda de vuelta como cabecera Authorization
-    // (ver App\Http\Controllers\CronController y vercel.json). Cualquiera que
+    // El secreto que el cron del servidor manda como cabecera Authorization
+    // (ver App\Http\Controllers\CronController y DESPLIEGUE.md). Cualquiera que
     // lo conozca puede disparar la anulación de partidos y los recordatorios
     // a demanda, así que no es opcional en producción.
     'cron' => [

@@ -24,10 +24,13 @@ return [
     | served from. Deliberately separate from 'default': that one is 'local',
     | which is private storage, while these files must be publicly readable.
     |
-    | Locally this stays 'public'. On any host with an ephemeral filesystem —
-    | Vercel and every other serverless runtime — it must point at object
-    | storage ('s3'), or every upload disappears with the container that
-    | received it. Changing this one value moves all seven call sites.
+    | Desde la mudanza a Hostinger esto es 'public', el disco del propio
+    | servidor: hay disco persistente, así que las subidas se quedan donde se
+    | escriben. Vivieron un tiempo en un bucket de objetos porque el disco de
+    | Vercel era efímero y cada despliegue se llevaba las imágenes por delante;
+    | ese motivo ya no existe.
+    |
+    | Cambiar este único valor mueve los siete sitios que suben o sirven.
     |
     */
 
@@ -65,52 +68,25 @@ return [
             'report' => false,
         ],
 
+        // Queda el disco s3 estándar de Laravel, sin usar: las subidas van al
+        // disco del servidor. Está aquí por si algún día hace falta
+        // almacenamiento de objetos, no porque hoy se use.
         's3' => [
             'driver' => 's3',
-            // R2_* y no AWS_*, con los segundos como respaldo para desarrollo.
-            // Vercel inyecta sus propios AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY
-            // en el contenedor y pisan los del proyecto: llegan vacios, el SDK se
-            // queda sin credenciales y acaba preguntando al servicio de metadatos
-            // de EC2, que en Vercel no existe. El sintoma es un timeout de 1s al
-            // guardar cualquier imagen del panel, sin mencion alguna a las
-            // credenciales. Su documentacion lo reconoce: los runtimes de
-            // contenedor "must use alternative environment variable names".
-            //
-            // Solo estos dos nombres estan afectados. AWS_BUCKET, AWS_ENDPOINT,
-            // AWS_URL y AWS_DEFAULT_REGION no los toca la plataforma y llegan
-            // intactos, asi que se dejan como estan.
-            'key' => env('R2_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
-            'secret' => env('R2_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            // true, unlike every other disk here. This is the uploads disk in
-            // production, and a rejected write returns false rather than
-            // raising: Filament would save the record with a path to an object
-            // that was never stored, and the broken crest would be the only
-            // symptom, with nothing in the logs. Failing loudly turns that into
-            // a visible error at the moment the admin uploads the file.
+            // true, a diferencia de los demás: una escritura rechazada devuelve
+            // false en vez de levantar, y el panel guardaría la ficha con la
+            // ruta de un fichero que nunca se escribió.
             'throw' => true,
             'report' => false,
         ],
 
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Symbolic Links
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure the symbolic links that will be created when the
-    | `storage:link` Artisan command is executed. The array keys should be
-    | the locations of the links and the values should be their targets.
-    |
-    */
-
-    'links' => [
-        public_path('storage') => storage_path('app/public'),
     ],
 
 ];

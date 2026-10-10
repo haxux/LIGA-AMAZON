@@ -42,30 +42,44 @@ class ProductionEnvTemplateTest extends TestCase
     }
 
     /**
-     * The template targets a host with an ephemeral, possibly read-only
-     * filesystem. Two settings would fail silently there rather than loudly:
-     * uploads written to a local disk vanish with the container that received
-     * them, and file logs are lost — or refused — along with them. Neither
-     * surfaces as an error the operator would notice before the damage.
+     * Al revés que antes: el servidor de Hostinger tiene disco propio, así que
+     * las subidas van al disco local y los logs a fichero. Lo que aquí se
+     * vigila es que no se cuele de vuelta la configuración de un host efímero
+     * —subidas a un bucket, logs a stderr—, que ya no describe nada real y
+     * dejaría las imágenes apuntando a un sitio donde no están.
      */
-    public function test_template_assumes_no_durable_local_filesystem(): void
+    public function test_template_assumes_the_servers_own_disk(): void
     {
         $contents = file_get_contents(self::PATH);
 
-        $this->assertStringContainsString('UPLOADS_DISK=s3', $contents);
-        $this->assertStringContainsString('LOG_CHANNEL=stderr', $contents);
+        $this->assertStringContainsString('UPLOADS_DISK=public', $contents);
+        $this->assertStringContainsString('LOG_CHANNEL=stack', $contents);
 
-        // Line-anchored, not a substring search: the comment above LOG_CHANNEL
-        // names LOG_STACK=daily as the setting to restore on a host with a real
-        // disk, and a naive assertStringNotContainsString would trip over it.
-        $active = array_filter(
+        $activas = array_filter(
             file(self::PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES),
             fn (string $l) => ! str_starts_with(trim($l), '#'),
         );
-        $this->assertEmpty(
-            array_filter($active, fn (string $l) => str_starts_with($l, 'LOG_STACK=')),
-            'LOG_STACK must not be set: file logs do not survive an ephemeral filesystem.',
-        );
+
+        foreach (['UPLOADS_DISK=s3', 'LOG_CHANNEL=stderr'] as $viejo) {
+            $this->assertEmpty(
+                array_filter($activas, fn (string $l) => trim($l) === $viejo),
+                "{$viejo} describe el despliegue efímero que ya no existe.",
+            );
+        }
+    }
+
+    /**
+     * La base vive en la misma máquina, y Laravel trae un driver propio para
+     * MariaDB desde la 11. Con `mysql` funcionaría, pero `mariadb` conoce sus
+     * diferencias.
+     */
+    public function test_the_template_points_at_mariadb_on_the_same_machine(): void
+    {
+        $contents = file_get_contents(self::PATH);
+
+        $this->assertStringContainsString('DB_CONNECTION=mariadb', $contents);
+        $this->assertStringContainsString('DB_HOST=localhost', $contents);
+        $this->assertStringNotContainsString('MYSQL_ATTR_SSL_CA', $contents);
     }
 
     /**
@@ -78,9 +92,8 @@ class ProductionEnvTemplateTest extends TestCase
             'APP_KEY',
             'DB_PASSWORD',
             'DB_USERNAME',
-            'MAIL_PASSWORD',
-            'R2_ACCESS_KEY_ID',
-            'R2_SECRET_ACCESS_KEY',
+            'VAPID_PRIVATE_KEY',
+            'CRON_SECRET',
         ];
         $lines = file(self::PATH, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
@@ -89,6 +102,19 @@ class ProductionEnvTemplateTest extends TestCase
 
             $this->assertCount(1, $matches, "{$key} must appear exactly once in the template.");
             $this->assertSame($key.'=', $matches[0], "{$key} must be present but empty.");
+        }
+    }
+
+    /**
+     * El bucket se abandonó al mudarse: ninguna credencial suya debe seguir
+     * pidiéndose, o el próximo que despliegue creerá que hace falta.
+     */
+    public function test_no_object_storage_credentials_remain(): void
+    {
+        $contents = file_get_contents(self::PATH);
+
+        foreach (['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'AWS_BUCKET', 'AWS_ENDPOINT'] as $clave) {
+            $this->assertStringNotContainsString($clave, $contents);
         }
     }
 }
