@@ -1,7 +1,12 @@
 # Despliegue — Liga Amazon
 
 El sitio vive en **Hostinger**, alojamiento compartido con hPanel, en el dominio
-`ligaamazon.com`. Se mudó aquí desde Vercel el **2026-10-10**.
+`lietoernooien.com`. Se mudó aquí desde Vercel el **2026-10-10**.
+
+El **2026-10-11** se rehízo en una cuenta nueva. La primera —`u406031460`, con
+el dominio `ligaamazon.com`— quedó abandonada: aquel nombre contenía «amazon» y
+eso ya había dado problemas por aludir a la empresa. El dominio de ahora es
+neerlandés a propósito, porque la liga se muda a Holanda.
 
 Este documento describe el despliegue tal como está hecho y verificado, no como
 se imagina. Lo que no se ha probado se dice que no se ha probado.
@@ -12,8 +17,8 @@ se imagina. Lo que no se ha probado se dice que no se ha probado.
 
 | | |
 |---|---|
-| Host | `us-imm-web487.main-hosting.eu` — `212.85.29.1` |
-| Usuario | `u406031460` |
+| Host | `us-imm-web909.main-hosting.eu` — `109.106.251.174` |
+| Usuario | `u269987465` |
 | SSH | puerto **65002**, sólo por clave |
 | PHP | **8.4** — se elige en hPanel → Avanzado → Configuración PHP |
 | Base de datos | **MariaDB 11.8**, en la misma máquina |
@@ -33,7 +38,7 @@ cualquier comando de Artisan conviene nombrar el binario explícitamente:
 ### Dónde está cada cosa
 
 ```
-~/domains/ligaamazon.com/
+~/domains/lietoernooien.com/
 ├── app/                      # el repositorio, con vendor/ y .env
 ├── public_html -> app/public # ENLACE SIMBÓLICO, ver §2
 └── public_html.hostinger-original/   # lo que Hostinger dejó puesto, intacto
@@ -51,9 +56,9 @@ La solución aplicada es que `public_html` sea un **enlace simbólico** a
 `app/public`:
 
 ```bash
-cd ~/domains/ligaamazon.com
+cd ~/domains/lietoernooien.com
 mv public_html public_html.hostinger-original      # una sola vez
-ln -sfn ~/domains/ligaamazon.com/app/public public_html
+ln -sfn ~/domains/lietoernooien.com/app/public public_html
 ```
 
 **Apache lo sigue** — comprobado el 2026-10-10 sirviendo la página de
@@ -75,7 +80,7 @@ que no viaja con el repositorio: hay que compilarlo en local y subirlo.
 npm ci
 npm run build
 rsync -az --delete -e "ssh -i ~/.ssh/liga_hostinger -p 65002" \
-  public/build/ u406031460@212.85.29.1:~/domains/ligaamazon.com/app/public/build/
+  public/build/ u269987465@109.106.251.174:~/domains/lietoernooien.com/app/public/build/
 ```
 
 Vite 8 exige **Node ≥ 20**. Con Node 18 falla con un error que no menciona la
@@ -97,9 +102,9 @@ anula partidos vencidos y manda recordatorios. Se configura en hPanel →
 Avanzado → Trabajos cron, **una vez al día**:
 
 ```bash
-cd /home/u406031460/domains/ligaamazon.com/app && curl -s \
+cd /home/u269987465/domains/lietoernooien.com/app && curl -s \
   -H "Authorization: Bearer $(grep '^CRON_SECRET=' .env | cut -d= -f2)" \
-  -H "Host: ligaamazon.com" http://127.0.0.1/cron/tick > /dev/null
+  -H "Host: lietoernooien.com" http://127.0.0.1/cron/tick > /dev/null
 ```
 
 El secreto se lee del `.env` al ejecutarse, así que **no queda escrito en el
@@ -110,8 +115,8 @@ panel**. Sin la cabecera, la ruta responde 403 — comprobado.
 ## 5. Desplegar un cambio
 
 ```bash
-ssh -i ~/.ssh/liga_hostinger -p 65002 u406031460@212.85.29.1
-cd ~/domains/ligaamazon.com/app
+ssh -i ~/.ssh/liga_hostinger -p 65002 u269987465@109.106.251.174
+cd ~/domains/lietoernooien.com/app
 P=/opt/alt/php84/usr/bin/php
 
 git pull --ff-only
@@ -163,7 +168,7 @@ trae usuarios: el administrador se crea pasándole `SEED_ADMIN_EMAIL` y
 **No hay copias automáticas todavía.** Es lo primero pendiente de §8. A mano:
 
 ```bash
-cd ~/domains/ligaamazon.com/app
+cd ~/domains/lietoernooien.com/app
 MYSQL_PWD=$(grep '^DB_PASSWORD=' .env | cut -d= -f2- | tr -d "'") \
 mysqldump -h localhost -u "$(grep '^DB_USERNAME=' .env | cut -d= -f2)" \
   --single-transaction --default-character-set=utf8mb4 --complete-insert --hex-blob \
@@ -207,6 +212,20 @@ coste 12, Eloquent parametrizado, Blade escapado, `#[Fillable]` en los modelos.
 4. **Un `git pull` no reinicia nada**, pero tampoco limpia el OPcache del
    servidor web. Si un cambio de PHP no se refleja, es eso; no se ha dado
    todavía, y la forma de forzarlo en este host está sin averiguar.
+5. **El dominio `lietoernooien.com` no está registrado.** Comprobado contra
+   Verisign el 2026-10-11: está libre. Hostinger deja montar el alojamiento sin
+   que el dominio sea tuyo, así que el sitio no es alcanzable desde fuera hasta
+   comprarlo. Mientras tanto se prueba con `curl -H "Host: lietoernooien.com"`
+   contra la IP.
+6. **Las cuentas de técnico**, cinco, hay que darlas de alta en `/admin`. No
+   viajaron de la base vieja: el seeder no trae usuarios a propósito, porque
+   este repositorio es público.
+7. **El saldo inicial de los clubes** está a cero en todos.
+8. **Aplazado por el propietario (2026-10-11):** limpiar la cuenta vieja
+   `u406031460` —borrar allí la base de datos y el `.env`, que llevan
+   credenciales— y **renombrar la liga**, que dentro de la aplicación sigue
+   llamándose «Liga Amazon» aunque se mude a Holanda. Lo segundo conviene
+   hacerlo antes de publicar.
 
 ---
 
