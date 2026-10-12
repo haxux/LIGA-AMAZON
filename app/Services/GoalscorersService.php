@@ -19,31 +19,37 @@ final class GoalscorersService
     /**
      * @param  ?Team  $team  narrows the board to one club's season squad
      * @param  ?Competition  $competition  liga, una copa o todo (por omisión, todo)
+     * @param  ?int  $divisionId  sólo partidos de liga de esa división
+     * @param  ?int  $matchdayNumber  sólo partidos de liga de esa jornada
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topScorers(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null): Collection
+    public function topScorers(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null, ?int $divisionId = null, ?int $matchdayNumber = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_GOAL, $limit, $team, $competition);
+        return $this->leaderboard($season, GameEvent::TYPE_GOAL, $limit, $team, $competition, $divisionId, $matchdayNumber);
     }
 
     /**
      * @param  ?Team  $team  narrows the board to one club's season squad
      * @param  ?Competition  $competition  liga, una copa o todo (por omisión, todo)
+     * @param  ?int  $divisionId  sólo partidos de liga de esa división
+     * @param  ?int  $matchdayNumber  sólo partidos de liga de esa jornada
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topAssisters(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null): Collection
+    public function topAssisters(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null, ?int $divisionId = null, ?int $matchdayNumber = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_ASSIST, $limit, $team, $competition);
+        return $this->leaderboard($season, GameEvent::TYPE_ASSIST, $limit, $team, $competition, $divisionId, $matchdayNumber);
     }
 
     /**
      * @param  ?Team  $team  narrows the board to one club's season squad
      * @param  ?Competition  $competition  liga, una copa o todo (por omisión, todo)
+     * @param  ?int  $divisionId  sólo partidos de liga de esa división
+     * @param  ?int  $matchdayNumber  sólo partidos de liga de esa jornada
      * @return Collection<int, ScorerRow> ordered count desc; null $limit = no limit
      */
-    public function topCleanSheets(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null): Collection
+    public function topCleanSheets(Season $season, ?int $limit = 10, ?Team $team = null, ?Competition $competition = null, ?int $divisionId = null, ?int $matchdayNumber = null): Collection
     {
-        return $this->leaderboard($season, GameEvent::TYPE_CLEAN_SHEET, $limit, $team, $competition);
+        return $this->leaderboard($season, GameEvent::TYPE_CLEAN_SHEET, $limit, $team, $competition, $divisionId, $matchdayNumber);
     }
 
     /**
@@ -58,7 +64,7 @@ final class GoalscorersService
      *
      * @return Collection<int, ScorerRow>
      */
-    private function leaderboard(Season $season, string $type, ?int $limit, ?Team $team = null, ?Competition $competition = null): Collection
+    private function leaderboard(Season $season, string $type, ?int $limit, ?Team $team = null, ?Competition $competition = null, ?int $divisionId = null, ?int $matchdayNumber = null): Collection
     {
         $competition ??= Competition::all();
 
@@ -66,7 +72,11 @@ final class GoalscorersService
             ->where('type', $type)
             // Por el partido y no por su jornada: uno de copa no tiene jornada,
             // y preguntando por ahí la copa entera se quedaba fuera.
-            ->whereHas('game', fn (Builder $query) => $competition->applyTo($query->inSeason($season)))
+            ->whereHas('game', fn (Builder $query) => $competition->applyTo($query->inSeason($season))
+                // División y jornada son cosas de la liga: un partido de copa no
+                // cuelga de ninguna, así que al elegirlas la copa queda fuera.
+                ->when($divisionId, fn (Builder $games) => $games->whereHas('matchday', fn (Builder $matchday) => $matchday->where('division_id', $divisionId)))
+                ->when($matchdayNumber, fn (Builder $games) => $games->whereHas('matchday', fn (Builder $matchday) => $matchday->where('number', $matchdayNumber))))
             ->when($team, fn (Builder $query, Team $team) => $query->whereHas(
                 'player.memberships',
                 fn (Builder $memberships) => $memberships->where('team_id', $team->getKey()),

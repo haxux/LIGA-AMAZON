@@ -45,18 +45,26 @@
 
                         <div class="relative flex w-20 flex-col items-center gap-1 sm:w-24" wire:key="hueco-{{ $slot }}">
                             <button type="button" wire:click="openPicker({{ $slot }})"
-                                    class="flex size-11 items-center justify-center rounded-full font-display text-base font-bold
+                                    class="flex size-11 items-center justify-center overflow-hidden rounded-full font-display text-base font-bold
                                            {{ $player ? 'bg-brand text-ink' : 'border border-dashed border-white/40 bg-black/20 text-white/50' }}
                                            {{ $openSlot === $slot ? 'ring-2 ring-white' : '' }}">
-                                {{ $player?->shirt_number ?? '+' }}
+                                @if ($player?->photo_path)
+                                    <img src="{{ Storage::disk(config('filesystems.uploads'))->url($player->photo_path) }}"
+                                         alt="" class="size-full rounded-full object-cover">
+                                @else
+                                    {{ $player?->shirt_number ?? '+' }}
+                                @endif
                             </button>
 
                             <span class="w-full truncate text-center font-display text-[11px] leading-tight text-white">
-                                {{ $player?->name ?? 'Vacío' }}
+                                {{ $player?->name ?? 'Vacío' }}@if ($player?->is_captain) (c)@endif
                             </span>
 
-                            @if ($player?->specific_position)
-                                <span class="font-mono text-[9px] tracking-[0.1em] text-white/60">{{ $player->specific_position }}</span>
+                            @if ($player)
+                                @php($detail = collect([$player->specific_position, $player->shirt_number !== null ? '#'.$player->shirt_number : null])->filter()->implode(' · '))
+                                @if ($detail !== '')
+                                    <span class="font-mono text-[9px] tracking-[0.1em] text-white/60">{{ $detail }}</span>
+                                @endif
                             @endif
                         </div>
                     @endforeach

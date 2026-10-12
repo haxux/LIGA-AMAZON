@@ -119,15 +119,19 @@ class StartingElevenEditor extends Component
     {
         $team = $this->team();
 
-        $numbers = SquadMembership::query()
+        $memberships = SquadMembership::query()
             ->where('team_id', $team->getKey())
-            ->pluck('shirt_number', 'player_id');
+            ->get()
+            ->keyBy('player_id');
 
         return Player::query()
             ->whereHas('memberships', fn (Builder $query) => $query->where('team_id', $team->getKey()))
             ->orderBy('name')
             ->get()
-            ->each(fn (Player $player) => $player->setAttribute('shirt_number', $numbers[$player->getKey()] ?? null));
+            ->each(function (Player $player) use ($memberships) {
+                $player->setAttribute('shirt_number', $memberships[$player->getKey()]?->shirt_number);
+                $player->setAttribute('is_captain', (bool) $memberships[$player->getKey()]?->is_captain);
+            });
     }
 
     public function openPicker(int $slot): void

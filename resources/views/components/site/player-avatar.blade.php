@@ -1,7 +1,10 @@
-{{-- Swap seam (Fase 6 design D5): when player avatars arrive from the external API,
-     this file is the ONLY edit — wrap the span in @if with the resolved image URL.
-     No avatar column exists today, so no conditional is written yet. --}}
+{{-- La foto la sube el administrador a mano; sin foto queda el círculo vacío. --}}
 @props(['player'])
 
-<span {{ $attributes->merge(['class' => 'size-8 shrink-0 rounded-full bg-surface-muted']) }}
-      aria-hidden="true"></span>
+@if ($player->photo_path)
+    <img src="{{ Storage::disk(config('filesystems.uploads'))->url($player->photo_path) }}" alt=""
+         {{ $attributes->merge(['class' => 'size-8 shrink-0 rounded-full bg-surface-muted object-cover']) }}>
+@else
+    <span {{ $attributes->merge(['class' => 'size-8 shrink-0 rounded-full bg-surface-muted']) }}
+          aria-hidden="true"></span>
+@endif

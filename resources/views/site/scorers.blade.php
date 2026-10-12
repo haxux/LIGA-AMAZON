@@ -4,14 +4,19 @@
         {{ mb_strtoupper($competition->isAll() ? 'Todas las competiciones' : $competition->label) }}
     </div>
 
-    {{-- Sin copas en la temporada sólo quedarían «Todo» y «Liga», que es la
-         misma lista dos veces: entonces no hay nada que elegir. --}}
-    @if (count($competitionOptions) > 2)
-        <x-site.filter-bar :action="route('site.scorers')">
+    {{-- La competición sólo se ofrece si hay copas (sin ellas «Todo» y «Liga»
+         son la misma lista). División y fecha son de la liga: al elegirlas
+         las copas quedan fuera de las cifras. --}}
+    <x-site.filter-bar :action="route('site.scorers')">
+        @if (count($competitionOptions) > 2)
             <x-site.filter-select name="competicion" label="COMPETICIÓN"
                                   :options="$competitionOptions" :selected="$competition->key" />
-        </x-site.filter-bar>
-    @endif
+        @endif
+        <x-site.filter-select name="division" label="DIVISIÓN"
+                              :options="$divisionOptions" :selected="$selectedDivision" />
+        <x-site.filter-select name="fecha" label="FECHA"
+                              :options="$fechaOptions" :selected="$selectedFecha" />
+    </x-site.filter-bar>
 
     <div class="grid gap-6 md:grid-cols-3">
         <x-site.scorer-list title="Máximos goleadores" :rows="$scorers" />

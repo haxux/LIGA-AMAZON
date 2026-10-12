@@ -301,4 +301,51 @@ class StartingElevenEditorTest extends TestCase
 
         $this->get('/club/once-ideal')->assertNotFound();
     }
+
+    // ── Lo que se ve en cada hueco ──────────────────────────────────────────
+
+    public function test_a_placed_player_shows_their_shirt_number(): void
+    {
+        $this->asCoach();
+        $jugador = $this->squad(1)->first();
+
+        $this->editor()
+            ->call('place', 1, $jugador->getKey())
+            ->assertSee('#1');
+    }
+
+    /**
+     * El capitán se marca en la plantilla del panel y tiene que notarse en el
+     * campo: es lo que distingue al que lleva el brazalete.
+     */
+    public function test_the_captain_is_marked_on_the_pitch(): void
+    {
+        $this->asCoach();
+        $jugador = $this->squad(1)->first();
+
+        $this->editor()->call('place', 1, $jugador->getKey())->assertDontSee('(c)');
+
+        SquadMembership::query()
+            ->where('team_id', $this->team->getKey())
+            ->where('player_id', $jugador->getKey())
+            ->update(['is_captain' => true]);
+
+        $this->editor()->call('place', 1, $jugador->getKey())->assertSee('(c)');
+    }
+
+    /**
+     * Con foto se ve la cara; sin ella, el dorsal dentro del círculo, que es lo
+     * que había siempre.
+     */
+    public function test_the_photo_replaces_the_shirt_number_inside_the_circle(): void
+    {
+        $this->asCoach();
+        $jugador = $this->squad(1)->first();
+
+        $this->editor()->call('place', 1, $jugador->getKey())->assertDontSee('players/cara.png');
+
+        $jugador->update(['photo_path' => 'players/cara.png']);
+
+        $this->editor()->call('place', 1, $jugador->getKey())->assertSee('players/cara.png');
+    }
 }
