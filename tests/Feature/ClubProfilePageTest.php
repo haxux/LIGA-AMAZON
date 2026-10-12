@@ -210,6 +210,35 @@ class ClubProfilePageTest extends TestCase
             ->assertSee('Once Titular');
     }
 
+    /**
+     * El once se pinta DOS veces: el técnico de ese club ve el componente
+     * editable y todo el mundo más —otro técnico, un administrador, un
+     * visitante sin registrar— ve esta versión estática. Lo que enseñan tiene
+     * que ser lo mismo.
+     *
+     * Lo reportó el propietario: el técnico veía las fotos de sus jugadores y
+     * un visitante no, porque la foto se añadió sólo al editor.
+     */
+    public function test_an_anonymous_visitor_sees_the_same_eleven_as_the_coach(): void
+    {
+        $player = $this->squadPlayer(['name' => 'Once Titular', 'photo_path' => 'players/cara.png'], shirtNumber: 10);
+
+        SquadMembership::query()
+            ->where('team_id', $this->team->getKey())
+            ->where('player_id', $player->getKey())
+            ->update(['is_captain' => true]);
+
+        $lineup = Lineup::factory()->create(['team_id' => $this->team->id, 'formation' => '4-3-3']);
+        LineupSlot::create(['lineup_id' => $lineup->id, 'player_id' => $player->id, 'slot' => 1]);
+
+        // Sin sesión: es justo el caso que fallaba.
+        $this->get($this->url())
+            ->assertOk()
+            ->assertSee('players/cara.png')
+            ->assertSee('(c)')
+            ->assertSee('#10');
+    }
+
     public function test_partidos_lists_the_clubs_games_by_matchday(): void
     {
         $rival = $this->rival('Tapajós SC');
