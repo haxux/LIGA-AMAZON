@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Players\Pages\CreatePlayer;
+use App\Models\Club;
 use App\Models\FcPlayer;
 use App\Models\Player;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -179,5 +183,107 @@ class CatalogoFcTest extends TestCase
     public function test_it_refuses_a_file_that_is_not_there(): void
     {
         $this->artisan('fc:importar-catalogo', ['fichero' => '/no/existe.csv'])->assertFailed();
+    }
+
+    // ── El formulario del panel ─────────────────────────────────────────────
+
+    /**
+     * El atajo entero: se elige una ficha del catálogo y los campos se
+     * rellenan solos, incluida la posición traducida.
+     */
+    public function test_choosing_a_catalogue_entry_fills_the_form(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->artisan('fc:importar-catalogo', ['fichero' => $this->csvDeEjemplo()])->assertSuccessful();
+
+        $club = Club::factory()->create();
+
+        Livewire::test(CreatePlayer::class)
+            ->fillForm(['fc_lookup' => 231747])
+            ->assertFormSet([
+                'name' => 'Kylian Mbappé',
+                'position' => 'Forward',
+                'specific_position' => 'DC',
+                'birth_date' => '1998-12-20',
+                'fc_id' => 231747,
+            ])
+            ->fillForm(['club_id' => $club->id])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $jugador = Player::where('name', 'Kylian Mbappé')->first();
+
+        $this->assertNotNull($jugador);
+        $this->assertSame(231747, (int) $jugador->fc_id);
+        $this->assertSame('Forward', $jugador->position);
+        $this->assertSame(91, $jugador->fcPlayer->overall_rating, 'El enlace con el catálogo no resuelve.');
+    }
+
+    /**
+     * El portero, que es el caso donde la traducción de posición podría
+     * romperse: POR es la única específica de su general.
+     */
+    public function test_a_goalkeeper_is_translated_correctly(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->artisan('fc:importar-catalogo', ['fichero' => $this->csvDeEjemplo()])->assertSuccessful();
+
+        Livewire::test(CreatePlayer::class)
+            ->fillForm(['fc_lookup' => 192448])
+            ->assertFormSet(['position' => 'Goalkeeper', 'specific_position' => 'POR']);
+    }
+
+    /**
+     * El catálogo es un atajo, no un requisito: crear a mano sigue funcionando
+     * sin tocarlo, y el jugador queda sin enlace.
+     */
+    public function test_creating_by_hand_still_works_without_the_catalogue(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $club = Club::factory()->create();
+
+        Livewire::test(CreatePlayer::class)
+            ->fillForm([
+                'club_id' => $club->id,
+                'name' => 'Pepe Inventado',
+                'position' => 'Midfielder',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $jugador = Player::where('name', 'Pepe Inventado')->first();
+
+        $this->assertNotNull($jugador);
+        $this->assertNull($jugador->fc_id);
+        $this->assertNull($jugador->fcPlayer);
+    }
+
+    /**
+     * Lo que el buscador rellena se puede cambiar antes de guardar: es un
+     * atajo para no teclear, no una fuente de verdad.
+     */
+    public function test_what_the_lookup_fills_can_still_be_changed(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->artisan('fc:importar-catalogo', ['fichero' => $this->csvDeEjemplo()])->assertSuccessful();
+
+        $club = Club::factory()->create();
+
+        Livewire::test(CreatePlayer::class)
+            ->fillForm(['fc_lookup' => 231747])
+            ->fillForm([
+                'club_id' => $club->id,
+                'name' => 'Otro Nombre',
+                'position' => 'Defender',
+                'specific_position' => 'DFC',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $jugador = Player::where('name', 'Otro Nombre')->first();
+
+        $this->assertNotNull($jugador);
+        $this->assertSame('Defender', $jugador->position);
+        $this->assertSame('DFC', $jugador->specific_position);
     }
 }

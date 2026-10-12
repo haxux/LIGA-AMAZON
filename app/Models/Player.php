@@ -10,7 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
-#[Fillable(['club_id', 'name', 'position', 'specific_position', 'market_value', 'birth_date'])]
+#[Fillable([
+    'club_id', 'name', 'position', 'specific_position', 'market_value', 'birth_date',
+    'photo_path', 'fc_id',
+])]
 class Player extends Model
 {
     /** @use HasFactory<PlayerFactory> */
@@ -113,6 +116,21 @@ class Player extends Model
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
+    }
+
+    /**
+     * La ficha del catálogo de EA FC de la que salió este jugador, si salió de
+     * alguna. Enlace y no copia: las medias viven en el catálogo, así que
+     * corregir una vale para todos los que la compartan, y un jugador creado a
+     * mano simplemente no tiene ninguna.
+     *
+     * Sin clave foránea en la base a propósito — el catálogo se vacía y se
+     * reimporta entero con cada edición del juego, y eso no debe arrastrar a
+     * nadie que esté jugando.
+     */
+    public function fcPlayer(): BelongsTo
+    {
+        return $this->belongsTo(FcPlayer::class, 'fc_id', 'fc_id');
     }
 
     public function memberships(): HasMany
