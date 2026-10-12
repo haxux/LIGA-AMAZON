@@ -33,3 +33,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .vercel
+
+# El catálogo de EA FC no viaja en el repositorio: es una recopilación ajena y
+# esto es público. Se carga en el servidor con `php artisan fc:importar-catalogo`.
+/storage/app/private/*.csv
