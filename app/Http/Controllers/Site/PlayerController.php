@@ -21,7 +21,9 @@ class PlayerController extends SiteController
 {
     public function __invoke(Request $request, PlayerStatsService $stats, Player $player): View
     {
-        $player->load('club');
+        // `fcPlayer` es de donde salen las medias: enlace, no copia, así que hay
+        // que cargarlo para no consultarlo desde la vista.
+        $player->load(['club', 'fcPlayer']);
 
         $seasons = $stats->bySeason($player);
         $selected = $seasons->firstWhere(fn (array $row) => $row['season']->getKey() === $request->integer('temporada'))

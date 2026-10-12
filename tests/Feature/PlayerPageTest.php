@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Club;
 use App\Models\Division;
+use App\Models\FcPlayer;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Matchday;
@@ -263,5 +264,87 @@ class PlayerPageTest extends TestCase
     public function test_a_player_that_does_not_exist_is_a_404(): void
     {
         $this->get('/jugadores/999999')->assertNotFound();
+    }
+
+    // ── La valoración de EA FC ──────────────────────────────────────────────
+
+    private function fichaFc(array $extra = []): FcPlayer
+    {
+        return FcPlayer::create([
+            'fc_id' => 231747,
+            'first_name' => 'Rivaldo',
+            'last_name' => 'Nunes',
+            'search_name' => 'rivaldo nunes',
+            'overall_rating' => 84,
+            'position' => 'ST',
+            'pace' => 91, 'shooting' => 85, 'passing' => 70,
+            'dribbling' => 88, 'defending' => 35, 'physicality' => 74,
+            'preferred_foot' => 'Right', 'weak_foot' => 4, 'skill_moves' => 5,
+            'nationality' => 'Brazil', 'edition' => 'fc27',
+            ...$extra,
+        ]);
+    }
+
+    public function test_the_profile_shows_the_ea_ratings_when_the_player_is_linked(): void
+    {
+        $this->fichaFc();
+        $this->player->update(['fc_id' => 231747]);
+
+        $this->get(route('site.players.show', $this->player))
+            ->assertOk()
+            ->assertSee('VALORACIÓN FC27')
+            ->assertSee('84')   // media
+            ->assertSee('91')   // ritmo
+            ->assertSee('RIT')
+            ->assertSee('DIESTRO');
+    }
+
+    /**
+     * EA reutiliza las seis casillas en los porteros y NO significan lo mismo:
+     * lo que en un delantero es velocidad, en un portero es estirada.
+     * Comprobado con datos reales — Courtois sale con un 46 en esa casilla, que
+     * es su velocidad, no su defensa. Enseñarlas con las etiquetas de campo
+     * sería mentir con seis números a la vez.
+     */
+    public function test_a_goalkeeper_gets_the_goalkeeping_labels(): void
+    {
+        $portero = Player::factory()->create([
+            'club_id' => $this->club->id,
+            'name' => 'Paulo Guarda',
+            'position' => Player::POSITION_GOALKEEPER,
+            'specific_position' => 'POR',
+            'fc_id' => 192448,
+        ]);
+
+        $this->fichaFc(['fc_id' => 192448, 'position' => 'GK', 'search_name' => 'paulo guarda']);
+
+        $this->get(route('site.players.show', $portero))
+            ->assertOk()
+            ->assertSee('DIV')
+            ->assertSee('REF')
+            ->assertDontSee('>RIT<', false)
+            ->assertDontSee('>TIR<', false);
+    }
+
+    /**
+     * El catálogo es un atajo opcional: un jugador creado a mano no tiene
+     * ficha, y su página se ve exactamente como antes.
+     */
+    public function test_a_player_without_a_catalogue_entry_shows_no_ratings(): void
+    {
+        $this->get(route('site.players.show', $this->player))
+            ->assertOk()
+            ->assertDontSee('VALORACIÓN');
+    }
+
+    public function test_the_photo_replaces_the_shirt_number_when_there_is_one(): void
+    {
+        $this->get(route('site.players.show', $this->player))->assertOk()->assertSee('9');
+
+        $this->player->update(['photo_path' => 'players/foto.png']);
+
+        $this->get(route('site.players.show', $this->player))
+            ->assertOk()
+            ->assertSee('players/foto.png');
     }
 }

@@ -37,9 +37,16 @@
 
 <x-layouts.site :title="$player->name.' — Liga Amazon'">
     <header class="mb-6 flex flex-wrap items-center gap-5 rounded-[6px] bg-surface-alt p-5">
-        <span class="flex size-16 shrink-0 items-center justify-center rounded-full bg-surface-muted font-display text-2xl font-bold text-brand">
-            {{ $shirtNumber ?? '—' }}
-        </span>
+        @if ($player->photo_path)
+            {{-- La foto la sube el administrador a mano: ninguna fuente de
+                 datos libre las trae. Sin foto se cae al dorsal de siempre. --}}
+            <img src="{{ Storage::disk(config('filesystems.uploads'))->url($player->photo_path) }}"
+                 alt="" class="size-16 shrink-0 rounded-full object-cover">
+        @else
+            <span class="flex size-16 shrink-0 items-center justify-center rounded-full bg-surface-muted font-display text-2xl font-bold text-brand">
+                {{ $shirtNumber ?? '—' }}
+            </span>
+        @endif
 
         <div class="min-w-0">
             <h1 class="font-display text-3xl uppercase tracking-wide text-white">{{ $player->name }}</h1>
@@ -83,6 +90,11 @@
             </form>
         @endif
     </header>
+
+    @if ($player->fcPlayer)
+        <x-site.fc-ratings :ficha="$player->fcPlayer"
+                           :es-portero="$player->position === \App\Models\Player::POSITION_GOALKEEPER" />
+    @endif
 
     {{-- Separadas por competición (Fase 15, decisión del propietario): primero
          la temporada entera y después cada competición en la que está su
