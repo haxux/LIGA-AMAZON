@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\FcPlayers\FcPlayerResource;
+use App\Filament\Resources\FcPlayers\Pages\EditFcPlayer;
+use App\Filament\Resources\FcPlayers\Pages\ListFcPlayers;
 use App\Filament\Resources\Players\Pages\CreatePlayer;
 use App\Models\Club;
 use App\Models\FcPlayer;
@@ -285,5 +288,64 @@ class CatalogoFcTest extends TestCase
         $this->assertNotNull($jugador);
         $this->assertSame('Defender', $jugador->position);
         $this->assertSame('DFC', $jugador->specific_position);
+    }
+
+    // ── La pantalla del catálogo ────────────────────────────────────────────
+
+    /**
+     * Pantalla APARTE y no unos campos dentro de la ficha del jugador: un
+     * jugador ENLAZA con una ficha, no la copia, así que editar desde su ficha
+     * daría a entender que se tocan «sus» números cuando se toca una fila
+     * compartida.
+     */
+    public function test_the_catalogue_screen_lists_and_searches(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->artisan('fc:importar-catalogo', ['fichero' => $this->csvDeEjemplo()])->assertSuccessful();
+
+        Livewire::test(ListFcPlayers::class)
+            ->assertOk()
+            ->assertCanSeeTableRecords(FcPlayer::all())
+            // Sin tilde: la tabla busca por la columna normalizada.
+            ->searchTable('Mbappe')
+            ->assertCanSeeTableRecords(FcPlayer::where('fc_id', 231747)->get())
+            ->assertCanNotSeeTableRecords(FcPlayer::where('fc_id', 239818)->get());
+    }
+
+    /**
+     * El encargo entero: corregir a mano y que la corrección no la pise la
+     * siguiente importación.
+     */
+    public function test_a_correction_made_in_the_panel_survives_a_reimport(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $fichero = $this->csvDeEjemplo();
+        $this->artisan('fc:importar-catalogo', ['fichero' => $fichero])->assertSuccessful();
+
+        $ficha = FcPlayer::where('fc_id', 231747)->first();
+        $this->assertFalse($ficha->hand_edited, 'Recién importada no debería estar marcada.');
+
+        Livewire::test(EditFcPlayer::class, ['record' => $ficha->getKey()])
+            ->fillForm(['overall_rating' => 95, 'pace' => 99])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $ficha->refresh();
+        $this->assertSame(95, $ficha->overall_rating);
+        $this->assertSame(99, $ficha->pace);
+        $this->assertTrue($ficha->hand_edited, 'Editar en el panel debería marcarla como corregida.');
+
+        $this->artisan('fc:importar-catalogo', ['fichero' => $fichero])->assertSuccessful();
+
+        $this->assertSame(95, $ficha->fresh()->overall_rating, 'La reimportación pisó la corrección.');
+    }
+
+    /**
+     * El catálogo entra por el comando y se renueva entero con cada edición del
+     * juego: una ficha inventada a mano no sería una ficha de EA.
+     */
+    public function test_the_catalogue_cannot_be_created_by_hand(): void
+    {
+        $this->assertFalse(FcPlayerResource::canCreate());
     }
 }

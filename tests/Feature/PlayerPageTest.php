@@ -295,7 +295,7 @@ class PlayerPageTest extends TestCase
             ->assertSee('VALORACIÓN FC27')
             ->assertSee('84')   // media
             ->assertSee('91')   // ritmo
-            ->assertSee('RIT')
+            ->assertSee('RITMO')
             ->assertSee('DIESTRO');
     }
 
@@ -320,10 +320,10 @@ class PlayerPageTest extends TestCase
 
         $this->get(route('site.players.show', $portero))
             ->assertOk()
-            ->assertSee('DIV')
-            ->assertSee('REF')
-            ->assertDontSee('>RIT<', false)
-            ->assertDontSee('>TIR<', false);
+            ->assertSee('ESTIRADA')
+            ->assertSee('REFLEJOS')
+            ->assertDontSee('RITMO')
+            ->assertDontSee('REGATE');
     }
 
     /**
