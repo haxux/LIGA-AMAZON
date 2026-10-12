@@ -120,10 +120,26 @@ cd ~/domains/lietoernooien.com/app
 P=/opt/alt/php84/usr/bin/php
 
 git pull --ff-only
-$P /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction
+$P /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+$P artisan package:discover
 $P artisan migrate --force
 $P artisan config:cache && $P artisan route:cache && $P artisan view:cache
 ```
+
+El `--no-scripts` y el `package:discover` a mano son obligatorios: **este PHP
+tiene `proc_open` deshabilitado**, así que Composer no puede lanzar ningún
+script posterior y revienta con
+
+```
+The Process class relies on proc_open, which is not available on your PHP installation.
+```
+
+Lo traicionero es *cuándo* revienta: el autoload ya se ha generado y lo que
+queda sin hacer es el `package:discover`, de modo que el despliegue parece
+completo y lo que queda viejo es el manifiesto de paquetes. Encima Composer
+imprime la sinopsis del comando detrás del error, que tapa el mensaje. Si se
+desplegó sin esto, basta con correr `$P artisan package:discover` y volver a
+cachear.
 
 Y desde local, **si cambió algo de `resources/`**, los assets (§3).
 
