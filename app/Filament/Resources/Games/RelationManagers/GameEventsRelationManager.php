@@ -212,7 +212,13 @@ class GameEventsRelationManager extends RelationManager
         $clubs = Team::query()->whereKey($teams)->pluck('club_id')->all();
 
         return $query->where(fn (Builder $player) => $player
-            ->whereHas('memberships', fn (Builder $memberships) => $memberships->whereIn('team_id', $teams))
+            // `allMemberships` y no `memberships`: la de ahora diría quién está
+            // hoy, y la pregunta es quién ESTUVO. Una pertenencia cerrada es
+            // justo eso, alguien que pasó por esa plantilla esta temporada.
+            ->whereHas('allMemberships', fn (Builder $memberships) => $memberships->whereIn('team_id', $teams))
+            // Y los vendidos fuera ANTES de que las salidas se cerraran en vez
+            // de borrarse: de ésos no queda pertenencia que consultar, sólo la
+            // marca en su ficha. Se puede quitar cuando no queden.
             ->orWhere(fn (Builder $gone) => $gone->whereNotNull('left_at')->whereIn('club_id', $clubs))
             ->orWhereHas('events', fn (Builder $events) => $events->where('game_id', $game->getKey())));
     }

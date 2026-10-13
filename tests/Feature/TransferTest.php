@@ -10,6 +10,7 @@ use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Models\Transfer;
 use App\Services\BudgetService;
+use App\Services\TransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -81,10 +82,18 @@ class TransferTest extends TestCase
             'player_id' => $this->player->id,
             'type' => SquadMembership::TYPE_OWNED,
         ]);
-        $this->assertDatabaseMissing('squad_memberships', [
+        // La fila NO desaparece: se cierra. Es lo que deja anotarle después un
+        // evento de un partido que jugó antes de irse.
+        $this->assertDatabaseHas('squad_memberships', [
             'team_id' => $this->sellingTeam->id,
             'player_id' => $this->player->id,
+            'shirt_number' => null,
         ]);
+        $this->assertNotNull(
+            SquadMembership::withoutGlobalScopes()
+                ->where('team_id', $this->sellingTeam->id)->where('player_id', $this->player->id)->value('left_at'),
+            'La pertenencia queda cerrada con su fecha',
+        );
     }
 
     /**
@@ -153,10 +162,18 @@ class TransferTest extends TestCase
         $this->assertNotNull($player);
         $this->assertNotNull($player->left_at);
         $this->assertSame('Palmeiras', $player->left_to);
-        $this->assertDatabaseMissing('squad_memberships', [
+        // La fila NO desaparece: se cierra. Es lo que deja anotarle después un
+        // evento de un partido que jugó antes de irse.
+        $this->assertDatabaseHas('squad_memberships', [
             'team_id' => $this->sellingTeam->id,
             'player_id' => $this->player->id,
+            'shirt_number' => null,
         ]);
+        $this->assertNotNull(
+            SquadMembership::withoutGlobalScopes()
+                ->where('team_id', $this->sellingTeam->id)->where('player_id', $this->player->id)->value('left_at'),
+            'La pertenencia queda cerrada con su fecha',
+        );
     }
 
     public function test_a_signing_from_outside_the_league_only_pays(): void
@@ -359,10 +376,18 @@ class TransferTest extends TestCase
         ]);
 
         // Y sale de verdad del anterior.
-        $this->assertDatabaseMissing('squad_memberships', [
+        // La fila NO desaparece: se cierra. Es lo que deja anotarle después un
+        // evento de un partido que jugó antes de irse.
+        $this->assertDatabaseHas('squad_memberships', [
             'team_id' => $this->sellingTeam->id,
             'player_id' => $this->player->id,
+            'shirt_number' => null,
         ]);
+        $this->assertNotNull(
+            SquadMembership::withoutGlobalScopes()
+                ->where('team_id', $this->sellingTeam->id)->where('player_id', $this->player->id)->value('left_at'),
+            'La pertenencia queda cerrada con su fecha',
+        );
         $this->assertSame($this->buying->id, $this->player->fresh()->club_id);
     }
 
@@ -387,5 +412,149 @@ class TransferTest extends TestCase
             'player_id' => $this->player->id,
             'shirt_number' => 1,
         ]);
+    }
+
+    // ── Lo que deja un traspaso para poder anotar eventos viejos ──────────
+
+    /**
+     * El problema de fondo, planteado por el propietario el 2026-10-13: un
+     * jugador traspasado participó en partidos ANTES de irse, y borrar su
+     * pertenencia hacía imposible anotarle esos eventos después.
+     *
+     * Ahora la pertenencia se cierra. Sigue existiendo, diciendo que estuvo.
+     */
+    public function test_leaving_closes_the_membership_instead_of_erasing_it(): void
+    {
+        Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_SIGNING,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->buying->id,
+            'fee' => 100,
+        ]);
+
+        $cerrada = SquadMembership::query()
+            ->where('team_id', $this->sellingTeam->id)
+            ->where('player_id', $this->player->id)
+            ->first();
+
+        $this->assertNotNull($cerrada, 'La fila sobrevive');
+        $this->assertNotNull($cerrada->left_at);
+        $this->assertNull($cerrada->shirt_number, 'Y suelta el dorsal');
+    }
+
+    /**
+     * La plantilla sigue significando «quien está hoy»: el que se fue no sale
+     * en ella aunque su fila siga existiendo.
+     */
+    public function test_the_squad_no_longer_lists_someone_who_left(): void
+    {
+        Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_SIGNING,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->buying->id,
+            'fee' => 100,
+        ]);
+
+        $this->assertSame(0, $this->sellingTeam->memberships()->count(), 'Fuera de la plantilla');
+        $this->assertSame(1, $this->sellingTeam->allMemberships()->count(), 'Pero consta que estuvo');
+    }
+
+    /**
+     * El dorsal que suelta queda libre de verdad: otro puede llevarlo esa misma
+     * temporada (decisión del propietario).
+     */
+    public function test_the_shirt_of_someone_who_left_can_be_reused(): void
+    {
+        Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_SIGNING,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->buying->id,
+            'fee' => 100,
+        ]);
+
+        $this->assertFalse(
+            app(TransferService::class)->shirtIsTaken($this->sellingTeam->fresh(), 7),
+            'El 7 que llevaba vuelve a estar libre',
+        );
+    }
+
+    /**
+     * Y vale igual para las CESIONES, que es lo que el propietario recordó:
+     * ceder a un jugador también le saca de la plantilla, y también tiene que
+     * dejar constancia de que estuvo.
+     */
+    public function test_a_loan_also_closes_the_membership_instead_of_erasing_it(): void
+    {
+        Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_LOAN_IN,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->buying->id,
+            'loan_term' => Transfer::LOAN_TERMS ? array_key_first(Transfer::LOAN_TERMS) : null,
+        ]);
+
+        $cerrada = SquadMembership::query()
+            ->where('team_id', $this->sellingTeam->id)
+            ->where('player_id', $this->player->id)
+            ->first();
+
+        $this->assertNotNull($cerrada);
+        $this->assertNotNull($cerrada->left_at);
+
+        // Y llega al otro como cesión, no como propiedad.
+        $this->assertDatabaseHas('squad_memberships', [
+            'team_id' => $this->buyingTeam->id,
+            'player_id' => $this->player->id,
+            'type' => SquadMembership::TYPE_LOAN,
+            'left_at' => null,
+        ]);
+    }
+
+    /**
+     * Una cesión que vuelve a casa REABRE su fila en vez de duplicarla:
+     * (team_id, player_id) es único, así que crear otra reventaría.
+     */
+    public function test_coming_back_reopens_the_old_membership(): void
+    {
+        $ida = Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_LOAN_IN,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->buying->id,
+            'loan_term' => array_key_first(Transfer::LOAN_TERMS),
+        ]);
+
+        $this->assertSame(0, $this->sellingTeam->memberships()->count());
+
+        // Vuelve.
+        Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_LOAN_IN,
+            'from_club_id' => $this->buying->id,
+            'to_club_id' => $this->selling->id,
+            'loan_term' => array_key_first(Transfer::LOAN_TERMS),
+        ]);
+
+        $this->assertSame(1, $this->sellingTeam->memberships()->count(), 'Está otra vez dentro');
+        $this->assertSame(
+            1,
+            SquadMembership::query()->where('team_id', $this->sellingTeam->id)->where('player_id', $this->player->id)->count(),
+            'Y en UNA sola fila, reabierta',
+        );
     }
 }

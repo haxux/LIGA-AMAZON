@@ -466,4 +466,49 @@ class GameEventsRelationManagerTest extends TestCase
 
         $this->assertDatabaseMissing('game_events', ['player_id' => $ajeno->id]);
     }
+
+    /**
+     * El caso general que el propietario planteó el 2026-10-13, y que el
+     * arreglo anterior NO cubría: un jugador traspasado DENTRO de la liga.
+     *
+     * Ése no se va a ninguna parte —sigue jugando, en otro club— así que no
+     * tiene marca de salida en su ficha. Lo único que decía que estuvo en su
+     * club anterior era la pertenencia, y se borraba. Ahora se cierra, y por
+     * eso sigue pudiendo recibir un evento de un partido que jugó allí.
+     */
+    public function test_a_player_transferred_inside_the_league_can_still_be_given_an_event(): void
+    {
+        $game = $this->makeGame();
+        $antiguo = Team::find($game->home_team_id);
+
+        $jugador = Player::factory()->create(['club_id' => $antiguo->club_id, 'name' => 'Sandro']);
+        $pertenencia = SquadMembership::factory()->create([
+            'team_id' => $antiguo->id,
+            'player_id' => $jugador->id,
+            'shirt_number' => 9,
+        ]);
+
+        // Se va a otro club de la liga: la pertenencia se cierra y su ficha
+        // apunta ya al club nuevo, sin ninguna marca de salida.
+        $pertenencia->close();
+        $jugador->forceFill(['club_id' => Club::factory()->create()->id])->save();
+
+        $this->assertNull($jugador->fresh()->left_at, 'No se fue de la liga');
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->callTableAction('create', data: [
+                'type' => GameEvent::TYPE_GOAL,
+                'player_id' => $jugador->id,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('game_events', [
+            'game_id' => $game->id,
+            'player_id' => $jugador->id,
+            'type' => GameEvent::TYPE_GOAL,
+        ]);
+    }
 }

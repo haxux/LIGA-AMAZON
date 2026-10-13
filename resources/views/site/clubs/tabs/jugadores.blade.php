@@ -29,7 +29,7 @@
         <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($group['members'] as $membership)
                 <a href="{{ route('site.players.show', array_filter(['player' => $membership->player_id, 'temporada' => $selectedSeason?->id])) }}"
-                   class="flex items-center gap-3 rounded-[5px] bg-surface-alt p-3 hover:bg-surface-muted">
+                   class="flex items-center gap-3 rounded-[5px] bg-surface-alt p-3 hover:bg-surface-muted {{ $membership->hasLeft() ? 'opacity-60' : '' }}">
                     <span class="flex size-8 shrink-0 items-center justify-center rounded-[3px] bg-surface-muted font-display text-sm font-bold text-brand">
                         {{ $membership->shirt_number ?? '—' }}
                     </span>
@@ -46,6 +46,10 @@
                             @if ($membership->player?->birth_date) · {{ $membership->player->birth_date->age }} AÑOS @endif
                             @if ($membership->player?->market_value) · {{ number_format($membership->player->market_value, 0, ',', '.') }} @endif
                             @if ($membership->type === \App\Models\SquadMembership::TYPE_LOAN) · CEDIDO @endif
+                            {{-- En una temporada cerrada salen también los que
+                                 se fueron a mitad de año: sin decirlo parecería
+                                 que acabaron el año aquí. --}}
+                            @if ($membership->hasLeft()) · SALIÓ EL {{ $membership->left_at->format('d/m/Y') }} @endif
                         </span>
                     </span>
                 </a>

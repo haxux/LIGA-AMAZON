@@ -324,10 +324,18 @@ class TransferProposalTest extends TestCase
         $this->assertSame(1_450_000, $this->balance());
         $this->assertNotNull($this->mine->fresh()->left_at);
         $this->assertSame('Palmeiras', $this->mine->fresh()->left_to);
-        $this->assertDatabaseMissing('squad_memberships', [
+        // La fila NO desaparece: se cierra. Es lo que deja anotarle después un
+        // evento de un partido que jugó antes de irse.
+        $this->assertDatabaseHas('squad_memberships', [
             'team_id' => $this->team->id,
             'player_id' => $this->mine->id,
+            'shirt_number' => null,
         ]);
+        $this->assertNotNull(
+            SquadMembership::withoutGlobalScopes()
+                ->where('team_id', $this->team->id)->where('player_id', $this->mine->id)->value('left_at'),
+            'La pertenencia queda cerrada con su fecha',
+        );
     }
 
     public function test_approving_a_loan_moves_the_player_and_no_money(): void

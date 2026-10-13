@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Database\Factories\SquadMembershipFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * llevó y a qué título estuvo. Una cesión es una pertenencia de tipo `loan`
  * cuyo club propietario (`Player::club`) no es el del equipo donde juega.
  */
-#[Fillable(['team_id', 'player_id', 'shirt_number', 'type', 'is_captain'])]
+#[Fillable(['team_id', 'player_id', 'shirt_number', 'type', 'is_captain', 'left_at'])]
 class SquadMembership extends Model
 {
     /** @use HasFactory<SquadMembershipFactory> */
@@ -37,6 +39,7 @@ class SquadMembership extends Model
         return [
             'shirt_number' => 'integer',
             'is_captain' => 'boolean',
+            'left_at' => 'datetime',
         ];
     }
 
@@ -55,6 +58,40 @@ class SquadMembership extends Model
                     ->update(['is_captain' => false]);
             }
         });
+    }
+
+    /**
+     * Las que siguen vivas. Es lo que significa «la plantilla»: quien está hoy.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function active(Builder $query): void
+    {
+        $query->whereNull('left_at');
+    }
+
+    /**
+     * Cierra la pertenencia en vez de borrarla: el jugador deja la plantilla
+     * pero queda constancia de que estuvo, que es lo que permite anotarle
+     * después un evento de un partido que jugó antes de irse.
+     *
+     * El dorsal se suelta (decisión del propietario): otro puede llevarlo esa
+     * misma temporada. Y el brazalete también — un capitán que se va deja de
+     * serlo, y si no, el equipo se quedaría sin poder nombrar otro.
+     */
+    public function close(): void
+    {
+        $this->forceFill([
+            'left_at' => now(),
+            'shirt_number' => null,
+            'is_captain' => false,
+        ])->save();
+    }
+
+    public function hasLeft(): bool
+    {
+        return $this->left_at !== null;
     }
 
     public function team(): BelongsTo

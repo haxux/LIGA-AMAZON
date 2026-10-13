@@ -249,15 +249,35 @@ final class TransferService
             ]);
         }
 
-        SquadMembership::firstOrCreate(
-            ['team_id' => $team->getKey(), 'player_id' => $player->getKey()],
-            [
-                'shirt_number' => $shirtNumber ?? $this->firstFreeShirtNumber($team),
-                'type' => $transfer->isLoan() ? SquadMembership::TYPE_LOAN : SquadMembership::TYPE_OWNED,
-            ],
-        );
+        // `firstOrNew` y no `firstOrCreate`: si ya pasó por este club esta
+        // temporada, su fila sigue ahí cerrada —volver no puede duplicarla,
+        // que (team_id, player_id) es único— así que se REABRE con dorsal
+        // nuevo. Es el caso de una cesión que vuelve a casa.
+        $membership = SquadMembership::firstOrNew([
+            'team_id' => $team->getKey(),
+            'player_id' => $player->getKey(),
+        ]);
+
+        if ($membership->exists && ! $membership->hasLeft()) {
+            return; // ya está dentro: nada que hacer
+        }
+
+        $membership->fill([
+            'left_at' => null,
+            'shirt_number' => $shirtNumber ?? $this->firstFreeShirtNumber($team),
+            'type' => $transfer->isLoan() ? SquadMembership::TYPE_LOAN : SquadMembership::TYPE_OWNED,
+        ])->save();
     }
 
+    /**
+     * Sale de la plantilla anterior, pero su paso por ella NO se borra: la
+     * pertenencia se cierra con la fecha.
+     *
+     * Borrarla destruía la única prueba de que estuvo allí, y con ella la
+     * posibilidad de anotarle después un evento de un partido que jugó ANTES de
+     * irse. Vale igual para los cuatro tipos: una venta fuera, un traspaso entre
+     * clubes de la liga y las dos cesiones pasan por aquí.
+     */
     private function leaveFormerSquad(Transfer $transfer): void
     {
         $team = $this->teamOf($transfer->fromClub, $transfer);
@@ -267,9 +287,11 @@ final class TransferService
         }
 
         SquadMembership::query()
+            ->active()
             ->where('team_id', $team->getKey())
             ->where('player_id', $transfer->player_id)
-            ->delete();
+            ->get()
+            ->each(fn (SquadMembership $membership) => $membership->close());
     }
 
     private function teamOf(?Club $club, Transfer $transfer): ?Team
@@ -292,7 +314,10 @@ final class TransferService
      */
     public function shirtIsTaken(Team $team, int $number): bool
     {
+        // Sólo las vivas: una pertenencia cerrada suelta su dorsal, así que el
+        // número de quien se fue vuelve a estar libre.
         return SquadMembership::query()
+            ->active()
             ->where('team_id', $team->getKey())
             ->where('shirt_number', $number)
             ->exists();
@@ -329,6 +354,7 @@ final class TransferService
     public function firstFreeShirtNumber(Team $team): int
     {
         $taken = SquadMembership::query()
+            ->active()
             ->where('team_id', $team->getKey())
             ->pluck('shirt_number')
             ->all();

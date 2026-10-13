@@ -11,6 +11,7 @@ use App\Models\Team;
 use App\Services\ClubSeasonService;
 use App\Services\ClubSeasonStats;
 use App\Services\Competition;
+use App\Services\SeasonResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -227,7 +228,15 @@ class ClubProfileController extends SiteController
      */
     private function squad(Team $team): array
     {
-        $members = $team->memberships()->with('player')->get()
+        // En la temporada VIGENTE, la plantilla es la de ahora: quien se fue ya
+        // no está. En una CERRADA es un archivo, y dejar fuera a quien jugó
+        // media temporada contaría el año a medias (decisión del propietario,
+        // 2026-10-13). A ésos la vista les pone su marca de salida.
+        $current = app(SeasonResolver::class)->active()?->getKey() === $team->season_id;
+
+        $members = ($current ? $team->memberships() : $team->allMemberships())
+            ->with('player')
+            ->get()
             ->sortBy(fn (SquadMembership $membership) => $membership->shirt_number ?? PHP_INT_MAX);
 
         return collect(Player::POSITIONS)

@@ -70,7 +70,26 @@ class Team extends Model
         return $this->hasOne(Lineup::class);
     }
 
+    /**
+     * La plantilla de AHORA: sólo las pertenencias abiertas.
+     *
+     * Por omisión y no por casualidad. Desde que una salida cierra la fila en
+     * vez de borrarla, «plantilla» y «quién pasó por la plantilla» son dos
+     * preguntas distintas, y la que hace casi todo el mundo es la primera. La
+     * otra se pide a propósito con `allMemberships()`, y así este cambio no
+     * obliga a revisar los diecinueve sitios que leen plantillas.
+     */
     public function memberships(): HasMany
+    {
+        return $this->hasMany(SquadMembership::class)->whereNull('left_at');
+    }
+
+    /**
+     * Todas las que hubo, cerradas incluidas: quién estuvo en algún momento.
+     * Es lo que necesita el formulario de eventos para dejar anotar un partido
+     * anterior a un traspaso.
+     */
+    public function allMemberships(): HasMany
     {
         return $this->hasMany(SquadMembership::class);
     }
