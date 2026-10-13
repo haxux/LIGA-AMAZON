@@ -43,11 +43,7 @@ class GameSchedulingService
             ->get();
 
         foreach ($overdue as $game) {
-            $game->update([
-                'home_score' => 0,
-                'away_score' => 0,
-                'voided_at' => now(),
-            ]);
+            $game->voidAgainst('both');
         }
 
         return $overdue->count();

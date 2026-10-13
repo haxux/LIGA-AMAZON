@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Games\Tables;
 
+use App\Filament\Resources\Games\Actions\VoidGameActions;
 use App\Filament\Support\TeamName;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -38,6 +39,7 @@ class GamesTable
             ])
             ->recordActions([
                 EditAction::make(),
+                ...VoidGameActions::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

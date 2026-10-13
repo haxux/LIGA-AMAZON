@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'matchday_id', 'cup_tie_id', 'cup_group_id', 'group_matchday',
-    'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score', 'voided_at',
+    'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score', 'voided_at', 'voided_against',
 ])]
 #[ObservedBy(GameObserver::class)]
 class Game extends Model
@@ -41,6 +41,59 @@ class Game extends Model
     public function isVoided(): bool
     {
         return $this->voided_at !== null;
+    }
+
+    /** Marcador reglamentario de una anulación a favor de uno de los dos. */
+    public const FORFEIT_SCORE = 3;
+
+    /**
+     * Anulado sin ganador: 0-0 que no reparte nada. Es el caso de la anulación
+     * automática y el de «ambos»; con un solo culpable el marcador reglamentario
+     * cuenta como cualquier otro resultado.
+     */
+    public function isVoidedWithoutWinner(): bool
+    {
+        return $this->isVoided() && ! in_array($this->voided_against, ['home', 'away'], true);
+    }
+
+    /**
+     * Los lados que la anulación perjudica, para pintarlos en rojo en el sitio.
+     *
+     * @return array<int, 'home'|'away'>
+     */
+    public function penalizedSides(): array
+    {
+        if (! $this->isVoided()) {
+            return [];
+        }
+
+        return match ($this->voided_against) {
+            'home' => ['home'],
+            'away' => ['away'],
+            default => ['home', 'away'],
+        };
+    }
+
+    /**
+     * Anula el partido contra `home`, `away` o `both`. Sin eventos: el partido
+     * no se jugó, así que los que hubiera cargados se borran.
+     */
+    public function voidAgainst(string $against): void
+    {
+        $this->events()->delete();
+
+        $this->update([
+            'home_score' => $against === 'home' ? 0 : ($against === 'away' ? self::FORFEIT_SCORE : 0),
+            'away_score' => $against === 'away' ? 0 : ($against === 'home' ? self::FORFEIT_SCORE : 0),
+            'voided_at' => now(),
+            'voided_against' => $against,
+        ]);
+    }
+
+    /** Deshace la anulación: vuelve a «por jugar», sin marcador. */
+    public function unvoid(): void
+    {
+        $this->update(['home_score' => null, 'away_score' => null, 'voided_at' => null, 'voided_against' => null]);
     }
 
     /**

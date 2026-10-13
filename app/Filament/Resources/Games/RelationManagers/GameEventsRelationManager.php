@@ -171,6 +171,7 @@ class GameEventsRelationManager extends RelationManager
             ->defaultSort('id')
             ->headerActions([
                 CreateAction::make()
+                    ->visible(fn (): bool => ! $this->getOwnerRecord()->isVoided())
                     ->after(fn (array $data, GameEvent $record) => $this->syncAssist($record, $data)),
             ])
             ->recordActions([

@@ -4,6 +4,8 @@
     $isPlayed = $game->home_score !== null && $game->away_score !== null;
     // Una etiqueta cualquiera —«Jornada 7» o «Copa Amazonas · Semifinal»—, con
     // el número suelto todavía admitido por las pantallas que lo pasan así.
+    // Los lados que una anulación perjudica van en rojo, sólo en este partido.
+    $penalized = $game->penalizedSides();
     $caption = $label ?? ($matchdayNumber !== null ? 'Jornada '.$matchdayNumber : $game->competitionLabel());
 @endphp
 
@@ -14,7 +16,7 @@
     <div class="flex items-center justify-between gap-2">
         <span class="flex min-w-0 items-center gap-2">
             <x-site.team-crest :team="$game->homeTeam" size="size-[18px]" />
-            <span class="truncate font-display text-lg font-semibold text-white">{{ $game->homeTeam->name }}</span>
+            <span class="truncate font-display text-lg font-semibold {{ in_array('home', $penalized) ? 'text-rose-500' : 'text-white' }}" @if (in_array('home', $penalized)) title="Partido anulado en su contra" @endif>{{ $game->homeTeam->name }}</span>
         </span>
         <span class="font-display text-lg font-bold {{ $isPlayed ? 'text-brand' : 'text-white/40' }}">
             {{ $isPlayed ? $game->home_score : '–' }}
@@ -24,7 +26,7 @@
     <div class="mt-2 flex items-center justify-between gap-2">
         <span class="flex min-w-0 items-center gap-2">
             <x-site.team-crest :team="$game->awayTeam" size="size-[18px]" />
-            <span class="truncate font-display text-lg font-semibold text-white">{{ $game->awayTeam->name }}</span>
+            <span class="truncate font-display text-lg font-semibold {{ in_array('away', $penalized) ? 'text-rose-500' : 'text-white' }}" @if (in_array('away', $penalized)) title="Partido anulado en su contra" @endif>{{ $game->awayTeam->name }}</span>
         </span>
         <span class="font-display text-lg font-bold {{ $isPlayed ? 'text-brand' : 'text-white/40' }}">
             {{ $isPlayed ? $game->away_score : '–' }}

@@ -44,7 +44,7 @@
     {{-- El marcador, que es lo que se viene a ver. --}}
     <section class="mb-6 rounded-[6px] border-t-[3px] border-brand bg-surface-alt p-6">
         <div class="flex items-center justify-between gap-4">
-            @foreach ([['team' => $game->homeTeam, 'score' => $game->home_score], ['team' => $game->awayTeam, 'score' => $game->away_score]] as $index => $side)
+            @foreach ([['team' => $game->homeTeam, 'score' => $game->home_score, 'key' => 'home'], ['team' => $game->awayTeam, 'score' => $game->away_score, 'key' => 'away']] as $index => $side)
                 @if ($index === 1)
                     <span class="font-mono text-xs tracking-[0.14em] text-white/40">{{ $isPlayed ? '–' : 'VS' }}</span>
                 @endif
@@ -52,7 +52,7 @@
                 <a href="{{ route('site.clubs.show', ['club' => $side['team']?->club_id, 'temporada' => $matchday?->season_id]) }}"
                    class="flex min-w-0 flex-1 flex-col items-center gap-2 text-center hover:opacity-80">
                     <x-site.team-crest :team="$side['team']" size="size-[48px]" />
-                    <span class="truncate font-display text-xl font-semibold text-white">{{ $side['team']?->name }}</span>
+                    <span class="truncate font-display text-xl font-semibold {{ in_array($side['key'], $game->penalizedSides()) ? 'text-rose-500' : 'text-white' }}">{{ $side['team']?->name }}</span>
                     <span class="font-display text-4xl font-bold {{ $isPlayed ? 'text-brand' : 'text-white/30' }}">
                         {{ $isPlayed ? $side['score'] : '–' }}
                     </span>
@@ -62,7 +62,11 @@
 
         <div class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 border-t border-white/10 pt-3 font-mono text-[10px] tracking-[0.12em] text-white/45">
             @if ($game->isVoided())
-                <span class="text-rose-400">ANULADO POR INCOMPARECENCIA</span>
+                <span class="text-rose-400">ANULADO POR INCOMPARECENCIA ·
+                    @if ($game->voided_against === 'home') EN CONTRA DE {{ mb_strtoupper($game->homeTeam?->name) }}
+                    @elseif ($game->voided_against === 'away') EN CONTRA DE {{ mb_strtoupper($game->awayTeam?->name) }}
+                    @else EN CONTRA DE AMBOS @endif
+                </span>
             @else
                 <span>{{ $isPlayed ? 'JUGADO' : 'POR JUGAR' }}</span>
             @endif

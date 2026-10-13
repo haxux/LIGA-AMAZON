@@ -84,7 +84,7 @@ final class StandingsService
             ->whereNotNull('home_score')
             ->whereNotNull('away_score')
             ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $seasonId))
-            ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score', 'voided_at']);
+            ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score', 'voided_at', 'voided_against']);
 
         return $this->fold($rows, $games);
     }
@@ -119,7 +119,7 @@ final class StandingsService
     private function fold(array $rows, Collection $games): Collection
     {
         foreach ($games as $game) {
-            $voided = $game->voided_at !== null;
+            $voided = $game->isVoidedWithoutWinner();
             $this->accumulate($rows, $game->home_team_id, $game->home_score, $game->away_score, $voided);
             $this->accumulate($rows, $game->away_team_id, $game->away_score, $game->home_score, $voided);
         }

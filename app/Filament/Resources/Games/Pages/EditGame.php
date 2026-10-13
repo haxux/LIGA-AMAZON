@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Games\Pages;
 
 use App\Filament\Resources\Games\GameResource;
+use App\Filament\Resources\Games\Actions\VoidGameActions;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -13,6 +14,7 @@ class EditGame extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            ...VoidGameActions::make(),
             DeleteAction::make(),
         ];
     }

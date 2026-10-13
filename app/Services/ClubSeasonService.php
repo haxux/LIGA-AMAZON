@@ -126,7 +126,7 @@ final class ClubSeasonService
             // Anulado por fecha vencida: cuenta como jugado (ver $played->count()
             // más abajo) y nada más — ni resultado ni goles, mismo criterio que
             // `StandingsService::accumulate()`.
-            if ($game->isVoided()) {
+            if ($game->isVoidedWithoutWinner()) {
                 continue;
             }
 
