@@ -9,6 +9,7 @@ use App\Http\Controllers\Site\CupController;
 use App\Http\Controllers\Site\CupsController;
 use App\Http\Controllers\Site\FixturesController;
 use App\Http\Controllers\Site\GameController;
+use App\Http\Controllers\Site\HistoryController;
 use App\Http\Controllers\Site\NewsController;
 use App\Http\Controllers\Site\PlayerController;
 use App\Http\Controllers\Site\ScorersController;
@@ -25,6 +26,10 @@ use Illuminate\Support\Facades\Route;
  */
 Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/', StandingsController::class)->name('site.standings');
+    // Las clasificaciones de las temporadas cerradas. Aparte de la portada y no
+    // como un filtro suyo: la tabla de ahora es lo que viene a ver todo el
+    // mundo, y el archivo es otra intención.
+    Route::get('/historia', HistoryController::class)->name('site.history');
     Route::get('/partidos', FixturesController::class)->name('site.fixtures');
     // El detalle de un partido, al que se llega desde cualquier tarjeta.
     Route::get('/partidos/{game}', GameController::class)->name('site.games.show');

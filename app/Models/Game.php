@@ -194,6 +194,18 @@ class Game extends Model
     }
 
     /**
+     * Los que de verdad se jugaron. Tener los DOS marcadores es lo que lo
+     * distingue de uno programado o anulado, y es el mismo criterio con el que
+     * StandingsService decide qué partido entra en la tabla: si aquí y allí
+     * discreparan, una temporada podría aparecer en el archivo con una tabla a
+     * ceros.
+     */
+    public function scopePlayed(Builder $query): Builder
+    {
+        return $query->whereNotNull('home_score')->whereNotNull('away_score');
+    }
+
+    /**
      * Cómo se llama la competición de este partido, dicha para una persona:
      * «Jornada 7», «Copa Amazonas · Semifinal» o «Copa Amazonas · Grupo A».
      *

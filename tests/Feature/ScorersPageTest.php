@@ -195,6 +195,74 @@ class ScorersPageTest extends TestCase
             ->assertSee('Sin datos todavía');
     }
 
+    public function test_the_season_filter_renders_and_defaults_to_the_current_season(): void
+    {
+        $current = Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
+        Season::factory()->create(['is_current' => false, 'name' => '2025/26']);
+        $division = Division::factory()->create(['season_id' => $current->id]);
+        $this->golEn($current, $division, 1, 'Goleador De Ahora');
+
+        $this->get('/estadisticas')
+            ->assertOk()
+            ->assertSee('name="temporada"', false)
+            ->assertSee('<option value="'.$current->id.'" selected', false)
+            ->assertSee('Goleador De Ahora');
+    }
+
+    public function test_a_past_season_can_be_chosen(): void
+    {
+        $current = Season::factory()->create(['is_current' => true]);
+        $currentDivision = Division::factory()->create(['season_id' => $current->id]);
+        $this->golEn($current, $currentDivision, 1, 'Goleador De Ahora');
+
+        $old = Season::factory()->create(['is_current' => false]);
+        $oldDivision = Division::factory()->create(['season_id' => $old->id]);
+        $this->golEn($old, $oldDivision, 1, 'Goleador De Antes');
+
+        $this->get('/estadisticas')
+            ->assertOk()
+            ->assertSee('Goleador De Ahora')
+            ->assertDontSee('Goleador De Antes');
+
+        $this->get('/estadisticas?temporada='.$old->id)
+            ->assertOk()
+            ->assertSee('Goleador De Antes')
+            ->assertDontSee('Goleador De Ahora');
+    }
+
+    public function test_an_unknown_season_falls_back_to_the_current_one(): void
+    {
+        $current = Season::factory()->create(['is_current' => true]);
+        $division = Division::factory()->create(['season_id' => $current->id]);
+        $this->golEn($current, $division, 1, 'Goleador De Ahora');
+
+        $this->get('/estadisticas?temporada=9999')
+            ->assertOk()
+            ->assertSee('Goleador De Ahora');
+    }
+
+    /**
+     * Los otros tres filtros se derivan de la temporada, así que al cambiarla
+     * una división de la anterior ya no existe. Tiene que caer en «todas» y
+     * dejar las cifras de la temporada pedida, no quedarse en blanco ni
+     * reventar.
+     */
+    public function test_a_division_from_another_season_falls_back_to_all(): void
+    {
+        $current = Season::factory()->create(['is_current' => true]);
+        $currentDivision = Division::factory()->create(['season_id' => $current->id, 'name' => 'Primera De Ahora']);
+        $this->golEn($current, $currentDivision, 1, 'Goleador De Ahora');
+
+        $old = Season::factory()->create(['is_current' => false]);
+        $oldDivision = Division::factory()->create(['season_id' => $old->id]);
+        $this->golEn($old, $oldDivision, 1, 'Goleador De Antes');
+
+        $this->get('/estadisticas?temporada='.$old->id.'&division='.$currentDivision->id)
+            ->assertOk()
+            ->assertSee('Goleador De Antes')
+            ->assertDontSee('Primera De Ahora');
+    }
+
     /**
      * El avatar de las listas era un círculo gris fijo desde la Fase 6, a la
      * espera de una fuente de imágenes que nunca llegó. Ahora enseña la foto

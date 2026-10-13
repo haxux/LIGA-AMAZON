@@ -64,6 +64,39 @@ final class StandingsService
         ));
     }
 
+    /**
+     * Las tablas de una temporada tal como se pintan: una por división, con su
+     * nombre y sus franjas de ascenso y descenso.
+     *
+     * Vive aquí y no en el controlador porque la piden DOS páginas —
+     * Clasificación, con la temporada vigente, e Historia, con una cerrada—, y
+     * una de las dos reglas es sutil: una temporada con equipos pero sin
+     * ninguna división que los tenga (`teams.division_id` es nullable para
+     * siempre, diseño D6) devuelve UNA tabla sin título en vez de una página en
+     * blanco. Duplicada en dos sitios, esa regla se arregla en uno y se olvida
+     * en el otro.
+     *
+     * @return array<int, array{heading: ?string, rows: Collection<int, StandingRow>, zones: Collection<int, mixed>}>
+     */
+    public function tablesFor(Season $season): array
+    {
+        $divisions = $season->divisions()->has('teams')->with('standingZones')->orderBy('id')->get();
+
+        if ($divisions->isEmpty()) {
+            return [['heading' => null, 'rows' => $this->forSeason($season), 'zones' => collect()]];
+        }
+
+        return $divisions
+            ->map(fn (Division $division) => [
+                'heading' => $division->name,
+                'rows' => $this->forDivision($division),
+                // Las franjas de ascenso y descenso son de la división, así que
+                // la tabla sin división de arriba simplemente no tiene.
+                'zones' => $division->standingZones,
+            ])
+            ->all();
+    }
+
     private function buildTable(Collection $teams, int $seasonId): Collection
     {
         $rows = $teams

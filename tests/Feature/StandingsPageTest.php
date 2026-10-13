@@ -57,7 +57,13 @@ class StandingsPageTest extends TestCase
             ->assertDontSee('Season A Team');
     }
 
-    public function test_the_season_filter_renders_and_defaults_to_the_current_season(): void
+    /**
+     * El filtro de temporada se quitó de aquí (decisión del propietario): esta
+     * página es la de ahora y el pasado se mira en Historia. El nombre de la
+     * temporada sí tiene que seguir estando, porque era lo único que le decía
+     * al visitante qué año está viendo.
+     */
+    public function test_the_season_filter_is_gone_and_the_season_is_named_instead(): void
     {
         $current = Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
         Season::factory()->create(['is_current' => false, 'name' => '2025/26']);
@@ -66,27 +72,42 @@ class StandingsPageTest extends TestCase
 
         $this->get(route('site.standings'))
             ->assertOk()
-            ->assertSee('name="temporada"', false)
-            ->assertSee('<option value="'.$current->id.'" selected', false)
+            ->assertDontSee('name="temporada"', false)
+            ->assertSee('2026/27')
+            ->assertDontSee('2025/26')
             ->assertSee('Manaos FC');
     }
 
-    public function test_another_season_can_be_selected_from_the_filter(): void
+    /**
+     * Esta página filtraba por `?temporada` hasta hoy, así que hay marcadores y
+     * enlaces compartidos que la llevan puesta. Se respetan mandándolos a
+     * Historia; servirles la temporada de ahora en silencio les daría otra cosa
+     * sin decírselo.
+     */
+    public function test_a_past_season_in_the_url_is_sent_to_history(): void
     {
         $current = Season::factory()->create(['is_current' => true]);
-        $currentDivision = Division::factory()->create(['season_id' => $current->id, 'name' => 'Primera']);
-        Team::factory()->for($current)->create(['division_id' => $currentDivision->id, 'name' => 'Season A Team']);
-
         $old = Season::factory()->create(['is_current' => false]);
-        $oldDivision = Division::factory()->create(['season_id' => $old->id, 'name' => 'Segunda']);
-        Team::factory()->for($old)->create(['division_id' => $oldDivision->id, 'name' => 'Season B Team']);
 
         $this->get(route('site.standings', ['temporada' => $old->id]))
-            ->assertOk()
-            ->assertSee('Season B Team')
-            ->assertDontSee('Season A Team');
+            ->assertRedirect(route('site.history', ['temporada' => $old->id]));
     }
 
+    public function test_the_current_season_in_the_url_stays_on_the_standings(): void
+    {
+        $current = Season::factory()->create(['is_current' => true]);
+        $division = Division::factory()->create(['season_id' => $current->id, 'name' => 'Primera']);
+        Team::factory()->for($current)->create(['division_id' => $division->id, 'name' => 'Manaos FC']);
+
+        $this->get(route('site.standings', ['temporada' => $current->id]))
+            ->assertOk()
+            ->assertSee('Manaos FC');
+    }
+
+    /**
+     * Un id inventado no manda a nadie a Historia: cae en la vigente, como caía
+     * antes de que el filtro existiera aquí.
+     */
     public function test_an_unknown_season_falls_back_to_the_current_one(): void
     {
         $current = Season::factory()->create(['is_current' => true]);
