@@ -33,6 +33,12 @@ class TransferCompletionForm
     {
         return array_merge(
             $transfer->isIncoming() && $transfer->player_id === null ? self::newPlayerFields($transfer) : [],
+            // El dorsal se pide SIEMPRE que el jugador aterrice en una
+            // plantilla, no sólo cuando además hay que crearle la ficha. Un
+            // traspaso entre dos clubes de la liga mueve a alguien que ya
+            // existe, y hasta hoy ahí no se preguntaba: el jugador llegaba con
+            // el primer número libre sin que nadie lo decidiera.
+            $transfer->isIncoming() ? self::shirtField($transfer) : [],
             self::termsFields($transfer),
         );
     }
@@ -83,6 +89,15 @@ class TransferCompletionForm
             DatePicker::make('birth_date')->label('Born'),
             TextInput::make('market_value')->label('Value')->numeric()->minValue(0),
             FcLookup::photoField(),
+        ];
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private static function shirtField(Transfer $transfer): array
+    {
+        return [
             TextInput::make('shirt_number')
                 ->label('Shirt')
                 ->numeric()

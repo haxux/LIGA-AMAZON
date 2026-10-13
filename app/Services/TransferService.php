@@ -307,6 +307,25 @@ final class TransferService
         return $this->teamOf($transfer->isIncoming() ? $transfer->toClub : $transfer->fromClub, $transfer);
     }
 
+    /**
+     * El mismo equipo, pero a partir de un club y una temporada sueltos.
+     *
+     * Lo necesita el formulario de alta del panel, que pregunta el dorsal antes
+     * de que el traspaso exista: ahí no hay un `Transfer` al que preguntarle,
+     * sólo lo que lleva elegido quien lo está rellenando.
+     */
+    public function teamFor(?int $clubId, ?int $seasonId): ?Team
+    {
+        if ($clubId === null || $seasonId === null) {
+            return null;
+        }
+
+        return Team::query()
+            ->where('club_id', $clubId)
+            ->where('season_id', $seasonId)
+            ->first();
+    }
+
     public function firstFreeShirtNumber(Team $team): int
     {
         $taken = SquadMembership::query()

@@ -35,6 +35,16 @@ class Transfer extends Model
     /** @use HasFactory<TransferFactory> */
     use HasFactory;
 
+    /**
+     * El dorsal con el que llega, elegido en el formulario de alta.
+     *
+     * Propiedad suelta y no columna: no es un dato del traspaso —el dorsal vive
+     * en la plantilla de la temporada y se retoca allí—, sino lo que ese alta
+     * concreta quiere que se le ponga al aterrizar. El observador lo lee al
+     * ejecutar. Nula significa «el primero libre», como siempre.
+     */
+    public ?int $desiredShirtNumber = null;
+
     public const TYPE_SIGNING = 'fichaje';
 
     public const TYPE_SALE = 'venta';
@@ -158,6 +168,23 @@ class Transfer extends Model
                 if ($transfer->from_club_id === null || $transfer->to_club_id === null) {
                     throw ValidationException::withMessages([
                         'to_club_id' => 'Un traspaso dentro de la liga necesita club de origen y club de destino.',
+                    ]);
+                }
+
+                // Un club no se ficha a sí mismo, igual que un equipo no juega
+                // contra sí mismo (ver `Game::booted()`).
+                //
+                // Faltaba, y el 2026-10-13 costó un traspaso: Sandro se
+                // registró de Drakukeo a Drakukeo y la operación hizo
+                // exactamente lo que se le pidió — lo sacó de la plantilla, lo
+                // volvió a meter en la misma CON OTRO DORSAL, y movió 35
+                // millones de un club a sí mismo. Nada falló y nada avisó: el
+                // jugador no salía ni llegaba, y no había manera de entender
+                // por qué. El (int) es igual de necesario que en Game: del
+                // formulario llegan cadenas.
+                if ((int) $transfer->from_club_id === (int) $transfer->to_club_id) {
+                    throw ValidationException::withMessages([
+                        'to_club_id' => 'El club que vende y el que compra no pueden ser el mismo.',
                     ]);
                 }
 

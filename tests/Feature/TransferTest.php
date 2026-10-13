@@ -282,4 +282,110 @@ class TransferTest extends TestCase
         $this->assertSame('Tapajós SC', $transfer->counterpartFor($this->selling));
         $this->assertSame('Manaos FC', $transfer->counterpartFor($this->buying));
     }
+
+    /**
+     * El fallo del 2026-10-13: el fichaje de Sandro se registró de Drakukeo a
+     * Drakukeo y la operación hizo exactamente lo que se le pidió — lo sacó de
+     * la plantilla, lo volvió a meter en la misma CON OTRO DORSAL, y movió 35
+     * millones de un club a sí mismo. Nada falló y nada avisó.
+     */
+    public function test_a_club_cannot_sign_a_player_from_itself(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_SIGNING,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->selling->id,
+            'fee' => 35_000_000,
+        ]);
+    }
+
+    public function test_nothing_moves_when_the_two_clubs_are_the_same(): void
+    {
+        $dorsalAntes = SquadMembership::query()
+            ->where('team_id', $this->sellingTeam->id)
+            ->where('player_id', $this->player->id)
+            ->value('shirt_number');
+
+        try {
+            Transfer::create([
+                'player_id' => $this->player->id,
+                'season_id' => $this->season->id,
+                'scope' => Transfer::SCOPE_INTERNAL,
+                'type' => Transfer::TYPE_SIGNING,
+                'from_club_id' => $this->selling->id,
+                'to_club_id' => $this->selling->id,
+                'fee' => 35_000_000,
+            ]);
+        } catch (ValidationException) {
+            // Lo que importa es lo que NO pasó.
+        }
+
+        $this->assertSame(7, $dorsalAntes);
+        $this->assertSame(7, SquadMembership::query()
+            ->where('team_id', $this->sellingTeam->id)
+            ->where('player_id', $this->player->id)
+            ->value('shirt_number'), 'El dorsal no se toca');
+        $this->assertSame(0, BudgetMovement::query()->count(), 'No se apunta dinero ninguno');
+    }
+
+    /**
+     * El otro síntoma que reportó el propietario: nadie le preguntó con qué
+     * dorsal llegaba. Ahora el alta lo lleva, y tiene que ser el que se eligió
+     * y no el primero libre.
+     */
+    public function test_an_internal_signing_lands_with_the_chosen_shirt(): void
+    {
+        $transfer = new Transfer([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_SIGNING,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->buying->id,
+            'fee' => 35_000_000,
+        ]);
+        $transfer->desiredShirtNumber = 21;
+        $transfer->save();
+
+        $this->assertDatabaseHas('squad_memberships', [
+            'team_id' => $this->buyingTeam->id,
+            'player_id' => $this->player->id,
+            'shirt_number' => 21,
+        ]);
+
+        // Y sale de verdad del anterior.
+        $this->assertDatabaseMissing('squad_memberships', [
+            'team_id' => $this->sellingTeam->id,
+            'player_id' => $this->player->id,
+        ]);
+        $this->assertSame($this->buying->id, $this->player->fresh()->club_id);
+    }
+
+    /**
+     * Sin elegirlo, el primero libre, como siempre: el alta no se vuelve
+     * obligatoria por haber ganado un campo.
+     */
+    public function test_an_internal_signing_without_a_chosen_shirt_takes_the_first_free_one(): void
+    {
+        Transfer::create([
+            'player_id' => $this->player->id,
+            'season_id' => $this->season->id,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            'type' => Transfer::TYPE_SIGNING,
+            'from_club_id' => $this->selling->id,
+            'to_club_id' => $this->buying->id,
+            'fee' => 35_000_000,
+        ]);
+
+        $this->assertDatabaseHas('squad_memberships', [
+            'team_id' => $this->buyingTeam->id,
+            'player_id' => $this->player->id,
+            'shirt_number' => 1,
+        ]);
+    }
 }

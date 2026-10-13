@@ -78,6 +78,57 @@ class TransferPanelsTest extends TestCase
     }
 
     /**
+     * El dorsal elegido en el alta tiene que llegar hasta la plantilla. No es
+     * una columna de `transfers`, así que viaja colgado del modelo hasta el
+     * observador — justo el tramo donde se podía perder en silencio.
+     */
+    public function test_the_shirt_chosen_when_recording_reaches_the_new_squad(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateTransfer::class)
+            ->fillForm([
+                'player_id' => $this->player->id,
+                'season_id' => $this->season->id,
+                'scope' => Transfer::SCOPE_INTERNAL,
+                'type' => Transfer::TYPE_SIGNING,
+                'from_club_id' => $this->selling->id,
+                'to_club_id' => $this->buying->id,
+                'fee' => 200_000,
+                'shirt_number' => 23,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('squad_memberships', [
+            'player_id' => $this->player->id,
+            'shirt_number' => 23,
+        ]);
+    }
+
+    /**
+     * Y el club que vende no se ofrece como comprador: elegirlo por error
+     * registraba una operación que no movía al jugador a ninguna parte.
+     */
+    public function test_the_selling_club_is_not_offered_as_the_buyer(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $options = Livewire::test(CreateTransfer::class)
+            ->fillForm([
+                'scope' => Transfer::SCOPE_INTERNAL,
+                'type' => Transfer::TYPE_SIGNING,
+                'from_club_id' => $this->selling->id,
+            ])
+            ->instance()
+            ->getSchemaComponent('form.to_club_id')
+            ->getOptions();
+
+        $this->assertArrayNotHasKey($this->selling->id, $options);
+        $this->assertArrayHasKey($this->buying->id, $options);
+    }
+
+    /**
      * El formulario no ofrece registrar una venta entre clubes de la liga: esa
      * operación es el fichaje del comprador, una sola fila (design D8).
      */

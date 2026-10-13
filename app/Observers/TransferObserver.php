@@ -28,6 +28,9 @@ class TransferObserver
             return;
         }
 
-        app(TransferService::class)->execute($transfer);
+        // Con el dorsal que se eligió en el alta, si se eligió: sin esto el
+        // jugador aterrizaba siempre con el primer número libre, aunque el
+        // administrador hubiera escrito otro.
+        app(TransferService::class)->execute($transfer, $transfer->desiredShirtNumber);
     }
 }

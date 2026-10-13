@@ -5,10 +5,13 @@ namespace App\Filament\Resources\Transfers\Schemas;
 use App\Models\Player;
 use App\Models\Transfer;
 use App\Services\SeasonResolver;
+use App\Services\TransferService;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Registrar un traspaso lo EJECUTA: mueve al jugador y cuadra los dos
@@ -25,6 +28,12 @@ class TransferForm
                     ->label('Player')
                     ->required()
                     ->searchable()
+                    ->live()
+                    // Al elegir jugador, el club que vende se pone solo: es el
+                    // suyo, y tecleándolo a mano es donde se equivoca uno.
+                    ->afterStateUpdated(function ($state, Set $set): void {
+                        $set('from_club_id', Player::query()->whereKey($state)->value('club_id'));
+                    })
                     ->options(fn (): array => Player::query()
                         ->with('club')
                         ->get()
@@ -63,11 +72,25 @@ class TransferForm
                     ->relationship('fromClub', 'name')
                     ->searchable()
                     ->preload()
+                    // En vivo para que el club comprador se vuelva a filtrar al
+                    // cambiarlo, y no se quede ofreciendo el que acaba de salir.
+                    ->live()
                     ->required(fn (Get $get): bool => $get('scope') === Transfer::SCOPE_INTERNAL || $get('type') === Transfer::TYPE_SALE)
                     ->visible(fn (Get $get): bool => $get('scope') === Transfer::SCOPE_INTERNAL || $get('type') === Transfer::TYPE_SALE),
                 Select::make('to_club_id')
                     ->label('Buying club')
-                    ->relationship('toClub', 'name')
+                    // Sin el club que vende entre las opciones: un club no se
+                    // ficha a sí mismo, y elegirlo por error registraba una
+                    // operación que no movía al jugador a ninguna parte y le
+                    // cambiaba el dorsal por el camino.
+                    ->relationship(
+                        'toClub',
+                        'name',
+                        fn (Builder $query, Get $get) => $query->when(
+                            $get('from_club_id'),
+                            fn (Builder $clubs, $sells) => $clubs->whereKeyNot($sells),
+                        ),
+                    )
                     ->searchable()
                     ->preload()
                     ->required(fn (Get $get): bool => $get('type') !== Transfer::TYPE_SALE)
@@ -86,6 +109,27 @@ class TransferForm
                     ->minValue(0)
                     ->visible(fn (Get $get): bool => ! in_array($get('type'), Transfer::FREE, true))
                     ->helperText('Plain figure. It becomes one movement in each budget, already approved.'),
+                // El dorsal con el que llega. No existía, y el jugador aterrizaba
+                // con el primer número libre sin que nadie lo eligiera ni se
+                // enterara (lo reportó el propietario el 2026-10-13). Vacío
+                // sigue valiendo: entonces se asigna el primero libre, como
+                // antes, pero porque se ha decidido y no por omisión.
+                TextInput::make('shirt_number')
+                    ->label('Shirt at the new club')
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(99)
+                    ->visible(fn (Get $get): bool => in_array($get('type'), Transfer::INCOMING, true))
+                    ->helperText(fn (Get $get): string => self::shirtHelp($get))
+                    ->rules([
+                        fn (Get $get): callable => function (string $attribute, $value, callable $fail) use ($get): void {
+                            $team = app(TransferService::class)->teamFor($get('to_club_id'), $get('season_id'));
+
+                            if ($team !== null && filled($value) && app(TransferService::class)->shirtIsTaken($team, (int) $value)) {
+                                $fail("Shirt {$value} is already taken in that squad.");
+                            }
+                        },
+                    ]),
                 Select::make('loan_term')
                     ->label('Loan term')
                     ->options(Transfer::LOAN_TERMS)
@@ -95,5 +139,24 @@ class TransferForm
                     // tiene tareas programadas (decisión cerrada).
                     ->helperText('Recorded as data; the return is made by hand.'),
             ]);
+    }
+
+    /**
+     * Los dorsales ya cogidos en la plantilla de destino, dichos de corrido: es
+     * más rápido leerlos que probar de uno en uno.
+     */
+    private static function shirtHelp(Get $get): string
+    {
+        $team = app(TransferService::class)->teamFor($get('to_club_id'), $get('season_id'));
+
+        if ($team === null) {
+            return 'Empty means the first free number.';
+        }
+
+        $taken = $team->memberships()->orderBy('shirt_number')->pluck('shirt_number')->implode(', ');
+
+        return $taken === ''
+            ? 'Empty means the first free number.'
+            : 'Taken in that squad: '.$taken;
     }
 }
