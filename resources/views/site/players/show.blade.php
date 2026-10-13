@@ -52,7 +52,15 @@
         @endif
 
         <div class="min-w-0">
-            <h1 class="font-display text-3xl uppercase tracking-wide text-white">{{ $player->name }}</h1>
+            <h1 class="font-display text-3xl uppercase tracking-wide text-white">
+                @if ($player->fc_id)
+                    {{-- El id de EA FC es el mismo de la ficha en SoFIFA. --}}
+                    <a href="https://sofifa.com/player/{{ $player->fc_id }}" target="_blank" rel="noopener noreferrer"
+                       title="Ver en SoFIFA" class="hover:text-brand">{{ $player->name }}</a>
+                @else
+                    {{ $player->name }}
+                @endif
+            </h1>
 
             <p class="mt-1 font-mono text-[10px] tracking-[0.12em] text-white/45">
                 @if ($club)
