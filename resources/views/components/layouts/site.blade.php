@@ -195,7 +195,17 @@
                 var csrf = document.querySelector('meta[name="csrf-token"]')?.content;
 
                 if (vapidKey) {
-                    window.LigaPush.autoPrompt('matches', vapidKey, csrf);
+                    {{-- El chat vive aquí desde que salió de los dos paneles, y
+                         el permiso para sus avisos se seguía pidiendo sólo allí
+                         dentro: un técnico que entre por el sitio nunca llegaba
+                         a suscribirse y no le avisaba nadie de un mensaje. En
+                         fila y no a la vez, que el endpoint del navegador es
+                         uno solo. --}}
+                    window.LigaPush.autoPromptAll(
+                        @if ($chatUser) ['matches', 'chat'] @else ['matches'] @endif,
+                        vapidKey,
+                        csrf,
+                    );
                 }
             });
         </script>

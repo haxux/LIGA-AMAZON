@@ -101,11 +101,28 @@
 
         window.localStorage.setItem(askedKey, '1');
 
-        subscribe(topic, vapidPublicKey, csrfToken).catch(function () {
+        return subscribe(topic, vapidPublicKey, csrfToken).catch(function () {
             // Denegado o sin soporte: no hay botón que informe del fallo, así
             // que no queda nada más que hacer.
         });
     }
 
-    window.LigaPush = { autoPrompt: autoPrompt };
+    /**
+     * Varios temas, UNO DETRÁS DE OTRO y no a la vez.
+     *
+     * En paralelo los dos acabarían pidiendo la misma suscripción del
+     * navegador —el endpoint es uno por dispositivo— y mandando dos altas a la
+     * vez por él, que es como se acaban creando dos filas para el mismo
+     * aparato. En fila, la segunda se encuentra la del navegador ya hecha y
+     * sólo añade su tema.
+     */
+    function autoPromptAll(topics, vapidPublicKey, csrfToken) {
+        return topics.reduce(function (chain, topic) {
+            return chain.then(function () {
+                return autoPrompt(topic, vapidPublicKey, csrfToken);
+            });
+        }, Promise.resolve());
+    }
+
+    window.LigaPush = { autoPrompt: autoPrompt, autoPromptAll: autoPromptAll };
 })();

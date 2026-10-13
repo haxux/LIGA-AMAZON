@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Club;
 use App\Models\PushSubscription;
+use App\Models\Season;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -98,5 +99,53 @@ class PushSubscriptionControllerTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseCount('push_subscriptions', 0);
+    }
+
+    /**
+     * El permiso para los avisos de chat se pedía SÓLO dentro de los dos
+     * paneles de Filament, y el chat se mudó al sitio público hace tiempo. Un
+     * técnico que entrara por el sitio —que es por donde se entra— no llegaba a
+     * suscribirse nunca, así que nadie le avisaba de un mensaje aunque todo lo
+     * demás estuviera puesto. En producción había dos suscripciones, las dos
+     * sólo de partidos.
+     */
+    public function test_a_logged_in_coach_is_asked_for_chat_notifications_on_the_site(): void
+    {
+        Season::factory()->create(['is_current' => true]);
+        $coach = User::factory()->coachOf(Club::factory()->create())->create();
+
+        $this->actingAs($coach, 'club')
+            ->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('autoPromptAll', false)
+            ->assertSee("['matches', 'chat']", false);
+    }
+
+    /**
+     * A quien no ha iniciado sesión no se le pide: el servidor rechazaría esa
+     * alta —el chat es de los que entran— y preguntar por nada sólo gasta el
+     * único permiso que el navegador concede.
+     */
+    public function test_an_anonymous_visitor_is_only_asked_about_matches(): void
+    {
+        Season::factory()->create(['is_current' => true]);
+
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee("['matches']", false)
+            ->assertDontSee("'chat'", false);
+    }
+
+    /**
+     * Y la pantalla del chat, que es donde más falta hace.
+     */
+    public function test_the_chat_page_also_asks_a_coach(): void
+    {
+        $coach = User::factory()->coachOf(Club::factory()->create())->create();
+
+        $this->actingAs($coach, 'club')
+            ->get(route('site.chat'))
+            ->assertOk()
+            ->assertSee("['matches', 'chat']", false);
     }
 }

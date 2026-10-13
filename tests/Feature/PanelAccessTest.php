@@ -81,7 +81,11 @@ class PanelAccessTest extends TestCase
             ->get('/admin')
             ->assertOk()
             ->assertSee('Go to the site')
-            ->assertSee(route('site.standings'), false);
+            // A la portada desde que existe (commit e6cf4c4). Con el `href=`
+            // delante y no la URL suelta: la raíz del sitio es el prefijo de
+            // todas las demás, así que a secas la encontraría en cualquier
+            // enlace y el test no probaría nada.
+            ->assertSee('href="'.route('site.home').'"', false);
     }
 
     public function test_the_coach_panel_links_back_to_their_club_page(): void
