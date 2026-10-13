@@ -187,4 +187,76 @@ class GoalscorersServiceTest extends TestCase
 
         $this->assertSame($order, $again);
     }
+
+    /**
+     * `leaderboards()` existe sólo para ahorrarle consultas a la portada, así
+     * que su única obligación es dar EXACTAMENTE lo mismo que las tres llamadas
+     * a `leaders()` que sustituye. Si algún día se separan, lo que se enseña en
+     * la portada deja de coincidir con lo que se enseña en Estadísticas, y
+     * nadie sabría cuál de las dos miente.
+     */
+    public function test_the_combined_boards_agree_with_the_one_by_one_ones(): void
+    {
+        $season = Season::factory()->create();
+        $service = app(GoalscorersService::class);
+
+        $tipos = [GameEvent::TYPE_GOAL, GameEvent::TYPE_ASSIST, GameEvent::TYPE_CLEAN_SHEET];
+
+        // Un reparto con empates a propósito, que es donde las dos podrían
+        // discrepar: dos a tres goles, dos a una asistencia, uno solo arriba en
+        // porterías a cero.
+        $reparto = [
+            ['Tres Goles A', GameEvent::TYPE_GOAL, 3],
+            ['Tres Goles B', GameEvent::TYPE_GOAL, 3],
+            ['Un Gol', GameEvent::TYPE_GOAL, 1],
+            ['Una Asistencia A', GameEvent::TYPE_ASSIST, 1],
+            ['Una Asistencia B', GameEvent::TYPE_ASSIST, 1],
+            ['Dos Porterias', GameEvent::TYPE_CLEAN_SHEET, 2],
+            ['Una Porteria', GameEvent::TYPE_CLEAN_SHEET, 1],
+        ];
+
+        foreach ($reparto as [$nombre, $tipo, $cuantos]) {
+            $game = $this->makeGame($season);
+            // Una portería a cero sólo la admite el modelo para un portero.
+            $player = Player::factory()->create([
+                'name' => $nombre,
+                'team_id' => $game->home_team_id,
+                'position' => $tipo === GameEvent::TYPE_CLEAN_SHEET ? Player::POSITION_GOALKEEPER : 'Forward',
+            ]);
+
+            foreach (range(1, $cuantos) as $ignored) {
+                GameEvent::factory()->for($game)->for($player)->create(['type' => $tipo]);
+            }
+        }
+
+        $combinadas = $service->leaderboards($season, $tipos, null, 5);
+
+        foreach ($tipos as $tipo) {
+            $unaAUna = $service->leaders($season, $tipo, null, 5);
+
+            $this->assertSame(
+                $unaAUna->map(fn (ScorerRow $r) => [$r->player->name, $r->count])->all(),
+                $combinadas[$tipo]->map(fn (ScorerRow $r) => [$r->player->name, $r->count])->all(),
+                "Las dos salidas discrepan en {$tipo}",
+            );
+        }
+
+        // Y que de verdad había empates que comparar, no listas de uno.
+        $this->assertCount(2, $combinadas[GameEvent::TYPE_GOAL]);
+        $this->assertCount(2, $combinadas[GameEvent::TYPE_ASSIST]);
+        $this->assertCount(1, $combinadas[GameEvent::TYPE_CLEAN_SHEET]);
+    }
+
+    public function test_the_combined_boards_are_empty_when_nothing_happened(): void
+    {
+        $season = Season::factory()->create();
+
+        $boards = app(GoalscorersService::class)->leaderboards(
+            $season,
+            [GameEvent::TYPE_GOAL, GameEvent::TYPE_ASSIST],
+        );
+
+        $this->assertTrue($boards[GameEvent::TYPE_GOAL]->isEmpty());
+        $this->assertTrue($boards[GameEvent::TYPE_ASSIST]->isEmpty());
+    }
 }

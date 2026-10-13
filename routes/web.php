@@ -10,6 +10,7 @@ use App\Http\Controllers\Site\CupsController;
 use App\Http\Controllers\Site\FixturesController;
 use App\Http\Controllers\Site\GameController;
 use App\Http\Controllers\Site\HistoryController;
+use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\NewsController;
 use App\Http\Controllers\Site\PlayerController;
 use App\Http\Controllers\Site\ScorersController;
@@ -25,9 +26,13 @@ use Illuminate\Support\Facades\Route;
  * throttled.
  */
 Route::middleware('throttle:60,1')->group(function (): void {
-    Route::get('/', StandingsController::class)->name('site.standings');
-    // Las clasificaciones de las temporadas cerradas. Aparte de la portada y no
-    // como un filtro suyo: la tabla de ahora es lo que viene a ver todo el
+    // La raíz es la portada, que es donde lleva el botón de la marca. Hasta el
+    // 2026-10-13 era Clasificación; su nombre de ruta no cambió, sólo la
+    // dirección, así que los enlaces del sitio siguen valiendo.
+    Route::get('/', HomeController::class)->name('site.home');
+    Route::get('/clasificacion', StandingsController::class)->name('site.standings');
+    // Las clasificaciones de las temporadas cerradas. Aparte de Clasificación y
+    // no como un filtro suyo: la tabla de ahora es lo que viene a ver todo el
     // mundo, y el archivo es otra intención.
     Route::get('/historia', HistoryController::class)->name('site.history');
     Route::get('/partidos', FixturesController::class)->name('site.fixtures');

@@ -17,12 +17,18 @@ use Illuminate\Support\Collection;
 final class StandingsService
 {
     /**
+     * El club va precargado en los equipos porque `Team::$crest_path` y
+     * `$short_name` son accesores que pasan POR él: sin esto, cada escudo de
+     * cada fila de cada tabla es una consulta suelta, y una tabla es justo el
+     * sitio donde hay una fila por equipo.
+     */
+    /**
      * @return Collection<int, StandingRow> ordered points desc, goal_difference desc, goals_for desc
      */
     public function forSeason(Season $season): Collection
     {
         return $this->buildTable(
-            Team::query()->where('season_id', $season->getKey())->orderBy('id')->get(),
+            Team::query()->where('season_id', $season->getKey())->with('club')->orderBy('id')->get(),
             $season->getKey(),
         );
     }
@@ -33,7 +39,7 @@ final class StandingsService
     public function forDivision(Division $division): Collection
     {
         return $this->buildTable(
-            Team::query()->where('division_id', $division->getKey())->orderBy('id')->get(),
+            Team::query()->where('division_id', $division->getKey())->with('club')->orderBy('id')->get(),
             $division->season_id,
         );
     }

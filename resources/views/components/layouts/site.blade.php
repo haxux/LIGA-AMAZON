@@ -47,7 +47,10 @@
                 && (int) $boundClubId === (int) $coachClub->getKey();
 
             $nav = [
-                ['label' => 'Clasificación', 'url' => route('site.standings'), 'active' => request()->routeIs('site.standings')],
+                // Historia cuelga de Clasificación, así que resalta con ella:
+                // quien está mirando una tabla de 2025 sigue estando en la
+                // sección de las tablas.
+                ['label' => 'Clasificación', 'url' => route('site.standings'), 'active' => request()->routeIs('site.standings') || request()->routeIs('site.history')],
                 ['label' => 'Partidos', 'url' => route('site.fixtures'), 'active' => request()->routeIs('site.fixtures')],
                 ['label' => 'Estadísticas', 'url' => route('site.scorers'), 'active' => request()->routeIs('site.scorers')],
                 ['label' => 'Equipos', 'url' => route('site.clubs.index'), 'active' => request()->routeIs('site.clubs.*') && ! $onOwnClub],
@@ -90,7 +93,9 @@
                  misma— para que al entrar los enlaces del técnico el escudo no
                  salte a una segunda línea. --}}
             <div class="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3 lg:gap-6">
-                <a href="{{ route('site.standings') }}" class="flex shrink-0 items-baseline gap-2 font-display text-[22px] leading-none lg:text-[26px]">
+                {{-- A la portada, que es la convención de cualquier sitio y lo
+                     que el propietario pidió: la marca da la bienvenida. --}}
+                <a href="{{ route('site.home') }}" class="flex shrink-0 items-baseline gap-2 font-display text-[22px] leading-none lg:text-[26px]">
                     <span class="font-extrabold text-brand">AMAZON</span>
                     <span class="font-semibold tracking-[0.14em] text-white">TOERNOOIEN</span>
                 </a>
@@ -154,6 +159,7 @@
                 <div class="flex flex-wrap gap-10">
                     <div class="flex flex-col gap-2">
                         <span class="font-mono text-[9px] tracking-[0.14em] text-brand">COMPETICIÓN</span>
+                        <a href="{{ route('site.home') }}" class="text-sm text-white/60 hover:text-brand">Inicio</a>
                         <a href="{{ route('site.standings') }}" class="text-sm text-white/60 hover:text-brand">Clasificación</a>
                         <a href="{{ route('site.fixtures') }}" class="text-sm text-white/60 hover:text-brand">Partidos</a>
                     </div>

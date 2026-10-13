@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\Site;
 
-use App\Models\Season;
+use App\Models\GameEvent;
 use App\Services\Competition;
 use App\Services\GoalscorersService;
-use App\Services\ScorerRow;
 use App\Services\StandingsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -48,7 +47,10 @@ class HistoryController extends SiteController
             'selectedSeason' => $season,
             'tables' => $tables,
             'champions' => $this->champions($tables),
-            'scorers' => $this->topScorers($goalscorers, $season),
+            // De la liga y no de todo: en esta página el campeón sale de la
+            // tabla de liga, y dos cifras juntas que vengan de competiciones
+            // distintas se leen como si fueran del mismo torneo.
+            'scorers' => $goalscorers->leaders($season, GameEvent::TYPE_GOAL, Competition::league()),
         ]);
     }
 
@@ -72,26 +74,5 @@ class HistoryController extends SiteController
             ])
             ->values()
             ->all();
-    }
-
-    /**
-     * El máximo goleador de la liga de esa temporada, y TODOS los que empaten
-     * con él. Elegir uno entre dos que marcaron doce goles sería inventarse un
-     * desempate que la liga no tiene.
-     *
-     * De la liga y no de todo: en esta página el campeón es el de la liga, y
-     * dos cifras juntas que vengan de competiciones distintas se leen como si
-     * fueran del mismo torneo.
-     *
-     * @return Collection<int, ScorerRow>
-     */
-    private function topScorers(GoalscorersService $goalscorers, Season $season): Collection
-    {
-        $board = $goalscorers->topScorers($season, 5, null, Competition::league());
-        $best = $board->first()?->count;
-
-        return $best === null
-            ? collect()
-            : $board->filter(fn (ScorerRow $row) => $row->count === $best)->values();
     }
 }
