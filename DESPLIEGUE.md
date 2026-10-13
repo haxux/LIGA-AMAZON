@@ -78,10 +78,36 @@ que no viaja con el repositorio: hay que compilarlo en local y subirlo.
 
 ```bash
 npm ci
+php artisan view:clear      # IMPRESCINDIBLE, ver abajo
 npm run build
 rsync -az --delete -e "ssh -i ~/.ssh/liga_hostinger -p 65002" \
   public/build/ u269987465@109.106.251.174:~/domains/lietoernooien.com/app/public/build/
 ```
+
+### El `view:clear` no es higiene, cambia lo que se publica
+
+`resources/css/app.css` trae del andamiaje de Laravel esta línea:
+
+```css
+@source '../../storage/framework/views/*.php';
+```
+
+Es el **caché de Blade compilado**, y ahí acaba todo lo que se haya renderizado
+en local —incluido el panel de Filament, que tiene su propia hoja aparte y no
+necesita nada de la pública. Así que el tamaño del CSS depende de por qué
+páginas se haya navegado antes de compilar, y eso no se nota al mirarlo.
+
+Medido el 2026-10-13, con el mismo código y sin cambiar una línea:
+
+| caché de vistas | CSS publicado |
+|---|---|
+| 140 vistas compiladas | 61,26 kB |
+| vacío (`view:clear`) | 43,65 kB |
+
+**17,6 kB —un 40 %— de clases del panel colándose en la hoja pública.** Como el
+código fuente de las vistas sí lo escanea Tailwind por su cuenta, el build
+limpio es el completo: se comprobó clase por clase que no faltara ninguna de las
+que usan las páginas públicas.
 
 Vite 8 exige **Node ≥ 20**. Con Node 18 falla con un error que no menciona la
 versión por ningún lado:
