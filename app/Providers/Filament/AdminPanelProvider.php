@@ -51,7 +51,7 @@ class AdminPanelProvider extends PanelProvider
             // las fichas viven ahí, se cruza de un lado a otro a menudo.
             ->navigationItems([
                 NavigationItem::make('Go to the site')
-                    ->url(fn (): string => route('site.standings'))
+                    ->url(fn (): string => route('site.home'))
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->sort(-1),
             ])
