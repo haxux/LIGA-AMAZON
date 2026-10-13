@@ -7,9 +7,12 @@
             </div>
         </div>
 
-        <p class="max-w-md text-xs text-ink/50">
-            Uno a uno entre técnicos, y con los presidentes. Se refresca solo cada pocos segundos.
-        </p>
+        <div class="flex max-w-md flex-col items-start gap-2">
+            <p class="text-xs text-ink/50">
+                Uno a uno entre técnicos, y con los presidentes. Se refresca solo cada pocos segundos.
+            </p>
+            <x-site.push-toggle />
+        </div>
     </div>
 
     <livewire:chat />

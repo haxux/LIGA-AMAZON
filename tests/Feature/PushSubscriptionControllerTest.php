@@ -148,4 +148,22 @@ class PushSubscriptionControllerTest extends TestCase
             ->assertOk()
             ->assertSee("['matches', 'chat']", false);
     }
+
+    /**
+     * El chat dice si le van a avisar o no, y ofrece activarlo.
+     *
+     * Sin esto no hay forma de diagnosticarlo: el permiso vive en el navegador
+     * y la suscripción en el servidor, y cuando falta una de las dos la página
+     * se queda callada. Llevaba meses sin notificar a nadie y nada lo decía.
+     */
+    public function test_the_chat_page_shows_whether_notifications_are_on(): void
+    {
+        $coach = User::factory()->coachOf(Club::factory()->create())->create();
+
+        $this->actingAs($coach, 'club')
+            ->get(route('site.chat'))
+            ->assertOk()
+            ->assertSee('data-push-toggle', false)
+            ->assertSee('Activar avisos');
+    }
 }

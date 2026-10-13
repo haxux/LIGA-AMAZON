@@ -79,31 +79,62 @@
         });
     }
 
+    function supported() {
+        return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    }
+
     /**
-     * Lo único que el sitio hace ahora con esto: preguntar una vez, al
-     * primer visitante de cada tema, y ya. Sin botón ni forma de
-     * desactivarlo desde aquí — quien no quiera avisos los bloquea desde los
-     * ajustes de notificaciones del navegador, como con cualquier otro sitio.
+     * Deja asegurada la suscripción a un tema, preguntando sólo si hace falta.
      *
-     * La marca de "ya se preguntó" se guarda ANTES de intentarlo, para que
-     * una respuesta "no" tampoco vuelva a preguntar en la siguiente página.
+     * Antes esto era «preguntar una vez y nunca más», con la marca guardada en
+     * `localStorage`. Y esa marca se consultaba AUNQUE no hubiera suscripción
+     * ninguna, así que bastaba haber pasado una vez por un panel para que el
+     * sitio no volviera a intentarlo jamás. Es lo que pasó: el permiso del chat
+     * se pedía sólo dentro de los paneles, la marca quedó puesta, y después el
+     * sitio ya no podía arreglarlo. Restablecer el permiso del navegador
+     * tampoco servía, porque eso no borra `localStorage`.
+     *
+     * Ahora manda el permiso real del navegador, que es el único dato que no
+     * miente:
+     *
+     *   concedido  → se suscribe en silencio, sin preguntar nada. Es lo que
+     *                hace que esto se recupere solo: a quien ya dijo que sí
+     *                por los partidos se le añade el chat sin molestarle.
+     *   denegado   → nada; preguntar otra vez no está en nuestra mano.
+     *   sin decidir→ se pregunta UNA vez, como antes.
+     *
+     * La marca de éxito evita repetir el alta en cada página. La de «ya se
+     * preguntó» sigue existiendo, pero sólo gobierna la pregunta, nunca el
+     * alta.
      */
-    function autoPrompt(topic, vapidPublicKey, csrfToken) {
-        var askedKey = 'liga-push-asked-' + topic;
-
-        if (window.localStorage.getItem(askedKey) === '1') {
-            return;
+    function ensure(topic, vapidPublicKey, csrfToken) {
+        if (!supported()) {
+            return Promise.resolve(false);
         }
 
-        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
-            return;
+        if (window.localStorage.getItem('liga-push-' + topic) === '1') {
+            return Promise.resolve(true);
         }
 
-        window.localStorage.setItem(askedKey, '1');
+        if (Notification.permission === 'denied') {
+            return Promise.resolve(false);
+        }
+
+        if (Notification.permission !== 'granted') {
+            var askedKey = 'liga-push-asked-' + topic;
+
+            if (window.localStorage.getItem(askedKey) === '1') {
+                return Promise.resolve(false);
+            }
+
+            // Antes de intentarlo, para que un "no" tampoco vuelva a preguntar.
+            window.localStorage.setItem(askedKey, '1');
+        }
 
         return subscribe(topic, vapidPublicKey, csrfToken).catch(function () {
-            // Denegado o sin soporte: no hay botón que informe del fallo, así
-            // que no queda nada más que hacer.
+            // Denegado, sin soporte o sin sesión para el tema que lo pide: no
+            // hay botón que informe del fallo, así que no queda más que hacer.
+            return false;
         });
     }
 
@@ -119,10 +150,10 @@
     function autoPromptAll(topics, vapidPublicKey, csrfToken) {
         return topics.reduce(function (chain, topic) {
             return chain.then(function () {
-                return autoPrompt(topic, vapidPublicKey, csrfToken);
+                return ensure(topic, vapidPublicKey, csrfToken);
             });
         }, Promise.resolve());
     }
 
-    window.LigaPush = { autoPrompt: autoPrompt, autoPromptAll: autoPromptAll };
+    window.LigaPush = { autoPrompt: ensure, autoPromptAll: autoPromptAll };
 })();
