@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Games\RelationManagers;
 
 use App\Models\GameEvent;
 use App\Models\Player;
+use App\Models\Team;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -61,19 +62,13 @@ class GameEventsRelationManager extends RelationManager
                         }
                     }),
                 Select::make('player_id')
-                    ->relationship('player', 'name', fn (Builder $query, Get $get) => $query
-                        // Las dos plantillas de ESTA temporada: desde la Fase 9 el
-                        // jugador pertenece al club y su participación en el año
-                        // vive en squad_memberships.
-                        ->whereHas('memberships', fn (Builder $memberships) => $memberships->whereIn('team_id', [
-                            $this->getOwnerRecord()->home_team_id,
-                            $this->getOwnerRecord()->away_team_id,
-                        ]))
+                    ->relationship('player', 'name', fn (Builder $query, Get $get) => $this
+                        ->whoCouldHavePlayed($query)
                         ->when(
                             $get('type') === GameEvent::TYPE_CLEAN_SHEET,
                             fn (Builder $query) => $query->where('position', Player::POSITION_GOALKEEPER),
                         ))
-                    ->getOptionLabelFromRecordUsing(fn (Player $record): string => "{$record->club?->short_name} · {$record->name}")
+                    ->getOptionLabelFromRecordUsing(fn (Player $record): string => self::label($record))
                     ->required()
                     ->searchable()
                     ->preload(),
@@ -86,14 +81,10 @@ class GameEventsRelationManager extends RelationManager
                     ->afterStateUpdated(fn (bool $state, Set $set) => $state ?: $set('assist_player_id', null)),
                 Select::make('assist_player_id')
                     ->label('Jugador que asistió')
-                    ->options(fn (Get $get): array => Player::query()
-                        ->whereHas('memberships', fn (Builder $memberships) => $memberships->whereIn('team_id', [
-                            $this->getOwnerRecord()->home_team_id,
-                            $this->getOwnerRecord()->away_team_id,
-                        ]))
+                    ->options(fn (Get $get): array => $this->whoCouldHavePlayed(Player::query())
                         ->where('id', '!=', $get('player_id'))
                         ->get()
-                        ->mapWithKeys(fn (Player $player): array => [$player->id => "{$player->club?->short_name} · {$player->name}"])
+                        ->mapWithKeys(fn (Player $player): array => [$player->id => self::label($player)])
                         ->all())
                     ->dehydrated()
                     ->searchable()
@@ -192,6 +183,47 @@ class GameEventsRelationManager extends RelationManager
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Quién pudo jugar este partido, que no es lo mismo que quién está hoy en
+     * las plantillas.
+     *
+     * Tres caminos, y el segundo es el que faltaba:
+     *
+     * 1. Los que están en una de las dos plantillas de la temporada.
+     * 2. Los que SE FUERON de la liga desde uno de los dos clubes. Al venderlos
+     *    fuera se les borra la pertenencia —`TransferService::leaveFormerSquad()`—
+     *    y desaparecían del desplegable para siempre, también en partidos que
+     *    habían jugado antes de irse. Pasó con Ola Aina: se vendió al Barcelona
+     *    y ya no había manera de anotarle un gol de la fase de grupos de la
+     *    copa. Su ficha se conserva a propósito (diseño D9) justo para que sus
+     *    eventos sobrevivan; no poder escribirlos dejaba esa intención a medias.
+     * 3. Los que ya tienen un evento en ESTE partido, para poder corregirlo
+     *    aunque hoy no encajen en ninguno de los otros dos casos.
+     *
+     * @param  Builder<Player>  $query
+     * @return Builder<Player>
+     */
+    private function whoCouldHavePlayed(Builder $query): Builder
+    {
+        $game = $this->getOwnerRecord();
+        $teams = [$game->home_team_id, $game->away_team_id];
+        $clubs = Team::query()->whereKey($teams)->pluck('club_id')->all();
+
+        return $query->where(fn (Builder $player) => $player
+            ->whereHas('memberships', fn (Builder $memberships) => $memberships->whereIn('team_id', $teams))
+            ->orWhere(fn (Builder $gone) => $gone->whereNotNull('left_at')->whereIn('club_id', $clubs))
+            ->orWhereHas('events', fn (Builder $events) => $events->where('game_id', $game->getKey())));
+    }
+
+    /**
+     * El club y el nombre, y un aviso si ya no está: en una lista donde conviven
+     * los de ahora y los que se fueron, sin decirlo parecería que sigue fichado.
+     */
+    private static function label(Player $player): string
+    {
+        return $player->club?->short_name.' · '.$player->name.($player->left_at ? ' (ya no está)' : '');
     }
 
     /**

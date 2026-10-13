@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\Games\Pages\EditGame;
 use App\Filament\Resources\Games\RelationManagers\GameEventsRelationManager;
+use App\Models\Club;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Matchday;
@@ -396,5 +397,73 @@ class GameEventsRelationManagerTest extends TestCase
         $this->assertDatabaseHas('game_events', [
             'player_id' => $homePlayer->id,
         ]);
+    }
+
+    /**
+     * El caso de Ola Aina, el 2026-10-13: se vendió al Barcelona y ya no había
+     * manera de anotarle un gol de un partido que SÍ jugó antes de irse.
+     *
+     * Al vender fuera de la liga se le borra la pertenencia a la plantilla, y
+     * el desplegable filtraba por ahí, así que el jugador desaparecía para
+     * siempre. Su ficha se conserva a propósito —diseño D9, para que sus
+     * eventos sobrevivan— y no poder escribirlos dejaba esa intención a medias.
+     */
+    public function test_a_player_sold_out_of_the_league_can_still_be_given_an_event(): void
+    {
+        $game = $this->makeGame();
+        $club = Team::find($game->home_team_id)->club;
+
+        $vendido = Player::factory()->create([
+            'club_id' => $club->id,
+            'name' => 'Ola Aina',
+            'left_at' => today(),
+            'left_to' => 'FC Barcelona',
+        ]);
+
+        // Sin pertenencia: es justo lo que la venta deja.
+        $this->assertSame(0, $vendido->memberships()->count());
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->callTableAction('create', data: [
+                'type' => GameEvent::TYPE_GOAL,
+                'player_id' => $vendido->id,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('game_events', [
+            'game_id' => $game->id,
+            'player_id' => $vendido->id,
+            'type' => GameEvent::TYPE_GOAL,
+        ]);
+    }
+
+    /**
+     * Pero sólo el de SUS clubes: que se haya ido de la liga no le hace
+     * elegible en el partido de otros dos.
+     */
+    public function test_someone_who_left_another_club_is_not_offered(): void
+    {
+        $game = $this->makeGame();
+
+        $ajeno = Player::factory()->create([
+            'club_id' => Club::factory()->create()->id,
+            'name' => 'De Otro Club',
+            'left_at' => today(),
+        ]);
+
+        Livewire::test(GameEventsRelationManager::class, [
+            'ownerRecord' => $game,
+            'pageClass' => EditGame::class,
+        ])
+            ->callTableAction('create', data: [
+                'type' => GameEvent::TYPE_GOAL,
+                'player_id' => $ajeno->id,
+            ])
+            ->assertHasTableActionErrors(['player_id']);
+
+        $this->assertDatabaseMissing('game_events', ['player_id' => $ajeno->id]);
     }
 }

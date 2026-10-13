@@ -139,6 +139,17 @@ class Player extends Model
     }
 
     /**
+     * Lo que hizo en los partidos: goles, asistencias, tarjetas, porterías a
+     * cero. Sobrevive a que se vaya de la liga —su ficha no se borra justo por
+     * esto (diseño D9)—, y por eso el formulario de eventos pregunta por aquí
+     * para dejar corregir un partido de alguien que ya no está.
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(GameEvent::class);
+    }
+
+    /**
      * El equipo en el que juega esta temporada, si está inscrito en ella. No es
      * un accesor de compatibilidad: `Player::team()` desapareció en la Fase 9
      * porque su significado cambió — un jugador ya no pertenece a un equipo,
