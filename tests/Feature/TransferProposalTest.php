@@ -9,6 +9,7 @@ use App\Filament\Resources\Transfers\TransferResource;
 use App\Models\BudgetMovement;
 use App\Models\Club;
 use App\Models\Conversation;
+use App\Models\FcPlayer;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\SquadMembership;
@@ -191,6 +192,84 @@ class TransferProposalTest extends TestCase
     }
 
     // ── Lo que el administrador hace con ella ─────────────────────────────
+
+    /**
+     * El que llega de fuera de la liga nace aquí, y desde que existe el
+     * catálogo de EA FC el formulario de cierre lo rellena desde él. Lo que
+     * hay que vigilar es que el ENLACE sobreviva al cierre del modal: sin
+     * guardar `fc_id`, el administrador elegía al jugador en el buscador, veía
+     * los campos rellenarse, y la ficha pública se quedaba sin medias sin que
+     * nada dijera por qué.
+     */
+    public function test_approving_a_signing_keeps_the_link_with_the_fc_catalogue(): void
+    {
+        $ficha = FcPlayer::create([
+            'fc_id' => 231747,
+            'first_name' => 'Kylian',
+            'last_name' => 'Mbappe',
+            'search_name' => 'kylian mbappe',
+            'position' => 'ST',
+            'overall_rating' => 91,
+            'club' => 'Real Madrid',
+        ]);
+
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SIGNING,
+            'external_player' => 'Kylian Mbappe',
+            'external_club' => 'Real Madrid',
+            'fee' => 300_000,
+        ]);
+
+        app(TransferService::class)->approve($proposal, $this->admin, [
+            'player_name' => 'Kylian Mbappe',
+            'position' => 'Forward',
+            'specific_position' => 'DC',
+            'fc_id' => $ficha->fc_id,
+            'photo_path' => 'players/mbappe.png',
+            'external_club' => 'Real Madrid',
+            'fee' => 300_000,
+            'shirt_number' => 9,
+        ]);
+
+        $player = Player::query()->where('name', 'Kylian Mbappe')->first();
+
+        $this->assertNotNull($player);
+        $this->assertSame(231747, $player->fc_id);
+        $this->assertSame('players/mbappe.png', $player->photo_path);
+
+        // Y el enlace sirve para lo que existe: la ficha pública saca de ahí
+        // las medias.
+        $this->assertNotNull($player->fcPlayer);
+        $this->assertSame(91, $player->fcPlayer->overall_rating);
+    }
+
+    /**
+     * Sin tocar el buscador, el alta funciona exactamente como antes: el que
+     * llega no queda atado a ninguna ficha de EA ni se inventa una.
+     */
+    public function test_approving_a_signing_without_the_catalogue_leaves_no_link(): void
+    {
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SIGNING,
+            'external_player' => 'Un Desconocido',
+            'external_club' => 'Palmeiras',
+            'fee' => 100_000,
+        ]);
+
+        app(TransferService::class)->approve($proposal, $this->admin, [
+            'player_name' => 'Un Desconocido',
+            'position' => 'Forward',
+            'external_club' => 'Palmeiras',
+            'fee' => 100_000,
+        ]);
+
+        $player = Player::query()->where('name', 'Un Desconocido')->first();
+
+        $this->assertNotNull($player);
+        $this->assertNull($player->fc_id);
+        $this->assertNull($player->photo_path);
+        $this->assertNull($player->fcPlayer);
+    }
 
     public function test_approving_a_signing_creates_the_player_and_moves_the_money(): void
     {

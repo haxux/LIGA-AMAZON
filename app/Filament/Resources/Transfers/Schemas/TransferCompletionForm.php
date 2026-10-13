@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Transfers\Schemas;
 
+use App\Filament\Support\FcLookup;
 use App\Models\Player;
 use App\Models\Team;
 use App\Models\Transfer;
@@ -45,6 +46,22 @@ class TransferCompletionForm
     private static function newPlayerFields(Transfer $transfer): array
     {
         return [
+            // El que llega de fuera de la liga se daba de alta tecleándolo
+            // entero, y mientras tanto el catálogo de EA FC ya rellenaba fichas
+            // en Jugadores. Es el mismo buscador, literalmente la misma clase:
+            // si el fichaje y el alta a mano crearan al jugador de dos maneras
+            // distintas, el mismo futbolista entraría distinto según por dónde
+            // se le diera de alta.
+            //
+            // El nombre que traía la propuesta queda de respaldo: si nadie toca
+            // el buscador, el alta funciona exactamente como antes.
+            // No toca el club de procedencia, aunque el catálogo lo sepa: en
+            // una propuesta entrante es obligatorio —lo exige el invariante de
+            // Transfer—, así que ya viene puesto, y lo pactado lo dice el
+            // técnico que propuso la operación, no EA.
+            FcLookup::make('player_name'),
+            FcLookup::idField(),
+
             TextInput::make('player_name')
                 ->label('Player')
                 ->default($transfer->external_player)
@@ -65,6 +82,7 @@ class TransferCompletionForm
                 ->native(false),
             DatePicker::make('birth_date')->label('Born'),
             TextInput::make('market_value')->label('Value')->numeric()->minValue(0),
+            FcLookup::photoField(),
             TextInput::make('shirt_number')
                 ->label('Shirt')
                 ->numeric()

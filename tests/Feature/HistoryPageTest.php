@@ -120,7 +120,11 @@ class HistoryPageTest extends TestCase
             ->assertOk()
             ->assertDontSee(route('site.history'));
 
-        $this->closedSeason('2025/26', 2025);
+        // El nombre NO con el formato «2025/26» de la factoría: `seasons.name`
+        // es único y la factoría lo saca de un rango de cien años, así que una
+        // temporada aleatoria de este mismo test chocaba con ésta una de cada
+        // cien ejecuciones. Se vio fallar dos veces y pasar el resto.
+        $this->closedSeason('Temporada Ya Cerrada', 2025);
 
         $this->get(route('site.standings'))
             ->assertOk()

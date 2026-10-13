@@ -6,9 +6,13 @@ use App\Filament\Resources\FcPlayers\FcPlayerResource;
 use App\Filament\Resources\FcPlayers\Pages\EditFcPlayer;
 use App\Filament\Resources\FcPlayers\Pages\ListFcPlayers;
 use App\Filament\Resources\Players\Pages\CreatePlayer;
+use App\Filament\Resources\Transfers\Pages\ListTransfers;
 use App\Models\Club;
 use App\Models\FcPlayer;
 use App\Models\Player;
+use App\Models\Season;
+use App\Models\Team;
+use App\Models\Transfer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -220,6 +224,47 @@ class CatalogoFcTest extends TestCase
         $this->assertSame(231747, (int) $jugador->fc_id);
         $this->assertSame('Forward', $jugador->position);
         $this->assertSame(91, $jugador->fcPlayer->overall_rating, 'El enlace con el catálogo no resuelve.');
+    }
+
+    /**
+     * El otro sitio donde nace un jugador: al cerrar un fichaje de fuera de la
+     * liga. Hasta ahora ahí se tecleaba entero, mientras el catálogo ya
+     * rellenaba fichas en Jugadores — lo pidió el propietario.
+     *
+     * El campo del nombre NO se llama igual que en Jugadores (`player_name`
+     * contra `name`), y eso es justo lo que podría romperse en silencio: el
+     * buscador rellenaría un campo que no existe en ese formulario y el
+     * administrador vería el nombre quedarse en blanco.
+     */
+    public function test_choosing_a_catalogue_entry_fills_the_transfer_form(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->artisan('fc:importar-catalogo', ['fichero' => $this->csvDeEjemplo()])->assertSuccessful();
+
+        $season = Season::factory()->create(['is_current' => true]);
+        $club = Club::factory()->create(['initial_balance' => 5_000_000]);
+        Team::factory()->create(['club_id' => $club->id, 'season_id' => $season->id]);
+
+        $proposal = Transfer::create([
+            'type' => Transfer::TYPE_SIGNING,
+            'to_club_id' => $club->id,
+            'external_player' => 'A quien sea',
+            'external_club' => 'Palmeiras',
+            'fee' => 100,
+            'season_id' => $season->id,
+            'scope' => Transfer::SCOPE_EXTERNAL,
+            'status' => Transfer::STATUS_PROPOSED,
+        ]);
+
+        Livewire::test(ListTransfers::class)
+            ->mountTableAction('approve', $proposal)
+            ->setTableActionData(['fc_lookup' => 231747])
+            ->assertTableActionDataSet([
+                'player_name' => 'Kylian Mbappé',
+                'position' => 'Forward',
+                'specific_position' => 'DC',
+                'fc_id' => 231747,
+            ]);
     }
 
     /**

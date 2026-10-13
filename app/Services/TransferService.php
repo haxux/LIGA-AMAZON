@@ -81,6 +81,12 @@ final class TransferService
      * La ficha del que llega: el club es el que lo recibe, y la posición hace
      * falta porque la ficha pública agrupa por ella (Fase 10).
      *
+     * `fc_id` y la foto entran por aquí desde que el formulario de cierre tiene
+     * el buscador del catálogo: sin guardarlos, el administrador elegía al
+     * jugador en EA FC, veía los campos rellenarse, y el enlace con el catálogo
+     * se perdía al cerrar el modal — la ficha pública se quedaba sin medias y
+     * sin cara, y no había manera de saber por qué.
+     *
      * @param  array<string, mixed>  $completion
      */
     private function createIncomingPlayer(Transfer $transfer, array $completion): Player
@@ -92,6 +98,8 @@ final class TransferService
             'specific_position' => $completion['specific_position'] ?? null,
             'birth_date' => $completion['birth_date'] ?? null,
             'market_value' => $completion['market_value'] ?? null,
+            'fc_id' => $completion['fc_id'] ?? null,
+            'photo_path' => $completion['photo_path'] ?? null,
         ]);
     }
 
