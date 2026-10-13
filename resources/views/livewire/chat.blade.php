@@ -130,7 +130,7 @@
                             <div class="max-w-[85%] rounded-[6px] border-l-[3px] border-brand bg-surface-alt p-3">
                                 <div class="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-brand">
                                     <span aria-hidden="true">💰</span>
-                                    <span>{{ \App\Models\Offer::KINDS[$entry->kind] ?? 'Oferta' }}</span>
+                                    <span>{{ \App\Models\Offer::KINDS_SHORT[$entry->kind] ?? 'Oferta' }}</span>
                                     <span class="rounded-full bg-white/10 px-2 py-0.5 text-white/70">{{ Offer::STATUSES[$entry->status] }}</span>
                                 </div>
 

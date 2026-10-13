@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Offer;
 use App\Models\Transfer;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -37,13 +38,88 @@ final class OfferService
         return (int) $offer->moved_by !== (int) $user->getKey();
     }
 
+    /**
+     * Aceptar cierra el trato entre los dos técnicos y lo deja PROPUESTO en la
+     * bandeja del administrador. No mueve plantilla ni dinero: eso lo hace el
+     * traspaso al aprobarse, que sigue siendo la única puerta.
+     *
+     * La propuesta nace aquí y no se teclea otra vez (decisión del propietario,
+     * 2026-10-13): lo acordado ya está escrito, y volver a escribirlo es donde
+     * se eligen dos veces el mismo club.
+     */
     public function accept(Offer $offer, User $user): Offer
     {
         $this->guardAnswer($offer, $user);
 
-        $offer->update(['status' => Offer::STATUS_ACCEPTED, 'moved_by' => $user->getKey()]);
+        return DB::transaction(function () use ($offer, $user): Offer {
+            $transfer = $this->propose($offer, $user);
 
-        return $offer;
+            $offer->update([
+                'status' => Offer::STATUS_ACCEPTED,
+                'moved_by' => $user->getKey(),
+                'transfer_id' => $transfer->getKey(),
+            ]);
+
+            return $offer;
+        });
+    }
+
+    /**
+     * El trato acordado, escrito como propuesta de traspaso para que el
+     * administrador la firme desde Transfers.
+     */
+    private function propose(Offer $offer, User $user): Transfer
+    {
+        $season = $this->seasons->active();
+
+        if ($season === null) {
+            throw ValidationException::withMessages(['offer' => 'No hay temporada vigente en la que registrar el traspaso.']);
+        }
+
+        $giving = $offer->givingClubId();
+
+        // Entre la oferta y el apretón de manos el jugador pudo irse a un
+        // tercer club, y entonces lo acordado no significa nada: ninguno de los
+        // dos que hablan lo tiene ya. Sin esta comprobación se propondría un
+        // traspaso entre los dos del hilo por un jugador que no es de ninguno.
+        $clubs = $offer->conversation?->participants
+            ->pluck('club_id')
+            ->filter()
+            ->map(fn ($id): int => (int) $id)
+            ->all() ?? [];
+
+        if ($giving === null || ! in_array($giving, $clubs, true)) {
+            throw ValidationException::withMessages([
+                'offer' => 'Ese jugador ya no es de ninguno de los dos clubes: la oferta se quedó vieja.',
+            ]);
+        }
+
+        $receiving = $offer->receivingClubId();
+
+        // El otro lado tiene que ser un club. Con un presidente al otro lado no
+        // lo hay —un presidente no dirige ninguno— y no hay adónde mandarlo.
+        if ($receiving === null) {
+            throw ValidationException::withMessages([
+                'offer' => 'El otro lado de la conversación no dirige ningún club.',
+            ]);
+        }
+
+        return Transfer::create([
+            'player_id' => $offer->player_id,
+            'season_id' => $season->getKey(),
+            // Una cesión pactada en el chat es una cesión, no una compra: lo
+            // acordado entre los dos técnicos es lo que se propone.
+            'type' => $offer->isFree() ? Transfer::TYPE_LOAN_IN : Transfer::TYPE_SIGNING,
+            'scope' => Transfer::SCOPE_INTERNAL,
+            // Propuesto, no ejecutado: falta la firma del administrador, que la
+            // pone desde Transfers y es la que mueve el dinero.
+            'status' => Transfer::STATUS_PROPOSED,
+            'from_club_id' => $giving,
+            'to_club_id' => $receiving,
+            'fee' => $offer->amount,
+            'loan_term' => $offer->loan_term,
+            'proposed_by' => $user->getKey(),
+        ]);
     }
 
     public function reject(Offer $offer, User $user): Offer
@@ -75,56 +151,6 @@ final class OfferService
             'status' => Offer::STATUS_SENT,
             'moved_by' => $user->getKey(),
         ]);
-    }
-
-    /**
-     * La firma del administrador: un traspaso de los de siempre, que al
-     * guardarse paga, cobra y mueve al jugador.
-     */
-    public function execute(Offer $offer, User $admin): Transfer
-    {
-        if (! $admin->isAdmin()) {
-            throw ValidationException::withMessages(['offer' => 'Sólo un administrador ejecuta una oferta.']);
-        }
-
-        if ($offer->status !== Offer::STATUS_ACCEPTED) {
-            throw ValidationException::withMessages(['offer' => 'Sólo se ejecuta una oferta aceptada.']);
-        }
-
-        $season = $this->seasons->active();
-
-        if ($season === null) {
-            throw ValidationException::withMessages(['offer' => 'No hay temporada vigente en la que registrar el traspaso.']);
-        }
-
-        $receiving = $offer->receivingClubId();
-        $giving = $offer->isAsking() ? $offer->player?->club_id : $offer->conversation?->other($offer->mover)?->club_id;
-
-        $transfer = Transfer::create([
-            'player_id' => $offer->player_id,
-            'season_id' => $season->getKey(),
-            // Una cesión pactada en el chat es una cesión, no una compra: lo
-            // acordado entre los dos técnicos es lo que se ejecuta.
-            'type' => $offer->isFree() ? Transfer::TYPE_LOAN_IN : Transfer::TYPE_SIGNING,
-            'scope' => Transfer::SCOPE_INTERNAL,
-            // Ejecutado, no propuesto: aquí la firma ya la está poniendo el
-            // administrador, que es lo que faltaba.
-            'status' => Transfer::STATUS_EXECUTED,
-            // El club que cede es el del jugador AHORA, no el de cuando se
-            // ofreció: entre una cosa y otra puede haber pasado otro traspaso.
-            'from_club_id' => $offer->player?->club_id ?? $giving,
-            'to_club_id' => $receiving,
-            'fee' => $offer->amount,
-            'loan_term' => $offer->loan_term,
-        ]);
-
-        $offer->update([
-            'status' => Offer::STATUS_EXECUTED,
-            'transfer_id' => $transfer->getKey(),
-            'moved_by' => $admin->getKey(),
-        ]);
-
-        return $transfer;
     }
 
     private function guardAnswer(Offer $offer, User $user): void

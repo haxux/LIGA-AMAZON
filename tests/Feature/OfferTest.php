@@ -17,6 +17,7 @@ use App\Models\Transfer;
 use App\Models\User;
 use App\Services\BudgetService;
 use App\Services\OfferService;
+use App\Services\TransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -164,7 +165,7 @@ class OfferTest extends TestCase
      * Y lo pactado es lo que se ejecuta: una cesión acordada en el chat no se
      * convierte en una compra al firmarla el administrador.
      */
-    public function test_executing_a_loan_offer_records_a_loan(): void
+    public function test_accepting_a_loan_offer_proposes_a_loan(): void
     {
         $offer = Offer::create([
             'conversation_id' => $this->conversation->id,
@@ -178,15 +179,19 @@ class OfferTest extends TestCase
         ]);
 
         app(OfferService::class)->accept($offer, $this->seller);
-        $transfer = app(OfferService::class)->execute($offer->fresh(), User::factory()->create());
 
+        $transfer = $offer->fresh()->transfer;
+
+        $this->assertNotNull($transfer, 'Aceptar deja escrita la propuesta');
         $this->assertSame(Transfer::TYPE_LOAN_IN, $transfer->type);
         $this->assertSame(Transfer::TERM_SIX_MONTHS, $transfer->loan_term);
+        $this->assertSame(Transfer::STATUS_PROPOSED, $transfer->status);
+
+        // Y nada se ha movido todavía: eso lo hace la firma del administrador.
         $this->assertSame(0, BudgetMovement::query()->count());
-        $this->assertDatabaseHas('squad_memberships', [
+        $this->assertDatabaseMissing('squad_memberships', [
             'team_id' => Team::query()->where('club_id', $this->buying->id)->value('id'),
             'player_id' => $this->player->id,
-            'type' => SquadMembership::TYPE_LOAN,
         ]);
     }
 
@@ -217,16 +222,95 @@ class OfferTest extends TestCase
      * El corazón de D10: aceptar deja la oferta acordada y nada más. Ni
      * plantillas ni presupuestos se mueven hasta que el administrador firma.
      */
-    public function test_accepting_moves_neither_squads_nor_budgets(): void
+    /**
+     * Aceptar cierra el trato y lo deja escrito como PROPUESTA, pero no mueve
+     * ni una plantilla ni un euro: eso sigue siendo cosa del traspaso, que el
+     * administrador firma desde Transfers.
+     */
+    public function test_accepting_proposes_the_transfer_without_moving_anything(): void
     {
         $offer = $this->offer();
 
         app(OfferService::class)->accept($offer, $this->seller);
 
         $this->assertSame(Offer::STATUS_ACCEPTED, $offer->fresh()->status);
+
+        $transfer = $offer->fresh()->transfer;
+        $this->assertNotNull($transfer);
+        $this->assertSame(Transfer::STATUS_PROPOSED, $transfer->status);
+        $this->assertSame(Transfer::SCOPE_INTERNAL, $transfer->scope);
+
+        // Nada movido.
         $this->assertSame(0, BudgetMovement::query()->count());
-        $this->assertSame(0, Transfer::query()->count());
         $this->assertSame($this->selling->id, $this->player->fresh()->club_id);
+    }
+
+    /**
+     * El fallo del 2026-10-13, que costó la venta de Sandro: en una oferta de
+     * VENTA el que recibía salía siendo el club del propio jugador, o sea el
+     * que lo suelta, y el traspaso nacía de un club a sí mismo.
+     */
+    public function test_a_sale_offer_proposes_the_move_in_the_right_direction(): void
+    {
+        $offer = Offer::create([
+            'conversation_id' => $this->conversation->id,
+            'player_id' => $this->player->id,
+            'kind' => Offer::KIND_SELL,
+            // En una venta la ofrece el dueño del jugador.
+            'from_club_id' => $this->selling->id,
+            'amount' => 35_000_000,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->seller->id,
+        ]);
+
+        app(OfferService::class)->accept($offer, $this->buyer);
+
+        $transfer = $offer->fresh()->transfer;
+
+        $this->assertNotNull($transfer);
+        $this->assertSame($this->selling->id, $transfer->from_club_id, 'Suelta el dueño del jugador');
+        $this->assertSame($this->buying->id, $transfer->to_club_id, 'Recibe el otro del hilo');
+        $this->assertNotSame($transfer->from_club_id, $transfer->to_club_id);
+    }
+
+    public function test_a_purchase_offer_also_proposes_the_right_direction(): void
+    {
+        $offer = $this->offer();
+
+        app(OfferService::class)->accept($offer, $this->seller);
+
+        $transfer = $offer->fresh()->transfer;
+
+        $this->assertSame($this->selling->id, $transfer->from_club_id);
+        $this->assertSame($this->buying->id, $transfer->to_club_id);
+    }
+
+    /**
+     * Y la propuesta llega entera a Transfers, que es donde se firma: el
+     * administrador la aprueba allí y es entonces cuando se mueve todo.
+     */
+    public function test_the_administrator_signs_the_proposal_from_transfers(): void
+    {
+        $offer = $this->offer(300_000);
+        app(OfferService::class)->accept($offer, $this->seller);
+
+        $transfer = $offer->fresh()->transfer;
+        $admin = User::factory()->create();
+
+        app(TransferService::class)->approve($transfer, $admin, [
+            'fee' => 300_000,
+            'shirt_number' => 14,
+        ]);
+
+        $this->assertSame(Transfer::STATUS_EXECUTED, $transfer->fresh()->status);
+        $this->assertSame($this->buying->id, $this->player->fresh()->club_id);
+        $this->assertDatabaseHas('squad_memberships', [
+            'team_id' => Team::query()->where('club_id', $this->buying->id)->value('id'),
+            'player_id' => $this->player->id,
+            'shirt_number' => 14,
+        ]);
+        $this->assertSame(700_000, app(BudgetService::class)->balanceFor($this->buying->fresh()));
+        $this->assertSame(1_300_000, app(BudgetService::class)->balanceFor($this->selling->fresh()));
     }
 
     public function test_rejecting_closes_the_offer(): void
@@ -288,46 +372,13 @@ class OfferTest extends TestCase
      * La firma del administrador: un traspaso de los de la Fase 12, que al
      * guardarse paga, cobra y mueve al jugador.
      */
-    public function test_the_administrator_executes_an_accepted_offer(): void
-    {
-        $offer = $this->offer(300_000);
-        app(OfferService::class)->accept($offer, $this->seller);
-
-        $admin = User::factory()->create();
-        $transfer = app(OfferService::class)->execute($offer->fresh(), $admin);
-
-        $this->assertSame(Transfer::TYPE_SIGNING, $transfer->type);
-        $this->assertSame($this->selling->id, $transfer->from_club_id);
-        $this->assertSame($this->buying->id, $transfer->to_club_id);
-        $this->assertSame(300_000, $transfer->fee);
-
-        $this->assertSame(Offer::STATUS_EXECUTED, $offer->fresh()->status);
-        $this->assertSame($transfer->id, $offer->fresh()->transfer_id);
-
-        // Y el traspaso hace lo suyo: los dos saldos y la plantilla.
-        $this->assertSame(1_300_000, app(BudgetService::class)->balanceFor($this->selling->fresh()));
-        $this->assertSame(700_000, app(BudgetService::class)->balanceFor($this->buying->fresh()));
-        $this->assertSame($this->buying->id, $this->player->fresh()->club_id);
-    }
-
-    public function test_only_an_accepted_offer_can_be_executed(): void
-    {
-        $offer = $this->offer();
-
-        $this->expectException(ValidationException::class);
-        app(OfferService::class)->execute($offer, User::factory()->create());
-    }
-
-    public function test_a_coach_cannot_execute_an_offer(): void
-    {
-        $offer = $this->offer();
-        app(OfferService::class)->accept($offer, $this->seller);
-
-        $this->expectException(ValidationException::class);
-        app(OfferService::class)->execute($offer->fresh(), $this->seller);
-    }
-
-    public function test_the_administrators_tray_lists_what_is_waiting_and_executes_it(): void
+    /**
+     * La bandeja del administrador es de MIRAR (decisión del propietario,
+     * 2026-10-13): enseña lo que los clubes negocian y no ejecuta nada. Hasta
+     * hoy tenía un botón de firmar, y esa segunda puerta construía mal el
+     * traspaso en las ofertas de venta.
+     */
+    public function test_the_administrators_tray_lists_but_does_not_execute(): void
     {
         $offer = $this->offer(200_000);
         app(OfferService::class)->accept($offer, $this->seller);
@@ -338,10 +389,34 @@ class OfferTest extends TestCase
 
         Livewire::test(ListOffers::class)
             ->assertCanSeeTableRecords([$offer])
-            ->callTableAction('execute', $offer)
-            ->assertHasNoTableActionErrors();
+            ->assertTableActionDoesNotExist('execute');
+    }
 
-        $this->assertSame(Offer::STATUS_EXECUTED, $offer->fresh()->status);
-        $this->assertSame(1, Transfer::query()->count());
+    /**
+     * Y no queda ninguna otra puerta: el servicio ya no sabe ejecutar.
+     */
+    public function test_the_offer_service_can_no_longer_execute(): void
+    {
+        $this->assertFalse(
+            method_exists(OfferService::class, 'execute'),
+            'Ejecutar desde la oferta era la segunda puerta al dinero; ya no existe.',
+        );
+    }
+
+    /**
+     * Si entre la oferta y el apretón de manos el jugador se fue a un TERCER
+     * club, lo acordado ya no significa nada: ninguno de los dos que hablan lo
+     * tiene. Sin esta comprobación se propondría un traspaso entre ellos por un
+     * jugador que no es de ninguno.
+     */
+    public function test_an_offer_gone_stale_is_refused_instead_of_proposing_nonsense(): void
+    {
+        $offer = $this->offer();
+
+        $tercero = Club::factory()->create(['name' => 'Otro Club']);
+        $this->player->forceFill(['club_id' => $tercero->id])->save();
+
+        $this->expectException(ValidationException::class);
+        app(OfferService::class)->accept($offer, $this->seller);
     }
 }

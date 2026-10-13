@@ -30,13 +30,29 @@ class Offer extends Model
     public const KIND_LOAN_OUT = 'ceder';
 
     /**
-     * Las cuatro operaciones que dos técnicos negocian entre ellos, dichas
-     * desde el lado de quien las propone: pido comprar, ofrezco vender, pido
-     * cedido, ofrezco ceder.
+     * Las cuatro operaciones, dichas DESDE EL LADO DE QUIEN LAS PROPONE y con
+     * el sujeto puesto.
+     *
+     * «Cesión» y «Ceder» se escriben casi igual y significan direcciones
+     * opuestas: una trae un jugador y la otra lo manda. Nombradas así no hay
+     * nada que recordar, y la frase dice sola de qué plantilla se elige.
      *
      * @var array<string, string>
      */
     public const KINDS = [
+        self::KIND_BUY => 'Comprarle un jugador suyo',
+        self::KIND_SELL => 'Venderle un jugador mío',
+        self::KIND_LOAN_IN => 'Pedirle un jugador cedido',
+        self::KIND_LOAN_OUT => 'Cederle un jugador mío',
+    ];
+
+    /**
+     * Las mismas, en una palabra, para las tablas y los avisos donde la frase
+     * entera no cabe.
+     *
+     * @var array<string, string>
+     */
+    public const KINDS_SHORT = [
         self::KIND_BUY => 'Compra',
         self::KIND_SELL => 'Venta',
         self::KIND_LOAN_IN => 'Cesión',
@@ -181,12 +197,42 @@ class Offer extends Model
     }
 
     /**
-     * El club que se queda al jugador si la operación sale: quien pide es quien
-     * recibe; quien ofrece, quien cede.
+     * El club que SUELTA al jugador: el dueño de su ficha, sin más.
+     *
+     * Quien tiene al jugador es quien lo da, lo haya pedido el otro o lo esté
+     * ofreciendo él. Y es el club de AHORA, no el de cuando se hizo la oferta:
+     * entre una cosa y la otra puede haber pasado otro traspaso.
+     */
+    public function givingClubId(): ?int
+    {
+        return $this->player?->club_id === null ? null : (int) $this->player->club_id;
+    }
+
+    /**
+     * El club que se queda al jugador: el otro de los dos que hablan.
+     *
+     * Una sola regla para las cuatro operaciones, y no una por tipo. La que
+     * había ramificaba según se pidiera o se ofreciera, y en las de OFRECER
+     * —venta y ceder— devolvía el club del propio jugador, o sea el que lo
+     * suelta. El 2026-10-13 eso ejecutó la venta de Sandro como un traspaso de
+     * Drakukeo a Drakukeo: el jugador no salía de un sitio ni llegaba al otro
+     * porque los dos lados eran el mismo.
+     *
+     * Dicho así no hay nada que ramificar: da el dueño, recibe el otro.
      */
     public function receivingClubId(): ?int
     {
-        return $this->isAsking() ? $this->from_club_id : (int) $this->player?->club_id;
+        $giving = $this->givingClubId();
+
+        if ($giving === null) {
+            return null;
+        }
+
+        return $this->conversation?->participants
+            ->pluck('club_id')
+            ->filter()
+            ->map(fn ($id): int => (int) $id)
+            ->first(fn (int $id): bool => $id !== $giving);
     }
 
     public function isOpen(): bool

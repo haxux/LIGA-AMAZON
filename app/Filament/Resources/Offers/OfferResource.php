@@ -3,25 +3,31 @@
 namespace App\Filament\Resources\Offers;
 
 use App\Filament\Resources\Offers\Pages\ListOffers;
+use App\Models\Club;
 use App\Models\Offer;
-use App\Services\OfferService;
+use App\Models\Transfer;
 use BackedEnum;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Validation\ValidationException;
 
 /**
  * La bandeja de ofertas del administrador (Fase 13, design D10).
  *
- * Una oferta aceptada por los dos técnicos no ha movido nada todavía: espera
- * aquí a que el administrador la firme. Firmarla registra un traspaso de los de
- * la Fase 12, y es ese traspaso —no la oferta— el que paga, cobra y mueve al
- * jugador. Una sola puerta de entrada al dinero y a las plantillas.
+ * Es una pantalla de MIRAR, no de hacer: aquí se ve lo que los clubes negocian
+ * entre ellos y en qué quedó cada cosa, y nada más.
+ *
+ * Al aceptarla los dos técnicos, la oferta deja escrita una propuesta de
+ * traspaso, y es en Transfers donde el administrador la firma. Ese traspaso
+ * —nunca la oferta— es el que paga, cobra y mueve al jugador: una sola puerta
+ * de entrada al dinero y a las plantillas.
+ *
+ * Hasta el 2026-10-13 esta pantalla tenía un botón de ejecutar, y había dos
+ * puertas. La de aquí construía mal el traspaso en las ofertas de venta —ver
+ * `Offer::receivingClubId()`— y lo registró de un club a sí mismo sin que nada
+ * avisara.
  */
 class OfferResource extends Resource
 {
@@ -53,8 +59,25 @@ class OfferResource extends Resource
             ->columns([
                 TextColumn::make('created_at')->label('Sent')->date('d/m/Y')->sortable(),
                 TextColumn::make('player.name')->label('Player')->searchable(),
-                TextColumn::make('player.club.name')->label('Current club'),
-                TextColumn::make('fromClub.name')->label('Bidding club'),
+                // Qué operación es, que no se veía: una pantalla de mirar que no
+                // dice si es compra, venta o cesión no sirve para mirar nada.
+                TextColumn::make('kind')
+                    ->label('Operation')
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn (string $state): string => Offer::KINDS_SHORT[$state] ?? $state),
+                // La dirección, que es lo que de verdad se viene a mirar y lo
+                // que se leía mal: el dueño del jugador lo suelta y el otro del
+                // hilo lo recibe.
+                TextColumn::make('direction')
+                    ->label('Moves')
+                    ->state(function (Offer $record): string {
+                        $clubs = Club::query()
+                            ->whereIn('id', array_filter([$record->givingClubId(), $record->receivingClubId()]))
+                            ->pluck('name', 'id');
+
+                        return ($clubs[$record->givingClubId()] ?? '—').' → '.($clubs[$record->receivingClubId()] ?? '—');
+                    }),
                 TextColumn::make('amount')->numeric(thousandsSeparator: '.')->sortable(),
                 TextColumn::make('status')
                     ->badge()
@@ -66,30 +89,28 @@ class OfferResource extends Resource
                         default => 'gray',
                     }),
                 TextColumn::make('mover.name')->label('Last moved by')->placeholder('—')->toggleable(),
+                // En qué quedó el trato, leído del traspaso que generó y no
+                // copiado aquí: si la oferta guardara su propia versión, las
+                // dos podrían discrepar y nadie sabría cuál creer.
+                TextColumn::make('transfer.status')
+                    ->label('Transfer')
+                    ->placeholder('—')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => Transfer::STATUSES[$state] ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        Transfer::STATUS_EXECUTED => 'success',
+                        Transfer::STATUS_REJECTED => 'danger',
+                        default => 'warning',
+                    }),
             ])
             ->filters([
                 SelectFilter::make('status')->options(Offer::STATUSES),
             ])
-            ->recordActions([
-                Action::make('execute')
-                    ->label('Execute')
-                    ->icon('heroicon-o-check-badge')
-                    ->color('success')
-                    ->visible(fn (Offer $record): bool => $record->status === Offer::STATUS_ACCEPTED)
-                    ->requiresConfirmation()
-                    ->modalDescription('This records the transfer: the buyer is charged, the seller credited and the player moves squad.')
-                    ->action(function (Offer $record): void {
-                        try {
-                            app(OfferService::class)->execute($record, auth()->user());
-                        } catch (ValidationException $exception) {
-                            Notification::make()->danger()->title($exception->validator->errors()->first())->send();
-
-                            return;
-                        }
-
-                        Notification::make()->success()->title('Transfer recorded')->send();
-                    }),
-            ]);
+            // Sin acciones: aquí NO se ejecuta nada (decisión del propietario,
+            // 2026-10-13). Esta pantalla es para mirar lo que los clubes
+            // negocian entre ellos; lo acordado aparece solo en Transfers como
+            // propuesta, y es allí donde se firma.
+            ->recordActions([]);
     }
 
     public static function getPages(): array
