@@ -84,6 +84,32 @@ rsync -az --delete -e "ssh -i ~/.ssh/liga_hostinger -p 65002" \
   public/build/ u269987465@109.106.251.174:~/domains/lietoernooien.com/app/public/build/
 ```
 
+### Los estáticos de `public/` se cachean una semana
+
+Lo que no pasa por Vite —`public/js/push.js`, `public/sw.js`— se sirve con
+`cache-control: public, max-age=604800` y con una URL que nunca cambia. Un
+despliegue que los toque es **invisible durante siete días**.
+
+Pasó el 2026-10-13 y costó un despliegue entero de depuración: en el servidor
+`public/js/push.js` tenía 6264 bytes con la corrección puesta, y
+
+```bash
+curl -s https://lietoernooien.com/js/push.js | wc -c   # 4160, el de la semana anterior
+curl -s 'https://lietoernooien.com/js/push.js?x=1' | wc -c   # 6264, el nuevo
+```
+
+Por eso el `<script>` lleva pegada la marca de modificación del fichero
+(`?v=filemtime`), igual que Vite hace con el CSS, y vive en el componente
+`resources/views/components/push-script.blade.php` para que no haya dos
+versiones de la misma línea.
+
+**`sw.js` no puede llevar versión**: el ámbito del service worker depende de su
+URL. Se registra con `updateViaCache: 'none'`, que obliga al navegador a
+pedirlo siempre al servidor.
+
+Para comprobar que un estático llegó de verdad, **siempre con y sin parámetro**:
+si difieren, lo que ven los navegadores es el viejo.
+
 ### El `view:clear` no es higiene, cambia lo que se publica
 
 `resources/css/app.css` trae del andamiaje de Laravel esta línea:
