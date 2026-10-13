@@ -20,7 +20,7 @@
              App\Http\Controllers\PushSubscriptionController. --}}
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="vapid-public-key" content="{{ config('services.webpush.public_key') }}">
-        <script src="{{ asset('js/push.js') }}" defer></script>
+        <x-push-script />
     </head>
     <body class="min-h-screen bg-brand-weave font-sans text-ink">
         @php

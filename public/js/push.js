@@ -21,7 +21,11 @@
             return Promise.resolve(null);
         }
 
-        return navigator.serviceWorker.register('/sw.js');
+        // `updateViaCache: 'none'` para que el navegador pida SIEMPRE el
+        // service worker al servidor en vez de servirlo de su caché HTTP.
+        // Estos ficheros salen con `cache-control: max-age=604800`, y un
+        // service worker viejo atascado una semana no hay quien lo note.
+        return navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
     }
 
     function postSubscription(method, body, csrfToken) {

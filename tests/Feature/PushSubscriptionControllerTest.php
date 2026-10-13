@@ -166,4 +166,21 @@ class PushSubscriptionControllerTest extends TestCase
             ->assertSee('data-push-toggle', false)
             ->assertSee('Activar avisos');
     }
+
+    /**
+     * El script lleva pegada la marca de su última modificación.
+     *
+     * Sin ella no llega nunca un arreglo: estos estáticos se sirven con
+     * `cache-control: max-age=604800` y la URL no cambia, así que el navegador
+     * sigue con el de la semana pasada. Pasó el 2026-10-13: el fichero nuevo
+     * estaba en el servidor y la URL devolvía el viejo.
+     */
+    public function test_the_push_script_url_changes_when_the_file_does(): void
+    {
+        Season::factory()->create(['is_current' => true]);
+
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('js/push.js?v='.filemtime(public_path('js/push.js')), false);
+    }
 }
