@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\GameSchedulingService;
+use App\Services\PushNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -24,7 +25,10 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  */
 class CronController extends Controller
 {
-    public function __construct(private readonly GameSchedulingService $scheduling) {}
+    public function __construct(
+        private readonly GameSchedulingService $scheduling,
+        private readonly PushNotificationService $push,
+    ) {}
 
     public function tick(Request $request): JsonResponse
     {
@@ -37,6 +41,16 @@ class CronController extends Controller
         return response()->json([
             'voided' => $this->scheduling->voidOverdueGames(),
             'reminders_sent' => $this->scheduling->sendReminders(),
+            // Las noticias PROGRAMADAS: se publican solas al llegar su fecha,
+            // sin que nadie escriba nada, así que nadie las anunciaría. Las que
+            // se guardan ya publicadas no esperan a esto —las anuncia su
+            // observador al momento—, pero entran por la misma puerta y la
+            // marca de "ya avisada" impide que se cuenten dos veces.
+            //
+            // Esto corre UNA vez al día, así que una noticia programada puede
+            // anunciarse hasta un día tarde. Publicarla a mano la anuncia al
+            // instante.
+            'news_announced' => $this->push->publishedNews(),
         ]);
     }
 }

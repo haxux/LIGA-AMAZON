@@ -22,7 +22,7 @@ class PushSubscriptionController extends Controller
             'endpoint' => ['required', 'string', 'max:500'],
             'keys.p256dh' => ['required', 'string'],
             'keys.auth' => ['required', 'string'],
-            'topic' => ['required', Rule::in([PushSubscription::TOPIC_MATCHES, PushSubscription::TOPIC_CHAT])],
+            'topic' => ['required', Rule::in([PushSubscription::TOPIC_MATCHES, PushSubscription::TOPIC_NEWS, PushSubscription::TOPIC_CHAT])],
         ]);
 
         $user = auth('club')->user() ?? auth()->user();
@@ -49,7 +49,7 @@ class PushSubscriptionController extends Controller
     {
         $data = $request->validate([
             'endpoint' => ['required', 'string', 'max:500'],
-            'topic' => ['required', Rule::in([PushSubscription::TOPIC_MATCHES, PushSubscription::TOPIC_CHAT])],
+            'topic' => ['required', Rule::in([PushSubscription::TOPIC_MATCHES, PushSubscription::TOPIC_NEWS, PushSubscription::TOPIC_CHAT])],
         ]);
 
         $subscription = PushSubscription::query()->where('endpoint', $data['endpoint'])->first();

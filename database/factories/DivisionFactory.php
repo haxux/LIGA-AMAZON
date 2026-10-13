@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Division;
 use App\Models\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\Division>
+ * @extends Factory<Division>
  */
 class DivisionFactory extends Factory
 {

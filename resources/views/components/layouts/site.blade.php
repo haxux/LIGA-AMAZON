@@ -202,7 +202,7 @@
                          fila y no a la vez, que el endpoint del navegador es
                          uno solo. --}}
                     window.LigaPush.autoPromptAll(
-                        @if ($chatUser) ['matches', 'chat'] @else ['matches'] @endif,
+                        @if ($chatUser) ['matches', 'news', 'chat'] @else ['matches', 'news'] @endif,
                         vapidKey,
                         csrf,
                     );

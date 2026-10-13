@@ -118,7 +118,7 @@ class PushSubscriptionControllerTest extends TestCase
             ->get(route('site.standings'))
             ->assertOk()
             ->assertSee('autoPromptAll', false)
-            ->assertSee("['matches', 'chat']", false);
+            ->assertSee("['matches', 'news', 'chat']", false);
     }
 
     /**
@@ -126,13 +126,15 @@ class PushSubscriptionControllerTest extends TestCase
      * alta —el chat es de los que entran— y preguntar por nada sólo gasta el
      * único permiso que el navegador concede.
      */
-    public function test_an_anonymous_visitor_is_only_asked_about_matches(): void
+    public function test_an_anonymous_visitor_is_not_asked_about_chat(): void
     {
         Season::factory()->create(['is_current' => true]);
 
         $this->get(route('site.standings'))
             ->assertOk()
-            ->assertSee("['matches']", false)
+            // Partidos y noticias sí: las dos se leen sin entrar. El chat no,
+            // que el servidor rechazaría esa alta sin sesión.
+            ->assertSee("['matches', 'news']", false)
             ->assertDontSee("'chat'", false);
     }
 
@@ -146,7 +148,7 @@ class PushSubscriptionControllerTest extends TestCase
         $this->actingAs($coach, 'club')
             ->get(route('site.chat'))
             ->assertOk()
-            ->assertSee("['matches', 'chat']", false);
+            ->assertSee("['matches', 'news', 'chat']", false);
     }
 
     /**

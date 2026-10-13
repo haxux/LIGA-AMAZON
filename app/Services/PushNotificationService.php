@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Game;
 use App\Models\Message;
+use App\Models\News;
 use App\Models\PushSubscription;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -58,6 +59,40 @@ class PushNotificationService
             "{$home} vs {$away}",
             route('site.games.show', $game),
         );
+    }
+
+    /**
+     * Anuncia las noticias publicadas que todavía no se han anunciado, y las
+     * marca.
+     *
+     * UN solo método para los DOS caminos que pueden dispararlo —guardar una
+     * noticia ya publicada, y el barrido diario del cron para las programadas,
+     * que se publican solas al llegar su fecha sin que nadie escriba nada—,
+     * porque si cada uno decidiera por su cuenta a quién avisar acabarían
+     * avisando distinto.
+     *
+     * La marca se pone con `saveQuietly()` a propósito: un `save()` normal
+     * volvería a disparar el observador que llama aquí, y eso es una llamada
+     * dentro de otra sin necesidad.
+     *
+     * @return int cuántas se anunciaron
+     */
+    public function publishedNews(): int
+    {
+        $pending = News::query()->awaitingNotification()->orderBy('published_at')->get();
+
+        foreach ($pending as $item) {
+            $this->sendToTopic(
+                PushSubscription::TOPIC_NEWS,
+                'Nueva noticia',
+                $item->title,
+                route('site.news.show', $item->slug),
+            );
+
+            $item->forceFill(['notified_at' => now()])->saveQuietly();
+        }
+
+        return $pending->count();
     }
 
     /**

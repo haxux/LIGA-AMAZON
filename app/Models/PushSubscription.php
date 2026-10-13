@@ -17,6 +17,13 @@ class PushSubscription extends Model
 
     public const TOPIC_CHAT = 'chat';
 
+    /**
+     * Las noticias de la liga. Como los partidos, no pide sesión: a una
+     * noticia la lee cualquiera, así que avisar de ella tampoco debería exigir
+     * entrar (decisión del propietario, 2026-10-13).
+     */
+    public const TOPIC_NEWS = 'news';
+
     protected function casts(): array
     {
         return [
