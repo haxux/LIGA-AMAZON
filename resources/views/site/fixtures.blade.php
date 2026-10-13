@@ -9,17 +9,29 @@
             :options="$seasons->pluck('name', 'id')"
             :selected="$selectedSeason->id" />
 
-        <x-site.filter-select
-            name="division"
-            label="DIVISIÓN"
-            :options="collect([$all => 'Todas'])->union($divisions->pluck('name', 'id'))"
-            :selected="$selectedDivision?->id ?? $all" />
+        {{-- Sin copas sólo quedarían «Todo» y «Liga», la misma lista dos veces. --}}
+        @if (count($competitionOptions) > 2)
+            <x-site.filter-select
+                name="competicion"
+                label="COMPETICIÓN"
+                :options="$competitionOptions"
+                :selected="$competition->key" />
+        @endif
 
-        <x-site.filter-select
-            name="jornada"
-            label="JORNADA"
-            :options="collect([$all => 'Todas'])->union($numbers->mapWithKeys(fn (int $number) => [$number => 'Jornada '.$number]))"
-            :selected="$selectedNumber ?? $all" />
+        {{-- División y jornada son de la liga: con una copa no hay nada que elegir. --}}
+        @if ($showLeague)
+            <x-site.filter-select
+                name="division"
+                label="DIVISIÓN"
+                :options="collect([$all => 'Todas'])->union($divisions->pluck('name', 'id'))"
+                :selected="$selectedDivision?->id ?? $all" />
+
+            <x-site.filter-select
+                name="jornada"
+                label="JORNADA"
+                :options="collect([$all => 'Todas'])->union($numbers->mapWithKeys(fn (int $number) => [$number => 'Jornada '.$number]))"
+                :selected="$selectedNumber ?? $all" />
+        @endif
     </x-site.filter-bar>
 
     @forelse ($groups as $group)
@@ -50,8 +62,24 @@
             @endforeach
         </section>
     @empty
-        <p class="rounded-md bg-surface px-4 py-6 text-center font-display text-lg uppercase tracking-wide text-white/60">
-            No hay partidos para este filtro.
-        </p>
+        @if ($cupSections->isEmpty())
+            <p class="rounded-md bg-surface px-4 py-6 text-center font-display text-lg uppercase tracking-wide text-white/60">
+                No hay partidos para este filtro.
+            </p>
+        @endif
     @endforelse
+
+    @foreach ($cupSections as $section)
+        <section class="mb-10">
+            <h2 class="font-display mb-4 rounded-[4px] bg-surface-alt px-4 py-2 text-lg uppercase tracking-wide text-brand">
+                <a href="{{ route('site.cups.show', $section['cup']) }}" class="hover:opacity-80">{{ $section['cup']->name }}</a>
+            </h2>
+
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($section['games'] as $game)
+                    <x-site.game-card :game="$game" />
+                @endforeach
+            </div>
+        </section>
+    @endforeach
 </x-layouts.site>

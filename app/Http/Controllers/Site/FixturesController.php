@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Site;
 
+use App\Models\Cup;
 use App\Models\Division;
+use App\Models\Game;
 use App\Models\Matchday;
 use App\Models\Season;
+use App\Services\Competition;
 use App\Services\MatchdayResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -23,6 +26,12 @@ class FixturesController extends SiteController
         $seasons = Season::query()->orderByDesc('start_date')->orderByDesc('id')->get();
         $season = $seasons->firstWhere('id', $request->integer('temporada')) ?? $this->activeSeason();
 
+        // Por omisión la liga, que es lo que esta pantalla siempre enseñó: «Todo»
+        // suma las copas debajo, y una copa concreta enseña sólo la suya.
+        $competitions = Competition::forSeason($season);
+        $competition = Competition::resolve($competitions, $request->string('competicion')->toString(), Competition::league());
+        $showLeague = $competition->isAll() || $competition->isLeague();
+
         $divisions = $season->divisions()->orderBy('id')->get();
         $division = $divisions->firstWhere('id', $request->integer('division'));
 
@@ -36,6 +45,10 @@ class FixturesController extends SiteController
         $number = $this->resolveNumber($request, $numbers, $matchdays, $resolver);
 
         return view('site.fixtures', [
+            'competition' => $competition,
+            'competitionOptions' => Competition::asSelectOptions($competitions),
+            'showLeague' => $showLeague,
+            'cupSections' => $this->cupSections($season, $competition),
             'seasons' => $seasons,
             'divisions' => $divisions,
             'numbers' => $numbers,
@@ -43,11 +56,42 @@ class FixturesController extends SiteController
             'selectedDivision' => $division,
             'selectedNumber' => $number,
             'all' => self::ALL,
-            'groups' => $this->groupByDivision(
+            'groups' => $showLeague ? $this->groupByDivision(
                 $number === null ? $matchdays : $matchdays->where('number', $number),
                 $division ? collect([$division]) : $divisions,
-            ),
+            ) : [],
         ]);
+    }
+
+    /**
+     * Los partidos de copa de la selección, una tanda por copa: todas las de la
+     * temporada con «Todo», sólo la elegida con una copa, y ninguna con la liga.
+     * Por orden de fecha, que es como se lee un cuadro que no tiene jornadas.
+     *
+     * @return Collection<int, array{cup: Cup, games: Collection<int, Game>}>
+     */
+    private function cupSections(Season $season, Competition $competition): Collection
+    {
+        if ($competition->isLeague()) {
+            return collect();
+        }
+
+        return Cup::query()
+            ->where('season_id', $season->getKey())
+            ->when($competition->cupId, fn ($query, int $cupId) => $query->whereKey($cupId))
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Cup $cup) => [
+                'cup' => $cup,
+                'games' => Game::query()
+                    ->inCup($cup)
+                    ->with(['homeTeam.club', 'awayTeam.club', 'cupTie.round', 'cupGroup'])
+                    ->orderBy('kickoff_at')
+                    ->orderBy('id')
+                    ->get(),
+            ])
+            ->filter(fn (array $section) => $section['games']->isNotEmpty())
+            ->values();
     }
 
     /**
