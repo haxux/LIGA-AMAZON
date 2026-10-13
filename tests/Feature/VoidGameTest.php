@@ -79,4 +79,83 @@ class VoidGameTest extends TestCase
         $this->assertFalse($game->fresh()->isVoided());
         $this->assertSame([], $game->fresh()->penalizedSides());
     }
+
+    /**
+     * El fallo que el propietario vio el 2026-10-13: un equipo con tres
+     * anulados aparecía con ocho partidos jugados en vez de diez.
+     *
+     * La tabla pedía los partidos filtrando por marcador ANTES de plegarlos, y
+     * un anulado sin marcador no llegaba nunca. O sea que un anulado contaba o
+     * no contaba según si alguien le había dejado un marcador encima, que es
+     * lo contrario de una regla.
+     */
+    public function test_a_voided_game_counts_as_played_even_with_no_score_on_it(): void
+    {
+        $game = $this->game();
+        $season = $game->matchday->season;
+
+        // El estado roto, escrito sin pasar por el modelo: así llegaron los dos
+        // partidos de producción, anulados y editados después.
+        $game->voidAgainst('both');
+        Game::query()->whereKey($game->getKey())->update(['home_score' => null, 'away_score' => null]);
+
+        $rows = (new StandingsService)->forSeason($season);
+
+        foreach ([$game->home_team_id, $game->away_team_id] as $teamId) {
+            $row = $rows->firstWhere(fn ($r) => $r->team->getKey() === $teamId);
+            $this->assertSame(1, $row->played, 'Un anulado tiene que contar como jugado');
+            $this->assertSame(0, $row->points, 'Y no repartir nada');
+            $this->assertSame(0, $row->goals_for);
+        }
+    }
+
+    /**
+     * Y que no vuelva a darse ese estado: el formulario del panel puede mover
+     * el marcador y `voided_at` por separado, así que el modelo los reconcilia
+     * al guardar. Resuelve en vez de rechazar, como el invariante de Season.
+     */
+    public function test_saving_a_voided_game_restores_its_regulation_score(): void
+    {
+        $game = $this->game();
+        $game->voidAgainst('both');
+
+        $game->home_score = null;
+        $game->away_score = null;
+        $game->save();
+
+        $this->assertSame([0, 0], [$game->fresh()->home_score, $game->fresh()->away_score]);
+    }
+
+    public function test_the_regulation_score_restored_matches_who_was_penalised(): void
+    {
+        foreach ([['home', 0, 3], ['away', 3, 0]] as [$contra, $local, $visitante]) {
+            $game = $this->game();
+            $game->voidAgainst($contra);
+
+            $game->home_score = null;
+            $game->away_score = null;
+            $game->save();
+
+            $this->assertSame(
+                [$local, $visitante],
+                [$game->fresh()->home_score, $game->fresh()->away_score],
+                "Anulado contra {$contra}",
+            );
+        }
+    }
+
+    /**
+     * Un partido que NO está anulado sigue pudiendo quedarse sin marcador: es
+     * un partido por jugar y la reconciliación no debe tocarlo.
+     */
+    public function test_a_game_that_is_not_voided_keeps_its_empty_score(): void
+    {
+        $game = $this->game();
+        $game->home_score = null;
+        $game->away_score = null;
+        $game->save();
+
+        $this->assertNull($game->fresh()->home_score);
+        $this->assertNull($game->fresh()->away_score);
+    }
 }

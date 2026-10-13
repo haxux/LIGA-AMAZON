@@ -5,12 +5,10 @@ namespace App\Http\Controllers\Site;
 use App\Models\Cup;
 use App\Models\Game;
 use App\Models\GameEvent;
-use App\Models\Matchday;
 use App\Models\News;
 use App\Models\Season;
 use App\Services\Competition;
 use App\Services\GoalscorersService;
-use App\Services\MatchdayResolver;
 use App\Services\SeasonOverview;
 use App\Services\StandingsService;
 use Illuminate\Contracts\View\View;
@@ -40,7 +38,6 @@ class HomeController extends SiteController
         StandingsService $standings,
         GoalscorersService $goalscorers,
         SeasonOverview $overview,
-        MatchdayResolver $resolver,
     ): View|RedirectResponse {
         $season = $this->activeSeason();
 
@@ -51,39 +48,28 @@ class HomeController extends SiteController
 
         $tables = $standings->tablesFor($season);
 
-        // Primero las jornadas SIN sus partidos: para saber cuál es la de ahora
-        // basta con sus fechas, y traer de paso los 122 partidos de la
-        // temporada para quedarse con seis es trabajo tirado.
-        $matchdays = $season->matchdays()->with('division')->orderBy('number')->get();
+        // Los siguientes por jugar, no «la jornada de ahora»: una jornada se
+        // juega a trozos y así salían ahí partidos con su resultado puesto,
+        // repetidos en el bloque de al lado.
+        $upcoming = $overview->upcomingGames($season);
 
-        // La jornada de ahora, la misma con la que abre Partidos.
+        // Dos preguntas distintas, las dos respondidas por los mismos partidos
+        // para que no puedan contradecirse:
         //
-        // Por NÚMERO y no por el objeto que devuelve el resolutor: con dos
-        // divisiones, la jornada 12 son dos filas de `matchdays`, una por
-        // división, y quedarse con una sola enseñaría media jornada sin decir
-        // que falta la otra mitad.
-        $current = $resolver->current($matchdays);
+        // El rótulo del bloque nombra la jornada SÓLO si todos son de ella; con
+        // un aplazado de otra mezclado, decir «jornada 11» mentiría sobre uno.
+        $numbers = $upcoming->map(fn (Game $game) => $game->matchday?->number)->filter()->unique();
+        $matchday = $numbers->count() === 1 ? $upcoming->first()->matchday : null;
 
-        $upcoming = $current === null
-            ? collect()
-            : $season->matchdays()
-                ->where('number', $current->number)
-                ->with(['division', 'games.homeTeam.club', 'games.awayTeam.club'])
-                ->orderBy('division_id')
-                ->get()
-                ->flatMap(fn (Matchday $matchday) => $matchday->games->map(fn (Game $game) => [
-                    'game' => $game,
-                    // La etiqueta la pone la portada porque la tarjeta, por sí
-                    // sola, diría «Jornada 12» sin decir de qué división.
-                    'label' => 'Jornada '.$matchday->number.($matchday->division ? ' · '.$matchday->division->name : ''),
-                ]))
-                ->take(8)
-                ->values();
+        // La cabecera dice por dónde va la temporada, y eso es la jornada más
+        // atrasada que queda por jugar: la del primero de la lista.
+        $jornada = $upcoming->first()?->matchday?->number;
 
         return view('site.home', [
             'season' => $season,
             'progress' => $overview->progress($season),
-            'matchday' => $current,
+            'matchday' => $matchday,
+            'jornada' => $jornada,
             'upcoming' => $upcoming,
             // Cuatro y no seis: en el teléfono esto se apila bajo los seis de
             // la jornada, y había que pasar doce tarjetas para llegar al podio

@@ -148,6 +148,78 @@ class HomePageTest extends TestCase
             ->assertSee('JORNADA 99 · SEGUNDA');
     }
 
+    /**
+     * Lo vio el propietario el 2026-10-13: en «se juega ahora» salían partidos
+     * con su resultado puesto, repetidos justo al lado en «últimos
+     * resultados». Una jornada se juega a trozos, y la portada enseñaba la
+     * jornada ENTERA.
+     */
+    public function test_played_games_never_appear_among_the_upcoming_ones(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        [$division, $home, $away] = $this->division($season, 'Primera');
+
+        // Dos equipos propios para el que falta por jugar: si reutilizara los
+        // del jugado, sus nombres saldrían en los dos y el test no probaría
+        // nada.
+        $uno = Team::factory()->create(['season_id' => $season->id, 'division_id' => $division->id, 'name' => 'Equipo Por Jugar']);
+        $dos = Team::factory()->create(['season_id' => $season->id, 'division_id' => $division->id, 'name' => 'Su Rival']);
+
+        // La misma jornada: uno ya jugado y otro todavía no.
+        $matchday = Matchday::factory()->create([
+            'season_id' => $season->id, 'division_id' => $division->id,
+            'number' => 50, 'date' => today()->addDay(),
+        ]);
+        Game::factory()->for($matchday)->create([
+            'home_team_id' => $home->id, 'away_team_id' => $away->id,
+            'home_score' => 2, 'away_score' => 2,
+        ]);
+        Game::factory()->for($matchday)->create([
+            'home_team_id' => $uno->id, 'away_team_id' => $dos->id,
+        ]);
+
+        $response = $this->get(route('site.home'))->assertOk();
+
+        $proximos = str($response->getContent())->after('PRÓXIMA JORNADA')->before('ÚLTIMOS RESULTADOS')->toString();
+        $this->assertStringContainsString('Equipo Por Jugar', $proximos);
+        $this->assertStringNotContainsString('Primera Colista', $proximos);
+    }
+
+    /**
+     * Un anulado tampoco está por jugar: ya se resolvió, aunque no se jugara.
+     */
+    public function test_voided_games_never_appear_among_the_upcoming_ones(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        [$division, $home, $away] = $this->division($season, 'Primera');
+
+        $anulado = $this->leagueGame($season, $division, $home, $away, null, null, today()->addDay()->toDateString());
+        $anulado->voidAgainst('both');
+
+        $response = $this->get(route('site.home'))->assertOk();
+        $proximos = str($response->getContent())->after('SE JUEGA AHORA')->before('CÓMO VA LA LIGA')->toString();
+
+        $this->assertStringNotContainsString('PRÓXIMA JORNADA', $proximos);
+    }
+
+    /**
+     * Un aplazado de una jornada anterior sigue estando por jugar. El rótulo
+     * no puede entonces prometer UNA jornada, porque mentiría sobre el otro.
+     */
+    public function test_the_heading_does_not_name_a_matchday_when_they_are_mixed(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        [$division, $home, $away] = $this->division($season, 'Primera');
+
+        $this->leagueGame($season, $division, $home, $away, null, null, today()->addDays(2)->toDateString());
+        $this->leagueGame($season, $division, $away, $home, null, null, today()->addDays(9)->toDateString());
+
+        $this->get(route('site.home'))
+            ->assertOk()
+            ->assertSee('PRÓXIMOS PARTIDOS')
+            ->assertDontSee('PRÓXIMA JORNADA');
+    }
+
     public function test_the_home_page_lists_the_latest_results(): void
     {
         $season = Season::factory()->create(['is_current' => true]);

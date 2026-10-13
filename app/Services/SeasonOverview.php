@@ -61,6 +61,43 @@ final class SeasonOverview
     }
 
     /**
+     * Los siguientes partidos de liga POR JUGAR, en orden de calendario.
+     *
+     * Por jugar de verdad: sin marcador y sin anular. La portada enseñaba «la
+     * próxima jornada» entera y en una jornada a medias salían ahí los que ya
+     * se habían jugado, con su resultado puesto, justo al lado del bloque de
+     * últimos resultados que los repetía (lo vio el propietario el
+     * 2026-10-13).
+     *
+     * Por partido y no por jornada: una jornada se juega a trozos, y un
+     * aplazado de la 9 sigue estando por jugar cuando va la 10. Preguntando
+     * por la jornada «de ahora» ese aplazado no aparecía en ninguna parte.
+     *
+     * @return Collection<int, Game>
+     */
+    public function upcomingGames(Season $season, int $limit = 6): Collection
+    {
+        return Game::query()
+            ->inSeason($season)
+            ->inLeague()
+            ->whereNull('home_score')
+            ->whereNull('away_score')
+            ->whereNull('voided_at')
+            ->with(['matchday.division', 'homeTeam.club', 'awayTeam.club'])
+            ->get()
+            // Clave compuesta y no un array de closures: `sortBy` con un array
+            // las trata como COMPARADORES de dos argumentos, no como
+            // extractores de clave, y el orden saldría al azar.
+            ->sortBy(fn (Game $game) => sprintf(
+                '%05d%012d',
+                $game->matchday?->number ?? 99999,
+                $game->getKey(),
+            ))
+            ->take($limit)
+            ->values();
+    }
+
+    /**
      * Cuánto se ha jugado ya de la liga, para la barra de la portada.
      *
      * Sólo partidos, y no jornadas: el número de jornada lo pone el bloque de

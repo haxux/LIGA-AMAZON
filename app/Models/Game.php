@@ -115,6 +115,24 @@ class Game extends Model
                 ]);
             }
 
+            // Un partido anulado lleva SIEMPRE su marcador reglamentario, y la
+            // regla vive aquí porque son dos columnas que tienen que concordar
+            // y el formulario del panel puede moverlas por separado.
+            //
+            // Pasó en producción el 2026-10-13: dos partidos se anularon bien
+            // —`voidAgainst()` les puso el 0-0— y al editarlos después el
+            // formulario les dejó el marcador vacío con `voided_at` puesto. Un
+            // anulado sin marcador desaparecía de la tabla en vez de contar
+            // como jugado, y a un equipo le faltaban dos partidos jugados sin
+            // que nada avisara.
+            //
+            // Resuelve en vez de rechazar, como el invariante de Season: nadie
+            // quiere un error de validación por editar un partido anulado.
+            if ($game->voided_at !== null && ($game->home_score === null || $game->away_score === null)) {
+                $game->home_score = $game->voided_against === 'away' ? self::FORFEIT_SCORE : 0;
+                $game->away_score = $game->voided_against === 'home' ? self::FORFEIT_SCORE : 0;
+            }
+
             // Un partido pertenece a UNA competición: la jornada de una liga, el
             // cruce de una copa o el grupo de una copa. Ni a ninguna —quedaría
             // fuera de toda clasificación y de todo cuadro, invisible— ni a dos,

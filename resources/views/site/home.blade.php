@@ -17,8 +17,13 @@
         // antes de la arroba, así que «JORNADA@if» se queda como texto literal
         // mientras su «@endif» sí compila, y la vista entera revienta con un
         // «unexpected token endif». Costó un 500 averiguarlo.
-        $cabecera = mb_strtoupper($season->name).($matchday ? ' · JORNADA '.$matchday->number : '');
-        $proxima = 'PRÓXIMA JORNADA'.($matchday?->date ? ' · '.$matchday->date->format('d/m/Y') : '');
+        $cabecera = mb_strtoupper($season->name).($jornada ? ' · JORNADA '.$jornada : '');
+
+        // Se nombra la jornada sólo cuando todos los que se enseñan son de
+        // ella; si hay un aplazado de otra mezclado, el rótulo no promete una.
+        $proxima = $matchday
+            ? 'PRÓXIMA JORNADA'.($matchday->date ? ' · '.$matchday->date->format('d/m/Y') : '')
+            : 'PRÓXIMOS PARTIDOS';
     @endphp
 
     {{-- La bienvenida: el nombre de la liga en grande y dónde estamos. El botón
@@ -64,8 +69,13 @@
                         {{ $proxima }}
                     </h3>
                     <div class="flex flex-col gap-3">
-                        @foreach ($upcoming as $row)
-                            <x-site.game-card :game="$row['game']" :label="$row['label']" />
+                        @foreach ($upcoming as $game)
+                            {{-- La etiqueta la pone la portada porque la
+                                 tarjeta, por sí sola, diría «Jornada 11» sin
+                                 decir de qué división. --}}
+                            <x-site.game-card
+                                :game="$game"
+                                :label="'Jornada '.$game->matchday->number.($game->matchday->division ? ' · '.$game->matchday->division->name : '')" />
                         @endforeach
                     </div>
                 </div>

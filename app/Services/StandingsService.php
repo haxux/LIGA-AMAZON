@@ -119,9 +119,17 @@ final class StandingsService
 
         // Sólo los de liga: desde la Fase 15 un partido puede ser de copa, y
         // ésos no cuentan para la tabla de una división.
+        //
+        // Entran los que tienen marcador Y TAMBIÉN los anulados, tengan el que
+        // tengan. Un anulado cuenta como jugado sin repartir nada, así que
+        // filtrarlo por el marcador antes de plegar lo hacía desaparecer de la
+        // tabla entera: a un equipo con tres anulados le salían ocho partidos
+        // jugados en vez de diez, y sólo porque uno de los tres conservaba su
+        // 0-0 y los otros dos lo habían perdido.
         $games = Game::query()
-            ->whereNotNull('home_score')
-            ->whereNotNull('away_score')
+            ->where(fn (Builder $query) => $query
+                ->where(fn (Builder $scored) => $scored->whereNotNull('home_score')->whereNotNull('away_score'))
+                ->orWhereNotNull('voided_at'))
             ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $seasonId))
             ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score', 'voided_at', 'voided_against']);
 
@@ -159,8 +167,12 @@ final class StandingsService
     {
         foreach ($games as $game) {
             $voided = $game->isVoidedWithoutWinner();
-            $this->accumulate($rows, $game->home_team_id, $game->home_score, $game->away_score, $voided);
-            $this->accumulate($rows, $game->away_team_id, $game->away_score, $game->home_score, $voided);
+
+            // El cast sólo puede tocar a un anulado sin ganador —los demás
+            // llegan con los dos marcadores—, y a ése no se le leen los goles:
+            // `accumulate()` se sale en cuanto cuenta el partido como jugado.
+            $this->accumulate($rows, $game->home_team_id, (int) $game->home_score, (int) $game->away_score, $voided);
+            $this->accumulate($rows, $game->away_team_id, (int) $game->away_score, (int) $game->home_score, $voided);
         }
 
         return collect($rows)
