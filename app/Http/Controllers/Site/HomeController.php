@@ -85,7 +85,10 @@ class HomeController extends SiteController
             'progress' => $overview->progress($season),
             'matchday' => $current,
             'upcoming' => $upcoming,
-            'results' => $overview->playedGames($season)->take(6),
+            // Cuatro y no seis: en el teléfono esto se apila bajo los seis de
+            // la jornada, y había que pasar doce tarjetas para llegar al podio
+            // y a lo que da gusto mirar.
+            'results' => $overview->playedGames($season)->take(4),
 
             // El podio: los tres primeros de cada división, y nada de las que
             // no han jugado, cuyo orden lo decidiría el id.

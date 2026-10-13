@@ -13,11 +13,15 @@
     @if ($rows->isEmpty())
         <p class="px-4 py-5 text-sm text-white/55">Sin datos todavía.</p>
     @else
-        <ul class="flex flex-1 flex-col divide-y divide-white/[0.055]">
+        {{-- Las filas NO se estiran para rellenar la tarjeta: con una sola, un
+             `flex-1` la centraba en el hueco y las tres tarjetas colocaban a su
+             jugador a alturas distintas. Todas empiezan arriba y el hueco
+             sobrante queda abajo, que se lee como espacio y no como descuadre. --}}
+        <ul class="divide-y divide-white/[0.055]">
             @foreach ($rows as $row)
-                <li class="flex-1">
+                <li>
                     <a href="{{ route('site.players.show', $row->player) }}"
-                       class="flex h-full items-center gap-3 px-4 py-4 hover:bg-surface-alt">
+                       class="flex items-center gap-3 px-4 py-4 hover:bg-surface-alt">
                         <x-site.player-avatar :player="$row->player" size="size-12" />
 
                         <span class="min-w-0 flex-1">
