@@ -8,6 +8,7 @@
     // posiciones en la ficha de club.
     $labels = [
         \App\Models\GameEvent::TYPE_GOAL => 'Gol',
+        \App\Models\GameEvent::TYPE_OWN_GOAL => 'Autogol',
         \App\Models\GameEvent::TYPE_ASSIST => 'Asistencia',
         \App\Models\GameEvent::TYPE_YELLOW_CARD => 'Tarjeta amarilla',
         \App\Models\GameEvent::TYPE_RED_CARD => 'Tarjeta roja',
@@ -16,6 +17,7 @@
 
     $colors = [
         \App\Models\GameEvent::TYPE_GOAL => 'text-brand',
+        \App\Models\GameEvent::TYPE_OWN_GOAL => 'text-rose-400',
         \App\Models\GameEvent::TYPE_ASSIST => 'text-white/70',
         \App\Models\GameEvent::TYPE_YELLOW_CARD => 'text-amber-400',
         \App\Models\GameEvent::TYPE_RED_CARD => 'text-rose-400',

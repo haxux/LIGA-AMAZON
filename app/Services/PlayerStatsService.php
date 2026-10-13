@@ -51,6 +51,7 @@ final class PlayerStatsService
 
         return [
             GameEvent::TYPE_GOAL => (int) ($counts[GameEvent::TYPE_GOAL] ?? 0),
+            GameEvent::TYPE_OWN_GOAL => (int) ($counts[GameEvent::TYPE_OWN_GOAL] ?? 0),
             GameEvent::TYPE_ASSIST => (int) ($counts[GameEvent::TYPE_ASSIST] ?? 0),
             GameEvent::TYPE_YELLOW_CARD => (int) ($counts[GameEvent::TYPE_YELLOW_CARD] ?? 0),
             GameEvent::TYPE_RED_CARD => (int) ($counts[GameEvent::TYPE_RED_CARD] ?? 0),

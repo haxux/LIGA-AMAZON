@@ -61,13 +61,27 @@ class GameController extends SiteController
             ->sortBy(fn (GameEvent $event) => $event->getKey())
             ->map(fn (GameEvent $event) => [
                 'event' => $event,
-                'side' => match (true) {
-                    $homeSquad->contains($event->player_id) => 'home',
-                    $awaySquad->contains($event->player_id) => 'away',
-                    default => 'unknown',
-                },
+                'side' => $this->sideOf($event, $homeSquad, $awaySquad),
             ])
             ->values();
+    }
+
+    /**
+     * Un autogol suma al rival de quien lo marcó, así que se cuenta en el
+     * lado contrario al de su plantilla: el relato lo lee quien mira el marcador.
+     *
+     * @param  Collection<int, int>  $homeSquad
+     * @param  Collection<int, int>  $awaySquad
+     */
+    private function sideOf(GameEvent $event, Collection $homeSquad, Collection $awaySquad): string
+    {
+        $own = $event->type === GameEvent::TYPE_OWN_GOAL;
+
+        return match (true) {
+            $homeSquad->contains($event->player_id) => $own ? 'away' : 'home',
+            $awaySquad->contains($event->player_id) => $own ? 'home' : 'away',
+            default => 'unknown',
+        };
     }
 
     /**

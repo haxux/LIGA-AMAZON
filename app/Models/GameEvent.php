@@ -18,6 +18,8 @@ class GameEvent extends Model
 
     public const TYPE_GOAL = 'goal';
 
+    public const TYPE_OWN_GOAL = 'own_goal';
+
     public const TYPE_ASSIST = 'assist';
 
     public const TYPE_YELLOW_CARD = 'yellow_card';
@@ -34,6 +36,7 @@ class GameEvent extends Model
      */
     public const TYPES = [
         self::TYPE_GOAL => 'Goal',
+        self::TYPE_OWN_GOAL => 'Own goal',
         self::TYPE_ASSIST => 'Assist',
         self::TYPE_YELLOW_CARD => 'Yellow card',
         self::TYPE_RED_CARD => 'Red card',

@@ -5,6 +5,7 @@
     // español, así que las etiquetas viven aquí, como en el detalle de partido.
     $labels = [
         GameEvent::TYPE_GOAL => 'Goles',
+        GameEvent::TYPE_OWN_GOAL => 'Autogoles',
         GameEvent::TYPE_ASSIST => 'Asistencias',
         GameEvent::TYPE_YELLOW_CARD => 'Amarillas',
         GameEvent::TYPE_RED_CARD => 'Rojas',
@@ -13,6 +14,7 @@
 
     $eventLabels = [
         GameEvent::TYPE_GOAL => 'Gol',
+        GameEvent::TYPE_OWN_GOAL => 'Autogol',
         GameEvent::TYPE_ASSIST => 'Asistencia',
         GameEvent::TYPE_YELLOW_CARD => 'Tarjeta amarilla',
         GameEvent::TYPE_RED_CARD => 'Tarjeta roja',
@@ -28,6 +30,7 @@
 
     $short = [
         GameEvent::TYPE_GOAL => 'G',
+        GameEvent::TYPE_OWN_GOAL => 'AG',
         GameEvent::TYPE_ASSIST => 'A',
         GameEvent::TYPE_YELLOW_CARD => 'TA',
         GameEvent::TYPE_RED_CARD => 'TR',
@@ -109,7 +112,7 @@
                 <h3 class="mb-2 font-mono text-[10px] tracking-[0.14em] text-white/45">{{ mb_strtoupper($block['title']) }}</h3>
             @endif
 
-            <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
                 @foreach ($labels as $type => $label)
                     <div class="rounded-[5px] bg-surface-alt p-4 text-center">
                         <span class="block font-mono text-[9px] tracking-[0.14em] text-white/40">{{ mb_strtoupper($label) }}</span>

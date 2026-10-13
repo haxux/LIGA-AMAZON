@@ -17,6 +17,7 @@
     $nombre = match (true) {
         $type === GameEvent::TYPE_YELLOW_CARD && $secondYellow => 'Doble amarilla: expulsado',
         $type === GameEvent::TYPE_GOAL => 'Gol',
+        $type === GameEvent::TYPE_OWN_GOAL => 'Autogol',
         $type === GameEvent::TYPE_ASSIST => 'Asistencia',
         $type === GameEvent::TYPE_YELLOW_CARD => 'Tarjeta amarilla',
         $type === GameEvent::TYPE_RED_CARD => 'Tarjeta roja directa',
@@ -113,6 +114,14 @@
         <svg viewBox="0 0 24 24" class="size-full">
             <rect x="7.5" y="3" width="9.5" height="16" rx="1.7" fill="#ef4444"
                   stroke="#7f1d1d" stroke-width="1" transform="rotate(-8 12 11)" />
+        </svg>
+    @elseif ($type === GameEvent::TYPE_OWN_GOAL)
+        {{-- Un balón en rojo con «AG»: es un gol, pero en propia puerta, y el
+             color es el dato —como en las tarjetas—. --}}
+        <svg viewBox="0 0 24 24" class="size-full" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="#ef4444" stroke-width="1.8" />
+            <text x="12" y="15.4" text-anchor="middle" font-size="8.5" font-weight="700"
+                  fill="#ef4444" font-family="sans-serif">AG</text>
         </svg>
     @elseif ($type === GameEvent::TYPE_CLEAN_SHEET)
         {{-- Un escudo con un cero: lo que se guardó fue la portería. Sólo trazo,
