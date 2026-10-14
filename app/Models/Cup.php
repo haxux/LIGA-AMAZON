@@ -52,16 +52,7 @@ class Cup extends Model
     /** Los tokens de color del tema, como atributo `style`; vacío en las nacionales. */
     public function themeStyle(): string
     {
-        $palette = $this->theme()?->palette();
-
-        if ($palette === null) {
-            return '';
-        }
-
-        return sprintf(
-            '--color-brand:%s;--color-surface:%s;--color-surface-alt:%s;--color-surface-muted:%s;',
-            $palette['brand'], $palette['surface'], $palette['alt'], $palette['muted'],
-        );
+        return $this->theme()?->style() ?? '';
     }
 
     public function logoUrl(): ?string

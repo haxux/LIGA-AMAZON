@@ -25,8 +25,10 @@
     ];
 @endphp
 
-<x-layouts.site :title="$game->homeTeam?->name.' – '.$game->awayTeam?->name.' — Liga Amazon'">
-    @php($cup = $game->cup())
+@php($cup = $game->cup())
+
+{{-- Un partido de copa internacional se ve dentro del escenario de su copa. --}}
+<x-layouts.site :title="$game->homeTeam?->name.' – '.$game->awayTeam?->name.' — Liga Amazon'" :theme="$cup?->theme()">
 
     <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/50">
         @if ($cup)

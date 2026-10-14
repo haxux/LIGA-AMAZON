@@ -54,7 +54,12 @@
                 ['label' => 'Partidos', 'url' => route('site.fixtures'), 'active' => request()->routeIs('site.fixtures')],
                 ['label' => 'Estadísticas', 'url' => route('site.scorers'), 'active' => request()->routeIs('site.scorers')],
                 ['label' => 'Equipos', 'url' => route('site.clubs.index'), 'active' => request()->routeIs('site.clubs.*') && ! $onOwnClub],
-                ['label' => 'Copas', 'url' => route('site.cups.index'), 'active' => request()->routeIs('site.cups.*')],
+                // Copas abre un menú: las de casa y las internacionales viven en
+                // listados distintos.
+                ['label' => 'Copas', 'url' => route('site.cups.index'), 'active' => request()->routeIs('site.cups.*'), 'children' => [
+                    ['label' => 'Copas nacionales', 'url' => route('site.cups.index', ['tipo' => 'nacionales']), 'active' => request()->routeIs('site.cups.index') && request('tipo') === 'nacionales'],
+                    ['label' => 'Copas internacionales', 'url' => route('site.cups.index', ['tipo' => 'internacionales']), 'active' => request()->routeIs('site.cups.index') && request('tipo') === 'internacionales'],
+                ]],
                 ['label' => 'Noticias', 'url' => route('site.news.index'), 'active' => request()->routeIs('site.news.*')],
             ];
 
@@ -108,6 +113,27 @@
                             <span class="hidden h-4 w-px shrink-0 bg-white/20 lg:block" aria-hidden="true"></span>
                         @endif
 
+                        @if (! empty($item['children']))
+                            {{-- Un <details> y no un menú por hover: se abre con
+                                 un toque en el móvil y funciona sin JavaScript. --}}
+                            <details class="site-nav-menu group relative">
+                                <summary class="flex cursor-pointer list-none items-center gap-1 whitespace-nowrap border-b-[3px] py-1.5 [&::-webkit-details-marker]:hidden {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
+                                    {{ $item['label'] }}
+                                    <svg class="size-3 transition-transform group-open:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+                                </summary>
+
+                                <div class="absolute left-0 top-full z-50 mt-2 min-w-[14rem] overflow-hidden rounded-[5px] border border-white/10 bg-ink shadow-xl">
+                                    @foreach ($item['children'] as $child)
+                                        <a href="{{ $child['url'] }}"
+                                           class="block border-l-[3px] px-4 py-2.5 {{ $child['active'] ? 'border-brand bg-white/[0.06] text-white' : 'border-transparent text-white/72 hover:bg-white/[0.06] hover:text-white' }}">
+                                            {{ $child['label'] }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </details>
+                            @continue
+                        @endif
+
                         <a href="{{ $item['url'] }}"
                            class="flex items-center gap-1.5 whitespace-nowrap border-b-[3px] py-1.5 {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
                             {{ $item['label'] }}
@@ -142,11 +168,23 @@
             </div>
         </header>
 
-        <main class="mx-auto max-w-6xl px-6 py-10">
-            {{ $slot }}
-        </main>
+        {{-- Una copa internacional cambia todo el contenido de la página
+             —fondo, colores, superficies— y deja la cabecera y el pie como
+             están: ver App\Enums\CupDesign. --}}
+        @php($theme = $theme ?? null)
+        @if ($theme)
+            <div class="cup-stage {{ $theme->stageClass() }}" style="{{ $theme->style() }}">
+                <main class="mx-auto max-w-6xl px-6 py-10">
+                    {{ $slot }}
+                </main>
+            </div>
+        @else
+            <main class="mx-auto max-w-6xl px-6 py-10">
+                {{ $slot }}
+            </main>
+        @endif
 
-        <footer class="mt-10 bg-ink py-8 text-white/60">
+        <footer class="{{ $theme ? '' : 'mt-10' }} bg-ink py-8 text-white/60">
             <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-8 px-6">
                 <div class="max-w-xs">
                     <div class="flex items-baseline gap-2 font-display text-xl">
@@ -186,6 +224,16 @@
         <script>
             {{-- Al primer visitante, y sólo una vez: el navegador pregunta
                  por su cuenta (ver public/js/push.js), sin botón que lo pida. --}}
+            {{-- El menú de Copas se cierra al tocar fuera, como cualquier
+                 desplegable. --}}
+            document.addEventListener('click', function (event) {
+                document.querySelectorAll('details.site-nav-menu[open]').forEach(function (menu) {
+                    if (! menu.contains(event.target)) {
+                        menu.removeAttribute('open');
+                    }
+                });
+            });
+
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof window.LigaPush === 'undefined') {
                     return;

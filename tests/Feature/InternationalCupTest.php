@@ -42,7 +42,7 @@ class InternationalCupTest extends TestCase
         $this->assertNull($cup->theme());
         $this->assertSame('', $cup->themeStyle());
 
-        $this->get(route('site.cups.show', $cup))->assertOk()->assertDontSee('COPA INTERNACIONAL');
+        $this->get(route('site.cups.show', $cup))->assertOk()->assertDontSee('cup-stage');
     }
 
     public function test_an_international_cup_page_wears_its_design(): void
@@ -52,8 +52,9 @@ class InternationalCupTest extends TestCase
 
         $this->get(route('site.cups.show', $cup))
             ->assertOk()
-            ->assertSee('COPA INTERNACIONAL')
-            ->assertSee('--color-brand:'.CupDesign::Libertadores->palette()['brand'], false);
+            ->assertSee('cup-stage cup-stage-libertadores', false)
+            ->assertSee('--color-brand:'.CupDesign::Libertadores->palette()['brand'], false)
+            ->assertSee('Fase final');
 
         $this->assertNotSame(CupDesign::Libertadores->palette(), CupDesign::Sudamericana->palette());
     }
@@ -83,7 +84,7 @@ class InternationalCupTest extends TestCase
         $color = '--color-brand:'.CupDesign::Sudamericana->palette()['brand'];
 
         $this->get(route('site.cups.index'))->assertOk()->assertSee($color, false)->assertSee('COPA SUDAMERICANA');
-        $this->get(route('site.games.show', $game))->assertOk();
+        $this->get(route('site.games.show', $game))->assertOk()->assertSee('cup-stage-sudamericana', false);
 
         // Con `?competicion=todo`, que es la vista donde las copas salen debajo
         // de la liga: Partidos enseña SÓLO la liga por omisión, que es lo que
@@ -124,5 +125,25 @@ class InternationalCupTest extends TestCase
             ])
             ->call('create')
             ->assertHasFormErrors(['design' => 'required']);
+    }
+
+    public function test_the_cups_menu_splits_national_from_international(): void
+    {
+        Cup::factory()->create(['season_id' => $this->season->id, 'name' => 'Copa Amazonas']);
+        Cup::factory()->international(CupDesign::Libertadores)
+            ->create(['season_id' => $this->season->id, 'name' => 'Libertadores Amazon']);
+
+        $this->get(route('site.home'))
+            ->assertSee('Copas nacionales')
+            ->assertSee('Copas internacionales');
+
+        $this->get(route('site.cups.index', ['tipo' => 'nacionales']))
+            ->assertOk()->assertSee('Copa Amazonas')->assertDontSee('Libertadores Amazon');
+
+        $this->get(route('site.cups.index', ['tipo' => 'internacionales']))
+            ->assertOk()->assertSee('Libertadores Amazon')->assertDontSee('Copa Amazonas');
+
+        $this->get(route('site.cups.index'))
+            ->assertOk()->assertSee('Copa Amazonas')->assertSee('Libertadores Amazon');
     }
 }

@@ -1,26 +1,75 @@
-<x-layouts.site :title="$cup->name.' — Liga Amazon'">
-    {{-- Una copa internacional redefine los tokens de color del sitio sobre
-         este contenedor (ver Cup::themeStyle), así que tablas, rondas y
-         tarjetas de dentro se tiñen sin saber nada de ella. --}}
-    <div style="{{ $cup->themeStyle() }}">
+@php
+    $design = $cup->theme();
+    $intl = $design !== null;
+@endphp
+
+{{-- Una copa internacional pasa su diseño al layout, que envuelve todo el
+     contenido en su escenario (ver App\Enums\CupDesign). Una nacional se ve
+     como siempre. --}}
+<x-layouts.site :title="$cup->name.' — Liga Amazon'" :theme="$design">
     <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/50">
-        <a href="{{ route('site.cups.index') }}" class="hover:text-ink">COPAS</a>
+        <a href="{{ route('site.cups.index', ['tipo' => $intl ? 'internacionales' : 'nacionales']) }}" class="hover:text-ink">
+            {{ $intl ? 'COPAS INTERNACIONALES' : 'COPAS NACIONALES' }}
+        </a>
         @if ($cup->season) · {{ mb_strtoupper($cup->season->name) }} @endif
     </div>
 
-    @if ($cup->theme())
+    @if ($intl)
+        @php($logo = $cup->logoUrl())
         @php($background = $cup->backgroundUrl())
-        <header class="relative mb-8 flex items-center gap-5 overflow-hidden rounded-md border-b-4 border-brand px-6 py-8"
-                style="background: {{ $background ? "linear-gradient(90deg, rgba(0,0,0,.7), rgba(0,0,0,.25)), url('".$background."') center/cover" : $cup->theme()->palette()['hero'] }}">
-            @if ($logo = $cup->logoUrl())
-                <img src="{{ $logo }}" alt="" class="h-20 w-auto shrink-0 object-contain sm:h-28">
-            @endif
 
-            <div class="min-w-0">
-                <div class="font-mono text-[10px] tracking-[0.2em] text-brand">COPA INTERNACIONAL</div>
-                <h1 class="font-display text-3xl uppercase tracking-wide text-white sm:text-5xl">{{ $cup->name }}</h1>
-            </div>
-        </header>
+        {{-- El cartel. Si se subió una imagen de cabecera —el banner oficial,
+             que ya trae su logo y su rótulo— se enseña entera y el nombre va
+             debajo, para no escribir encima de su propio texto. Si no, el
+             logo y el nombre van en el centro, sobre el escenario. --}}
+        @if ($background)
+            <header class="mb-10 overflow-hidden rounded-lg border border-brand/30 bg-surface-alt shadow-2xl">
+                <img src="{{ $background }}" alt="{{ $cup->name }}" class="block aspect-[16/9] w-full object-cover sm:aspect-[16/7]">
+
+                <div class="flex flex-wrap items-center justify-between gap-4 border-t-4 border-brand px-6 py-5">
+                    <div class="flex min-w-0 items-center gap-4">
+                        @if ($logo)
+                            <img src="{{ $logo }}" alt="" class="h-14 w-auto shrink-0 object-contain">
+                        @endif
+                        <div class="min-w-0">
+                            <div class="font-mono text-[10px] tracking-[0.3em] text-brand">{{ mb_strtoupper($design->label()) }}</div>
+                            <h1 class="font-display truncate text-3xl font-extrabold uppercase tracking-wide text-white sm:text-4xl">{{ $cup->name }}</h1>
+                        </div>
+                    </div>
+                    @if ($cup->season)
+                        <div class="font-mono text-[11px] tracking-[0.25em] text-ink/70">TEMPORADA {{ mb_strtoupper($cup->season->name) }}</div>
+                    @endif
+                </div>
+            </header>
+        @else
+            <header class="mb-10 flex min-h-[20rem] flex-col items-center justify-center px-6 py-12 text-center sm:min-h-[24rem]">
+                @if ($logo)
+                    <img src="{{ $logo }}" alt="{{ $cup->name }}" class="mb-6 h-36 w-auto object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,.55)] sm:h-48">
+                @else
+                    <span class="mb-4 font-display text-8xl text-brand drop-shadow-[0_10px_30px_rgba(0,0,0,.55)]" aria-hidden="true">&#9819;</span>
+                @endif
+
+                <div class="font-display text-sm font-semibold tracking-[0.35em] text-white/85">— {{ mb_strtoupper($design->label()) }} —</div>
+                <h1 class="font-display mt-1 text-4xl font-extrabold uppercase tracking-wide text-white drop-shadow-[0_4px_14px_rgba(0,0,0,.6)] sm:text-6xl">{{ $cup->name }}</h1>
+                @if ($cup->season)
+                    <div class="mt-3 font-mono text-[11px] tracking-[0.25em] text-brand">TEMPORADA {{ mb_strtoupper($cup->season->name) }}</div>
+                @endif
+            </header>
+        @endif
+
+        {{-- Las cifras de la copa, de un vistazo. --}}
+        <div class="mb-12 grid grid-cols-3 gap-3 text-center">
+            @foreach ([
+                ['value' => $cup->participants()->count(), 'label' => 'EQUIPOS'],
+                ['value' => $groups->count() ?: '—', 'label' => 'GRUPOS'],
+                ['value' => $rounds->count() ?: '—', 'label' => 'RONDAS'],
+            ] as $stat)
+                <div class="rounded-md border border-brand/25 bg-surface px-3 py-4 backdrop-blur-sm">
+                    <div class="font-display text-3xl font-bold text-brand sm:text-4xl">{{ $stat['value'] }}</div>
+                    <div class="mt-1 font-mono text-[9px] tracking-[0.2em] text-ink/60">{{ $stat['label'] }}</div>
+                </div>
+            @endforeach
+        </div>
     @else
         <h1 class="font-display mb-6 text-3xl uppercase tracking-wide text-ink">{{ $cup->name }}</h1>
     @endif
@@ -28,11 +77,11 @@
     {{-- Los grupos, si los lleva: cada uno es una liga pequeña, y se clasifica
          con el mismo código que una división. --}}
     @if ($groups->isNotEmpty())
-        <h2 class="font-display mb-3 text-lg uppercase tracking-wide text-ink/70">Fase de grupos</h2>
+        <x-site.cup-heading :fancy="$intl">Fase de grupos</x-site.cup-heading>
 
         <div class="mb-10 grid gap-4 lg:grid-cols-2">
             @foreach ($groups as $entry)
-                <section class="overflow-hidden rounded-md bg-surface">
+                <section class="overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
                     <h3 class="font-display bg-surface-alt px-4 py-2 text-base uppercase tracking-wide text-brand">
                         Grupo {{ $entry['group']->name }}
                     </h3>
@@ -76,9 +125,9 @@
          tercero de cada grupo de arriba, puesto a competir con los demás—, así
          que no lleva PJ/G/E/P propios: ya están en su grupo. --}}
     @if ($bestThirds->isNotEmpty())
-        <h2 class="font-display mb-3 text-lg uppercase tracking-wide text-ink/70">Mejores terceros</h2>
+        <x-site.cup-heading :fancy="$intl">Mejores terceros</x-site.cup-heading>
 
-        <section class="mb-10 overflow-hidden rounded-md bg-surface">
+        <section class="mb-10 overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
             <table class="w-full text-left">
                 <thead>
                     <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
@@ -118,7 +167,7 @@
 
     {{-- El cuadro. Cada cruce enseña su global y quién pasó; si pasó por una
          decisión, se dice por qué, que es lo que nadie recuerda después. --}}
-    <h2 class="font-display mb-3 text-lg uppercase tracking-wide text-ink/70">Cuadro</h2>
+    <x-site.cup-heading :fancy="$intl">{{ $intl ? 'Fase final' : 'Cuadro' }}</x-site.cup-heading>
 
     @forelse ($rounds as $entry)
         <section class="mb-8">
@@ -133,7 +182,7 @@
                 @php($tie = $item['tie'])
                 @php($result = $item['result'])
 
-                <div class="mb-3 rounded-[5px] bg-surface-alt p-4">
+                <div class="mb-3 rounded-[5px] bg-surface-alt p-4 {{ $intl ? 'border-l-[3px] border-brand backdrop-blur-sm' : '' }}">
                     <div class="flex items-center justify-between gap-3">
                         @foreach ([['team' => $tie->homeTeam, 'goals' => $result->homeGoals], ['team' => $tie->awayTeam, 'goals' => $result->awayGoals]] as $index => $side)
                             @if ($index === 1)
@@ -187,5 +236,4 @@
             Esta copa todavía no tiene rondas.
         </p>
     @endforelse
-    </div>
 </x-layouts.site>

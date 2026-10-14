@@ -31,3 +31,37 @@
     background-image:
         repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 8px, transparent 8px, transparent 16px);
 }
+
+/*
+ * Copas internacionales: el escenario que envuelve el contenido de la página
+ * (no la cabecera ni el pie) al entrar en una. Los tokens de color los pone
+ * App\Enums\CupDesign::style() en línea; aquí sólo vive el dibujo del fondo.
+ * El fondo va fijo para que la página entera se mueva por encima, como un
+ * telón; donde el navegador no lo soporta, simplemente se desplaza.
+ */
+.cup-stage {
+    color: var(--color-ink);
+    min-height: 100vh;
+}
+
+.cup-stage-libertadores {
+    background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(240, 182, 76, 0.18), transparent 70%),
+        url('../images/cups/libertadores-arcos.svg') center top / cover no-repeat fixed,
+        linear-gradient(180deg, #4C3B23 0%, #2A2013 45%, #0B0805 100%) fixed;
+    background-color: #0B0805;
+}
+
+.cup-stage-sudamericana {
+    background:
+        radial-gradient(circle at 8% 22%, rgba(190, 225, 255, 0.45) 0, rgba(120, 170, 255, 0.12) 6%, transparent 22%),
+        radial-gradient(ellipse 70% 50% at 70% 10%, rgba(80, 140, 255, 0.25), transparent 70%),
+        url('../images/cups/sudamericana-esquirlas.svg') center / cover no-repeat fixed,
+        linear-gradient(160deg, #1449E0 0%, #0B32B4 45%, #061A6E 100%) fixed;
+    background-color: #061A6E;
+}
+
+/* La misma escena metida en una tarjeta: ahí el fondo va con ella. */
+.cup-banner {
+    background-attachment: scroll, scroll, scroll, scroll;
+}
