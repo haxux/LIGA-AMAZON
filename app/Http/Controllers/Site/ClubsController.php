@@ -28,6 +28,9 @@ class ClubsController extends SiteController
 
         $teams = Team::query()
             ->where('season_id', $season->getKey())
+            // Un equipo sin división todavía no compite en nada: no se lista
+            // (decisión del propietario), aunque siga existiendo en el panel.
+            ->whereNotNull('division_id')
             ->with(['club', 'division'])
             ->get()
             ->sortBy(fn (Team $team) => $team->club?->name)
@@ -41,31 +44,20 @@ class ClubsController extends SiteController
     }
 
     /**
-     * Una sección por división, en el orden del panel, y una última para los
-     * equipos sin división. `teams.division_id` es nullable desde la Fase 2, así
-     * que un club recién inscrito puede no tenerla todavía: dejarlo fuera del
-     * listado sería esconderlo justo cuando alguien lo busca.
+     * Una sección por división, en el orden del panel.
      *
      * @param  Collection<int, Team>  $teams
      * @return array<int, array{heading: string|null, teams: Collection<int, Team>}>
      */
     private function groupByDivision(Collection $teams, Season $season): array
     {
-        $groups = $season->divisions()
+        return $season->divisions()
             ->orderBy('id')
             ->get()
             ->map(fn (Division $division) => [
                 'heading' => $division->name,
                 'teams' => $teams->where('division_id', $division->getKey())->values(),
-            ]);
-
-        $orphans = $teams->whereNull('division_id')->values();
-
-        if ($orphans->isNotEmpty()) {
-            $groups->push(['heading' => 'Sin división', 'teams' => $orphans]);
-        }
-
-        return $groups
+            ])
             ->filter(fn (array $group) => $group['teams']->isNotEmpty())
             ->values()
             ->all();

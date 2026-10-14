@@ -49,19 +49,21 @@ class ClubsPageTest extends TestCase
     }
 
     /**
-     * `teams.division_id` es nullable desde siempre, así que un club recién
-     * inscrito puede no tener división todavía. Desaparecer del listado sería
-     * la peor respuesta posible: es justo cuando alguien lo está buscando.
+     * Un equipo sin división todavía no compite en nada, y el propietario pidió
+     * que no se liste (reemplaza a la regla anterior, que lo enseñaba aparte).
      */
-    public function test_a_club_without_a_division_is_still_listed(): void
+    public function test_a_club_without_a_division_is_not_listed(): void
     {
         $season = Season::factory()->create(['is_current' => true]);
-        Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        $primera = Division::factory()->create(['season_id' => $season->id, 'name' => 'Primera']);
+        Team::factory()->for($season)->create(['division_id' => $primera->id, 'name' => 'Con Division FC']);
         Team::factory()->for($season)->create(['division_id' => null, 'name' => 'Sin Asignar FC']);
 
         $this->get(route('site.clubs.index'))
             ->assertOk()
-            ->assertSee('Sin Asignar FC');
+            ->assertSee('Con Division FC')
+            ->assertDontSee('Sin Asignar FC')
+            ->assertDontSee('Sin división');
     }
 
     public function test_each_club_links_to_its_profile(): void
