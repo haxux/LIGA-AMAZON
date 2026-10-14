@@ -98,7 +98,7 @@ class FixturesController extends SiteController
                 'games' => Game::query()
                     ->inCup($cup)
                     ->when($groupMatchday, fn ($query, int $number) => $query->where('group_matchday', $number))
-                    ->with(['homeTeam.club', 'awayTeam.club', 'cupTie.round', 'cupGroup'])
+                    ->with(['homeTeam.club', 'awayTeam.club', 'cupTie.round.cup', 'cupGroup.cup'])
                     ->orderBy('kickoff_at')
                     ->orderBy('id')
                     ->get(),

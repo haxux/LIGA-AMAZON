@@ -299,7 +299,7 @@ class DatosBaseSeeder extends Seeder
 
             $copa = Cup::firstOrCreate(
                 ['season_id' => $temporada->getKey(), 'name' => $f['nombre']],
-                ['has_group_stage' => $f['con_grupos']],
+                ['has_group_stage' => $f['con_grupos'], 'scope' => $f['ambito'] ?? 'national', 'design' => $f['diseno'] ?? null],
             );
 
             $grupos = [];

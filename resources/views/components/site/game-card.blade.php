@@ -6,10 +6,12 @@
     // el número suelto todavía admitido por las pantallas que lo pasan así.
     // Los lados que una anulación perjudica van en rojo, sólo en este partido.
     $penalized = $game->penalizedSides();
+    // Un partido de copa internacional lleva los colores de su copa.
+    $themeStyle = $game->cup()?->themeStyle() ?? '';
     $caption = $label ?? ($matchdayNumber !== null ? 'Jornada '.$matchdayNumber : $game->competitionLabel());
 @endphp
 
-<a href="{{ route('site.games.show', $game) }}"
+<a href="{{ route('site.games.show', $game) }}" style="{{ $themeStyle }}"
    class="block rounded-[5px] border-t-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
     <div class="mb-3 truncate font-mono text-[9px] tracking-[0.1em] text-white/40">{{ mb_strtoupper($caption) }}</div>
 

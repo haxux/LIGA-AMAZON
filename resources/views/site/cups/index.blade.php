@@ -14,12 +14,18 @@
 
     @forelse ($cups as $cup)
         <a href="{{ route('site.cups.show', $cup) }}"
+           style="{{ $cup->themeStyle() }}"
            class="mb-3 flex items-center gap-4 rounded-[5px] border-l-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
-            <span class="font-display text-2xl text-brand" aria-hidden="true">&#9819;</span>
+            @if ($logo = $cup->logoUrl())
+                <img src="{{ $logo }}" alt="" class="h-10 w-10 shrink-0 object-contain">
+            @else
+                <span class="font-display text-2xl text-brand" aria-hidden="true">&#9819;</span>
+            @endif
 
             <span class="min-w-0">
                 <span class="block truncate font-display text-lg font-semibold text-white">{{ $cup->name }}</span>
                 <span class="block font-mono text-[10px] tracking-[0.12em] text-white/45">
+                    @if ($cup->theme()) {{ mb_strtoupper($cup->theme()->label()) }} · @endif
                     {{ $cup->participants_count }} EQUIPOS
                     @if ($cup->has_group_stage) · CON FASE DE GRUPOS @else · ELIMINATORIA DIRECTA @endif
                 </span>

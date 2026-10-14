@@ -81,7 +81,7 @@
 
     @foreach ($cupSections as $section)
         <section class="mb-10">
-            <h2 class="font-display mb-4 rounded-[4px] bg-surface-alt px-4 py-2 text-lg uppercase tracking-wide text-brand">
+            <h2 style="{{ $section['cup']->themeStyle() }}" class="font-display mb-4 rounded-[4px] bg-surface-alt px-4 py-2 text-lg uppercase tracking-wide text-brand">
                 <a href="{{ route('site.cups.show', $section['cup']) }}" class="hover:opacity-80">{{ $section['cup']->name }}</a>
             </h2>
 

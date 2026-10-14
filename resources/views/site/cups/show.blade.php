@@ -1,10 +1,29 @@
 <x-layouts.site :title="$cup->name.' — Liga Amazon'">
+    {{-- Una copa internacional redefine los tokens de color del sitio sobre
+         este contenedor (ver Cup::themeStyle), así que tablas, rondas y
+         tarjetas de dentro se tiñen sin saber nada de ella. --}}
+    <div style="{{ $cup->themeStyle() }}">
     <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/50">
         <a href="{{ route('site.cups.index') }}" class="hover:text-ink">COPAS</a>
         @if ($cup->season) · {{ mb_strtoupper($cup->season->name) }} @endif
     </div>
 
-    <h1 class="font-display mb-6 text-3xl uppercase tracking-wide text-ink">{{ $cup->name }}</h1>
+    @if ($cup->theme())
+        @php($background = $cup->backgroundUrl())
+        <header class="relative mb-8 flex items-center gap-5 overflow-hidden rounded-md border-b-4 border-brand px-6 py-8"
+                style="background: {{ $background ? "linear-gradient(90deg, rgba(0,0,0,.7), rgba(0,0,0,.25)), url('".$background."') center/cover" : $cup->theme()->palette()['hero'] }}">
+            @if ($logo = $cup->logoUrl())
+                <img src="{{ $logo }}" alt="" class="h-20 w-auto shrink-0 object-contain sm:h-28">
+            @endif
+
+            <div class="min-w-0">
+                <div class="font-mono text-[10px] tracking-[0.2em] text-brand">COPA INTERNACIONAL</div>
+                <h1 class="font-display text-3xl uppercase tracking-wide text-white sm:text-5xl">{{ $cup->name }}</h1>
+            </div>
+        </header>
+    @else
+        <h1 class="font-display mb-6 text-3xl uppercase tracking-wide text-ink">{{ $cup->name }}</h1>
+    @endif
 
     {{-- Los grupos, si los lleva: cada uno es una liga pequeña, y se clasifica
          con el mismo código que una división. --}}
@@ -168,4 +187,5 @@
             Esta copa todavía no tiene rondas.
         </p>
     @endforelse
+    </div>
 </x-layouts.site>

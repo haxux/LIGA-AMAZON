@@ -215,6 +215,8 @@ class ExportarDatosBase extends Command
             ->map(fn (Cup $c) => [
                 'temporada' => $c->season?->name,
                 'nombre' => $c->name,
+                'ambito' => $c->scope->value,
+                'diseno' => $c->design?->value,
                 'con_grupos' => (bool) $c->has_group_stage,
                 'grupos' => $c->groups->pluck('name')->values()->all(),
                 'participantes' => $c->participants
