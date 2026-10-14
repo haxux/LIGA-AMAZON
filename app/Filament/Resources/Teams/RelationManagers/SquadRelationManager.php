@@ -4,18 +4,21 @@ namespace App\Filament\Resources\Teams\RelationManagers;
 
 use App\Models\Player;
 use App\Models\SquadMembership;
+use App\Services\TransferService;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rules\Unique;
 
 /**
@@ -91,11 +94,49 @@ class SquadRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                // Fin de cesión: lo devuelve a la plantilla de su dueño de un
+                // gesto. Antes había que saberse el truco de registrar la
+                // cesión al revés, y quien no lo supiera tiraba de borrar.
+                Action::make('endLoan')
+                    ->label('Fin de cesión')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('warning')
+                    ->visible(fn (SquadMembership $record): bool => $record->type === SquadMembership::TYPE_LOAN)
+                    ->requiresConfirmation()
+                    ->modalDescription('Sale de esta plantilla y vuelve a la de su club. Lo que hizo aquí se conserva.')
+                    ->action(function (SquadMembership $record): void {
+                        $home = app(TransferService::class)->endLoan($record);
+
+                        Notification::make()
+                            ->success()
+                            ->title($home === null
+                                ? 'Cesión cerrada; su club no está inscrito esta temporada'
+                                : 'Vuelve a '.$home->name)
+                            ->send();
+                    }),
+                // Dar de BAJA, no borrar. Borrar la pertenencia destruía la
+                // única prueba de que ese jugador estuvo en esta plantilla, y
+                // con ella la posibilidad de anotarle después un evento de un
+                // partido que jugó aquí. Era la última puerta por la que se
+                // perdía esa historia.
+                Action::make('release')
+                    ->label('Dar de baja')
+                    ->icon('heroicon-o-arrow-right-on-rectangle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription('Sale de la plantilla y suelta su dorsal. Sigue constando que estuvo, para poder anotarle eventos de los partidos que jugó.')
+                    ->action(fn (SquadMembership $record) => $record->close()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    BulkAction::make('release')
+                        ->label('Dar de baja')
+                        ->icon('heroicon-o-arrow-right-on-rectangle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalDescription('Salen de la plantilla y sueltan su dorsal. Sigue constando que estuvieron.')
+                        ->deselectRecordsAfterCompletion()
+                        ->action(fn (Collection $records) => $records->each(fn (SquadMembership $m) => $m->close())),
                 ]),
             ]);
     }

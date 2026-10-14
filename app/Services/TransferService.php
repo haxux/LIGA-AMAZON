@@ -333,6 +333,75 @@ final class TransferService
     }
 
     /**
+     * Fin de una cesión: el jugador deja la plantilla que lo tenía prestado y
+     * vuelve a la de su dueño.
+     *
+     * No existía. El plazo de una cesión se guardaba como un texto —«6 meses»,
+     * «1 año»— que no vencía solo ni servía para calcular nada, y para
+     * devolverlo había que saberse el truco de registrar la cesión al revés.
+     * Quien no lo supiera tiraba del botón de borrar, y ahí se perdía la
+     * constancia de que ese jugador estuvo allí.
+     *
+     * No queda registrado como traspaso a propósito: un traspaso mueve dinero y
+     * una devolución no mueve nada. Dejarlo escrito como una cesión de vuelta
+     * se leería en el historial como un préstamo nuevo, que es lo contrario de
+     * lo que pasó.
+     *
+     * Vive en esta clase porque mover plantillas es lo que sabe hacer, y porque
+     * aquí están el dorsal libre y el equipo de un club en una temporada.
+     *
+     * @return ?Team el equipo al que vuelve, o null si su dueño no está
+     *               inscrito en esa temporada
+     */
+    public function endLoan(SquadMembership $membership): ?Team
+    {
+        if ($membership->type !== SquadMembership::TYPE_LOAN) {
+            throw ValidationException::withMessages([
+                'membership' => 'Ese jugador no está cedido: está en propiedad.',
+            ]);
+        }
+
+        if ($membership->hasLeft()) {
+            throw ValidationException::withMessages([
+                'membership' => 'Esa cesión ya se cerró.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($membership): ?Team {
+            $season = $membership->team?->season_id;
+            $owner = $membership->player?->club_id;
+
+            // Se cierra SIEMPRE, aunque su dueño no esté inscrito: la cesión se
+            // acabó de todas formas, y dejarlo en la plantilla ajena sería
+            // peor que dejarlo sin plantilla.
+            $membership->close();
+
+            $home = $this->teamFor($owner, $season);
+
+            if ($home === null) {
+                return null;
+            }
+
+            // Reabre su ficha de siempre si la tenía, que es lo normal: salió
+            // de ahí al irse cedido.
+            $back = SquadMembership::firstOrNew([
+                'team_id' => $home->getKey(),
+                'player_id' => $membership->player_id,
+            ]);
+
+            if (! $back->exists || $back->hasLeft()) {
+                $back->fill([
+                    'left_at' => null,
+                    'shirt_number' => $this->firstFreeShirtNumber($home),
+                    'type' => SquadMembership::TYPE_OWNED,
+                ])->save();
+            }
+
+            return $home;
+        });
+    }
+
+    /**
      * El mismo equipo, pero a partir de un club y una temporada sueltos.
      *
      * Lo necesita el formulario de alta del panel, que pregunta el dorsal antes

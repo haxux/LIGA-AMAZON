@@ -36,8 +36,17 @@ class ClubsPageTest extends TestCase
     {
         $current = Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
         $past = Season::factory()->create(['name' => '2025/26']);
-        Team::factory()->for($current)->create(['name' => 'Club de Hoy']);
-        Team::factory()->for($past)->create(['name' => 'Club de Ayer']);
+
+        // Con división: desde 36d336f un equipo sin ella no se lista, y el
+        // factory la deja nula por omisión.
+        Team::factory()->for($current)->create([
+            'division_id' => Division::factory()->create(['season_id' => $current->id])->id,
+            'name' => 'Club de Hoy',
+        ]);
+        Team::factory()->for($past)->create([
+            'division_id' => Division::factory()->create(['season_id' => $past->id])->id,
+            'name' => 'Club de Ayer',
+        ]);
 
         $this->get(route('site.clubs.index'))
             ->assertSee('Club de Hoy')
@@ -70,7 +79,10 @@ class ClubsPageTest extends TestCase
     {
         $season = Season::factory()->create(['is_current' => true]);
         $club = Club::factory()->create(['name' => 'Manaos FC']);
-        Team::factory()->for($season)->create(['club_id' => $club->id]);
+        Team::factory()->for($season)->create([
+            'club_id' => $club->id,
+            'division_id' => Division::factory()->create(['season_id' => $season->id])->id,
+        ]);
 
         $this->get(route('site.clubs.index'))
             ->assertSee(route('site.clubs.show', ['club' => $club->id]), escape: false);
