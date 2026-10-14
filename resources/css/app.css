@@ -65,3 +65,12 @@
 .cup-banner {
     background-attachment: scroll, scroll, scroll, scroll;
 }
+
+/* Quien pasa una eliminatoria: su nombre brilla en el color del acento, en
+   lugar de escribirlo debajo. */
+.tie-winner {
+    color: var(--color-brand);
+    text-shadow:
+        0 0 10px color-mix(in oklab, var(--color-brand) 65%, transparent),
+        0 0 24px color-mix(in oklab, var(--color-brand) 35%, transparent);
+}

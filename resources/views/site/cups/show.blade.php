@@ -62,7 +62,7 @@
             @foreach ([
                 ['value' => $cup->participants()->count(), 'label' => 'EQUIPOS'],
                 ['value' => $groups->count() ?: '—', 'label' => 'GRUPOS'],
-                ['value' => $rounds->count() ?: '—', 'label' => 'RONDAS'],
+                ['value' => ($preliminaryRounds->count() + $rounds->count()) ?: '—', 'label' => 'RONDAS'],
             ] as $stat)
                 <div class="rounded-md border border-brand/25 bg-surface px-3 py-4 backdrop-blur-sm">
                     <div class="font-display text-3xl font-bold text-brand sm:text-4xl">{{ $stat['value'] }}</div>
@@ -72,6 +72,18 @@
         </div>
     @else
         <h1 class="font-display mb-6 text-3xl uppercase tracking-wide text-ink">{{ $cup->name }}</h1>
+    @endif
+
+    {{-- Las fases preliminares (de clasificación): eliminatorias que se
+         juegan antes de los grupos, para entrar en ellos. --}}
+    @if ($preliminaryRounds->isNotEmpty())
+        <x-site.cup-heading :fancy="$intl">Fases preliminares</x-site.cup-heading>
+
+        <div class="mb-10">
+            @foreach ($preliminaryRounds as $entry)
+                <x-site.cup-round :entry="$entry" :intl="$intl" />
+            @endforeach
+        </div>
     @endif
 
     {{-- Los grupos, si los lleva: cada uno es una liga pequeña, y se clasifica
@@ -165,72 +177,11 @@
         </section>
     @endif
 
-    {{-- El cuadro. Cada cruce enseña su global y quién pasó; si pasó por una
-         decisión, se dice por qué, que es lo que nadie recuerda después. --}}
+    {{-- El cuadro: las rondas después de los grupos. --}}
     <x-site.cup-heading :fancy="$intl">{{ $intl ? 'Fase final' : 'Cuadro' }}</x-site.cup-heading>
 
     @forelse ($rounds as $entry)
-        <section class="mb-8">
-            <h3 class="font-display mb-3 rounded-[4px] bg-surface-alt px-4 py-2 text-lg uppercase tracking-wide text-brand">
-                {{ $entry['round']->name }}
-                <span class="font-mono text-[10px] tracking-[0.12em] text-white/40">
-                    · {{ $entry['round']->isTwoLegged() ? 'IDA Y VUELTA' : 'PARTIDO ÚNICO' }}
-                </span>
-            </h3>
-
-            @forelse ($entry['ties'] as $item)
-                @php($tie = $item['tie'])
-                @php($result = $item['result'])
-
-                <div class="mb-3 rounded-[5px] bg-surface-alt p-4 {{ $intl ? 'border-l-[3px] border-brand backdrop-blur-sm' : '' }}">
-                    <div class="flex items-center justify-between gap-3">
-                        @foreach ([['team' => $tie->homeTeam, 'goals' => $result->homeGoals], ['team' => $tie->awayTeam, 'goals' => $result->awayGoals]] as $index => $side)
-                            @if ($index === 1)
-                                <span class="font-mono text-[10px] tracking-[0.12em] text-white/35">GLOBAL</span>
-                            @endif
-
-                            <span class="flex min-w-0 flex-1 items-center gap-2 {{ $index === 1 ? 'justify-end text-right' : '' }}">
-                                @if ($index === 1)
-                                    <span class="font-display text-2xl font-bold {{ $result->winner?->is($side['team']) ? 'text-brand' : 'text-white/70' }}">
-                                        {{ $result->played === 0 ? '–' : $side['goals'] }}
-                                    </span>
-                                @endif
-
-                                <a href="{{ route('site.clubs.show', ['club' => $side['team']?->club_id]) }}"
-                                   class="truncate font-display text-lg {{ $result->winner?->is($side['team']) ? 'font-bold text-white' : 'text-white/70' }}">
-                                    {{ $side['team']?->name }}
-                                </a>
-
-                                @if ($index === 0)
-                                    <span class="font-display text-2xl font-bold {{ $result->winner?->is($side['team']) ? 'text-brand' : 'text-white/70' }}">
-                                        {{ $result->played === 0 ? '–' : $side['goals'] }}
-                                    </span>
-                                @endif
-                            </span>
-                        @endforeach
-                    </div>
-
-                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 pt-2 font-mono text-[10px] tracking-[0.1em] text-white/45">
-                        @foreach ($tie->games as $game)
-                            <a href="{{ route('site.games.show', $game) }}" class="hover:text-brand">
-                                {{ $game->homeTeam?->short_name }}
-                                {{ $game->home_score ?? '–' }}–{{ $game->away_score ?? '–' }}
-                                {{ $game->awayTeam?->short_name }}
-                            </a>
-                        @endforeach
-
-                        @if ($result->isDecided())
-                            <span class="text-brand">PASA {{ mb_strtoupper($result->winner->name) }}</span>
-                            @if ($result->note) <span class="text-white/60">· {{ $result->note }}</span> @endif
-                        @elseif ($result->needsDecision())
-                            <span class="text-amber-400">EMPATE — PENDIENTE DE RESOLVER</span>
-                        @endif
-                    </div>
-                </div>
-            @empty
-                <p class="font-mono text-[11px] tracking-[0.08em] text-ink/50">Todavía sin emparejamientos.</p>
-            @endforelse
-        </section>
+        <x-site.cup-round :entry="$entry" :intl="$intl" />
     @empty
         <p class="rounded-md bg-surface px-4 py-6 text-center font-display text-lg uppercase tracking-wide text-white/60">
             Esta copa todavía no tiene rondas.

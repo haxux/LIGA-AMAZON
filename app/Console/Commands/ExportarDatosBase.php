@@ -227,6 +227,7 @@ class ExportarDatosBase extends Command
                 'rondas' => $c->rounds
                     ->map(fn ($r) => [
                         'nombre' => $r->name,
+                        'fase' => $r->stage,
                         'orden' => (int) $r->position,
                         'partidos' => (int) $r->legs,
                     ])->values()->all(),

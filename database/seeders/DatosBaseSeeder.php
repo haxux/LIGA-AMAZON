@@ -314,7 +314,7 @@ class DatosBaseSeeder extends Seeder
             foreach ($f['rondas'] ?? [] as $r) {
                 CupRound::firstOrCreate(
                     ['cup_id' => $copa->getKey(), 'position' => $r['orden']],
-                    ['name' => $r['nombre'], 'legs' => $r['partidos']],
+                    ['name' => $r['nombre'], 'stage' => $r['fase'] ?? 'final', 'legs' => $r['partidos']],
                 );
             }
 

@@ -106,8 +106,13 @@ class CupPageTest extends TestCase
             ->assertSee('Semifinal')
             ->assertSee('IDA Y VUELTA')
             ->assertSee('GLOBAL')
-            ->assertSeeInOrder(['Manaos FC', '3'])
-            ->assertSee('PASA MANAOS FC');
+            ->assertSeeInOrder(['3', 'GLOBAL'])
+            // La ida y la vuelta, al lado del global y leídas desde el local
+            // del cruce: la vuelta 1-2 se lee 2 – 1.
+            ->assertSeeInOrder(['IDA', '1 – 0', 'VUELTA', '2 – 1'])
+            // Quién pasó no se escribe: su nombre brilla.
+            ->assertDontSee('PASA')
+            ->assertSeeInOrder(['tie-winner', 'Manaos FC'], false);
     }
 
     /**
@@ -121,8 +126,29 @@ class CupPageTest extends TestCase
         $tie->update(['winner_team_id' => $this->away->id, 'decision_note' => 'Penaltis 5-4']);
 
         $this->get(route('site.cups.show', $this->cup))
-            ->assertSee('PASA TAPAJÓS SC')
+            ->assertSeeInOrder(['tie-winner', 'Tapajós SC'], false)
             ->assertSee('Penaltis 5-4');
+    }
+
+    /**
+     * Las fases preliminares se juegan antes de los grupos, y así se enseñan:
+     * arriba, separadas del cuadro.
+     */
+    public function test_preliminary_rounds_come_before_the_bracket(): void
+    {
+        CupRound::create(['cup_id' => $this->cup->id, 'name' => 'Primera fase', 'stage' => CupRound::STAGE_PRELIMINARY, 'position' => 1, 'legs' => 2]);
+        CupRound::create(['cup_id' => $this->cup->id, 'name' => 'Final', 'position' => 2, 'legs' => 1]);
+
+        $this->get(route('site.cups.show', $this->cup))
+            ->assertOk()
+            ->assertSeeInOrder(['Fases preliminares', 'Primera fase', 'Cuadro', 'Final']);
+    }
+
+    public function test_without_preliminary_rounds_there_is_no_such_section(): void
+    {
+        $this->tie();
+
+        $this->get(route('site.cups.show', $this->cup))->assertDontSee('Fases preliminares');
     }
 
     public function test_a_level_tie_says_it_is_still_open(): void

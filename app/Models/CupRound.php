@@ -9,15 +9,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Una ronda del cuadro: octavos, cuartos, semifinal, final.
+ * Una ronda eliminatoria: octavos, cuartos, semifinal, final… o una fase
+ * preliminar, que se juega antes de los grupos (`stage`).
  *
  * Los partidos por eliminatoria se eligen aquí y no en la copa porque así se
  * juegan de verdad: una final a partido único con semifinales a ida y vuelta es
  * lo corriente (decisión del propietario).
  */
-#[Fillable(['cup_id', 'name', 'position', 'legs'])]
+#[Fillable(['cup_id', 'name', 'stage', 'position', 'legs'])]
 class CupRound extends Model
 {
+    /** Antes de la fase de grupos: la criba para entrar en ella. */
+    public const STAGE_PRELIMINARY = 'preliminary';
+
+    /** El cuadro de siempre, después de los grupos si los hay. */
+    public const STAGE_FINAL = 'final';
+
+    protected $attributes = [
+        'stage' => self::STAGE_FINAL,
+    ];
+
     protected function casts(): array
     {
         return [
@@ -49,6 +60,11 @@ class CupRound extends Model
     public function ties(): HasMany
     {
         return $this->hasMany(CupTie::class);
+    }
+
+    public function isPreliminary(): bool
+    {
+        return $this->stage === self::STAGE_PRELIMINARY;
     }
 
     public function isTwoLegged(): bool
