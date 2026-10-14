@@ -13,6 +13,7 @@ use App\Models\Game;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Competition;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -83,7 +84,13 @@ class InternationalCupTest extends TestCase
 
         $this->get(route('site.cups.index'))->assertOk()->assertSee($color, false)->assertSee('COPA SUDAMERICANA');
         $this->get(route('site.games.show', $game))->assertOk();
-        $this->get(route('site.fixtures'))->assertOk()->assertSee($color, false);
+
+        // Con `?competicion=todo`, que es la vista donde las copas salen debajo
+        // de la liga: Partidos enseña SÓLO la liga por omisión, que es lo que
+        // esa pantalla siempre enseñó (ver FixturesController).
+        $this->get(route('site.fixtures', ['competicion' => Competition::ALL]))
+            ->assertOk()
+            ->assertSee($color, false);
     }
 
     public function test_the_admin_creates_an_international_cup_with_a_design(): void
