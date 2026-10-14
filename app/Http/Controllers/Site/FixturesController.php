@@ -44,11 +44,23 @@ class FixturesController extends SiteController
         $numbers = $matchdays->pluck('number')->unique()->sort()->values();
         $number = $this->resolveNumber($request, $numbers, $matchdays, $resolver);
 
+        // La jornada de grupo sólo se ofrece al mirar UNA copa con fase de grupos:
+        // es el equivalente de la jornada de liga para sus partidos de grupo.
+        $groupMatchdays = $competition->cupId === null
+            ? collect()
+            : Game::query()->inCup($competition->cupId)->whereNotNull('group_matchday')
+                ->orderBy('group_matchday')->pluck('group_matchday')->unique()->values();
+        $groupMatchday = $groupMatchdays->contains($request->integer('jornada_grupo'))
+            ? $request->integer('jornada_grupo')
+            : null;
+
         return view('site.fixtures', [
+            'groupMatchdays' => $groupMatchdays,
+            'selectedGroupMatchday' => $groupMatchday,
             'competition' => $competition,
             'competitionOptions' => Competition::asSelectOptions($competitions),
             'showLeague' => $showLeague,
-            'cupSections' => $this->cupSections($season, $competition),
+            'cupSections' => $this->cupSections($season, $competition, $groupMatchday),
             'seasons' => $seasons,
             'divisions' => $divisions,
             'numbers' => $numbers,
@@ -70,7 +82,7 @@ class FixturesController extends SiteController
      *
      * @return Collection<int, array{cup: Cup, games: Collection<int, Game>}>
      */
-    private function cupSections(Season $season, Competition $competition): Collection
+    private function cupSections(Season $season, Competition $competition, ?int $groupMatchday = null): Collection
     {
         if ($competition->isLeague()) {
             return collect();
@@ -85,6 +97,7 @@ class FixturesController extends SiteController
                 'cup' => $cup,
                 'games' => Game::query()
                     ->inCup($cup)
+                    ->when($groupMatchday, fn ($query, int $number) => $query->where('group_matchday', $number))
                     ->with(['homeTeam.club', 'awayTeam.club', 'cupTie.round', 'cupGroup'])
                     ->orderBy('kickoff_at')
                     ->orderBy('id')

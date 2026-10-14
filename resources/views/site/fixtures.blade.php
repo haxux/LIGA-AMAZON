@@ -18,6 +18,16 @@
                 :selected="$competition->key" />
         @endif
 
+        {{-- Una copa con fase de grupos: sus jornadas de grupo, como la jornada
+             de la liga. Las eliminatorias no tienen, y entonces no se pinta. --}}
+        @if ($groupMatchdays->isNotEmpty())
+            <x-site.filter-select
+                name="jornada_grupo"
+                label="JORNADA DE GRUPO"
+                :options="collect(['' => 'Todas'])->union($groupMatchdays->mapWithKeys(fn ($number) => [$number => 'Jornada '.$number]))"
+                :selected="$selectedGroupMatchday ?? ''" />
+        @endif
+
         {{-- División y jornada son de la liga: con una copa no hay nada que elegir. --}}
         @if ($showLeague)
             <x-site.filter-select
