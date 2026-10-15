@@ -97,15 +97,29 @@
                  medio es la que cede —`min-w-0 flex-1`, y envuelve dentro de sí
                  misma— para que al entrar los enlaces del técnico el escudo no
                  salte a una segunda línea. --}}
-            <div class="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3 lg:gap-6">
+            {{-- En el móvil la cabecera es una sola fila —marca, club y botón de
+                 menú— y los enlaces se despliegan debajo, en vertical: puestos
+                 en línea envolvían en tres renglones y empujaban todo hacia
+                 abajo. Desde `lg` vuelve a ser la barra de siempre. --}}
+            <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-6 py-3 lg:flex-nowrap lg:gap-x-6">
                 {{-- A la portada, que es la convención de cualquier sitio y lo
                      que el propietario pidió: la marca da la bienvenida. --}}
-                <a href="{{ route('site.home') }}" class="flex shrink-0 items-baseline gap-2 font-display text-[22px] leading-none lg:text-[26px]">
+                <a href="{{ route('site.home') }}" class="order-1 mr-auto flex shrink-0 items-baseline gap-2 font-display text-[22px] leading-none lg:mr-0 lg:text-[26px]">
                     <span class="font-extrabold text-brand">AMAZON</span>
                     <span class="font-semibold tracking-[0.14em] text-white">TOERNOOIEN</span>
                 </a>
 
-                <nav class="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 font-display text-sm font-semibold uppercase tracking-[0.08em] lg:gap-x-5 lg:text-[15px]">
+                {{-- El botón del menú, sólo en el móvil. Lleva el aviso de no
+                     leídos porque el enlace del chat queda dentro, escondido. --}}
+                <button type="button" id="site-menu-toggle" aria-controls="site-nav" aria-expanded="false" aria-label="Abrir el menú"
+                        class="relative order-3 flex size-10 shrink-0 items-center justify-center rounded-[4px] border border-white/10 bg-white/[0.06] hover:bg-white/[0.12] lg:hidden">
+                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                    @if ($chatUnread > 0)
+                        <span class="absolute -right-1 -top-1 size-3 rounded-full border-2 border-ink bg-emerald-500" aria-hidden="true"></span>
+                    @endif
+                </button>
+
+                <nav id="site-nav" class="order-4 mt-3 hidden w-full flex-col gap-y-0.5 border-t border-white/10 pt-2 font-display text-base font-semibold uppercase tracking-[0.08em] data-open:flex lg:order-2 lg:mt-0 lg:flex lg:w-auto lg:min-w-0 lg:flex-1 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-5 lg:gap-y-1 lg:border-0 lg:pt-0 lg:text-[15px]">
                     @foreach ($nav as $item)
                         @if (! empty($item['coach']) && ($nav[$loop->index - 1]['coach'] ?? false) === false)
                             {{-- Lo del técnico, separado de lo que ve todo el
@@ -116,16 +130,16 @@
                         @if (! empty($item['children']))
                             {{-- Un <details> y no un menú por hover: se abre con
                                  un toque en el móvil y funciona sin JavaScript. --}}
-                            <details class="site-nav-menu group relative">
-                                <summary class="flex cursor-pointer list-none items-center gap-1 whitespace-nowrap border-b-[3px] py-1.5 [&::-webkit-details-marker]:hidden {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
+                            <details class="site-nav-menu group lg:relative">
+                                <summary class="flex cursor-pointer list-none items-center gap-1 whitespace-nowrap border-l-[3px] py-2.5 pl-3 lg:border-l-0 lg:border-b-[3px] lg:py-1.5 lg:pl-0 [&::-webkit-details-marker]:hidden {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
                                     {{ $item['label'] }}
                                     <svg class="size-3 transition-transform group-open:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
                                 </summary>
 
-                                <div class="absolute left-0 top-full z-50 mt-2 min-w-[14rem] overflow-hidden rounded-[5px] border border-white/10 bg-ink shadow-xl">
+                                <div class="ml-3 border-l border-white/10 lg:absolute lg:left-0 lg:top-full lg:z-50 lg:ml-0 lg:mt-2 lg:min-w-[14rem] lg:overflow-hidden lg:rounded-[5px] lg:border lg:bg-ink lg:shadow-xl">
                                     @foreach ($item['children'] as $child)
                                         <a href="{{ $child['url'] }}"
-                                           class="block border-l-[3px] px-4 py-2.5 {{ $child['active'] ? 'border-brand bg-white/[0.06] text-white' : 'border-transparent text-white/72 hover:bg-white/[0.06] hover:text-white' }}">
+                                           class="block border-l-[3px] px-4 py-2.5 text-sm {{ $child['active'] ? 'border-brand bg-white/[0.06] text-white' : 'border-transparent text-white/72 hover:bg-white/[0.06] hover:text-white' }}">
                                             {{ $child['label'] }}
                                         </a>
                                     @endforeach
@@ -135,7 +149,7 @@
                         @endif
 
                         <a href="{{ $item['url'] }}"
-                           class="flex items-center gap-1.5 whitespace-nowrap border-b-[3px] py-1.5 {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
+                           class="flex items-center gap-1.5 whitespace-nowrap border-l-[3px] py-2.5 pl-3 lg:border-l-0 lg:border-b-[3px] lg:py-1.5 lg:pl-0 {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
                             {{ $item['label'] }}
 
                             @if (($item['badge'] ?? 0) > 0)
@@ -154,7 +168,7 @@
                      cualquier otro visitante la cabecera queda como estaba. --}}
                 @if ($coachClub)
                     <a id="coach-club" href="{{ url('/club') }}"
-                       class="flex shrink-0 items-center gap-2 rounded-[4px] border border-white/10 bg-white/[0.06] px-2.5 py-1.5 hover:bg-white/[0.12]"
+                       class="order-2 flex shrink-0 items-center gap-2 rounded-[4px] border border-white/10 bg-white/[0.06] px-2.5 py-2.5 hover:bg-white/[0.12] lg:order-3 lg:py-1.5"
                        title="Ir al panel de {{ $coachClub->name }}">
                         <x-site.club-crest :club="$coachClub" size="size-[20px]" />
                         {{-- El nombre se recorta en vez de empujar: en una
@@ -226,6 +240,11 @@
                  por su cuenta (ver public/js/push.js), sin botón que lo pida. --}}
             {{-- El menú de Copas se cierra al tocar fuera, como cualquier
                  desplegable. --}}
+            document.getElementById('site-menu-toggle')?.addEventListener('click', function () {
+                var open = document.getElementById('site-nav').toggleAttribute('data-open');
+                this.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+
             document.addEventListener('click', function (event) {
                 document.querySelectorAll('details.site-nav-menu[open]').forEach(function (menu) {
                     if (! menu.contains(event.target)) {

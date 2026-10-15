@@ -91,7 +91,7 @@
     @if ($groups->isNotEmpty())
         <x-site.cup-heading :fancy="$intl">Fase de grupos</x-site.cup-heading>
 
-        <div class="mb-10 grid gap-4 lg:grid-cols-2">
+        <div class="mb-10 grid gap-4">
             @foreach ($groups as $entry)
                 <section class="overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
                     <h3 class="font-display bg-surface-alt px-4 py-2 text-base uppercase tracking-wide text-brand">
@@ -106,7 +106,7 @@
                             <col class="w-12">
                             <col>
                             @foreach (range(1, 6) as $_)
-                                <col class="w-11">
+                                <col class="w-11 sm:w-16 lg:w-20">
                             @endforeach
                         </colgroup>
                         <thead>
@@ -174,7 +174,7 @@
                     <col>
                     <col class="w-16">
                     @foreach (range(1, 6) as $_)
-                        <col class="w-11">
+                        <col class="w-11 sm:w-16 lg:w-20">
                     @endforeach
                 </colgroup>
                 <thead>
