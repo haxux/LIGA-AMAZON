@@ -24,14 +24,17 @@
         {{-- Los nombres en los extremos y el global en el centro, con la ida
              y la vuelta al lado. Quién pasó no se escribe: su nombre brilla. --}}
         <div class="mb-3 rounded-[5px] bg-surface-alt px-4 py-4 sm:px-6 {{ $intl ? 'border-l-[3px] border-brand backdrop-blur-sm' : '' }}">
-            <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-10">
+            {{-- En el móvil, los dos nombres arriba y el marcador debajo, a lo
+                 ancho: puestos en tres columnas, el centro (global, ida y vuelta)
+                 se comía el sitio y los nombres no se veían. --}}
+            <div class="grid grid-cols-2 items-center gap-x-3 gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-10">
                 @foreach ($sides as $index => $side)
                     @php($won = $result->isDecided() && $result->winner?->is($side['team']))
                     @php($lost = $result->isDecided() && ! $won)
 
                     @if ($index === 1)
                         {{-- El centro: el global grande y, a su lado, cada partido. --}}
-                        <div class="flex flex-col items-center gap-2 sm:flex-row sm:gap-5">
+                        <div class="order-last col-span-2 flex flex-col items-center gap-2 sm:order-none sm:col-span-1 sm:flex-row sm:gap-5">
                             <div class="text-center">
                                 <div class="flex items-center gap-3 font-display text-4xl font-bold leading-none">
                                     <span class="{{ $result->winner?->is($tie->homeTeam) && $result->isDecided() ? 'text-brand' : 'text-white' }}">{{ $result->played === 0 ? '–' : $result->homeGoals }}</span>

@@ -103,18 +103,18 @@
                              según sus nombres y las columnas de un grupo no
                              caen bajo las del de al lado. --}}
                         <colgroup>
-                            <col class="w-12">
+                            <col class="w-8 sm:w-12">
                             <col>
                             @foreach (range(1, 6) as $_)
-                                <col class="w-11 sm:w-16 lg:w-20">
+                                <col class="w-7 sm:w-16 lg:w-20">
                             @endforeach
                         </colgroup>
                         <thead>
                             <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
-                                <th class="py-2 pl-4 pr-1">#</th>
-                                <th class="px-2 py-2">EQUIPO</th>
+                                <th class="py-2 pl-3 pr-1 sm:pl-4">#</th>
+                                <th class="px-1 py-2 sm:px-2">EQUIPO</th>
                                 @foreach (['PJ', 'G', 'E', 'P', 'DG', 'PTS'] as $head)
-                                    <th class="px-2 py-2 text-center">{{ $head }}</th>
+                                    <th class="px-0.5 py-2 text-center sm:px-2">{{ $head }}</th>
                                 @endforeach
                             </tr>
                         </thead>
@@ -122,24 +122,24 @@
                             @foreach ($entry['table'] as $index => $row)
                                 @php($zone = $cup->standingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
                                 <tr class="font-display text-sm text-white">
-                                    <td class="relative py-2 pl-4 pr-1 text-white/40 tabular-nums">
+                                    <td class="relative py-2 pl-3 pr-1 text-white/40 tabular-nums sm:pl-4">
                                         @if ($zone)
                                             {{-- Color de StandingZone::COLORS, una paleta cerrada. --}}
                                             <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
                                         @endif
                                         {{ $index + 1 }}
                                     </td>
-                                    <td class="truncate px-2 py-2">
+                                    <td class="truncate px-1 py-2 sm:px-2">
                                         <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id]) }}" class="hover:text-brand">
                                             {{ $row->team->name }}
                                         </a>
                                     </td>
-                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->played }}</td>
-                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->won }}</td>
-                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->drawn }}</td>
-                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->lost }}</td>
-                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->goal_difference }}</td>
-                                    <td class="px-2 py-2 text-center font-bold text-brand tabular-nums">{{ $row->points }}</td>
+                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->played }}</td>
+                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->won }}</td>
+                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->drawn }}</td>
+                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->lost }}</td>
+                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->goal_difference }}</td>
+                                    <td class="px-0.5 py-2 text-center sm:px-2 font-bold text-brand tabular-nums">{{ $row->points }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -170,20 +170,20 @@
         <section class="mb-10 overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
             <table class="w-full table-fixed text-left">
                 <colgroup>
-                    <col class="w-12">
+                    <col class="w-8 sm:w-12">
                     <col>
-                    <col class="w-16">
+                    <col class="w-7 sm:w-16">
                     @foreach (range(1, 6) as $_)
-                        <col class="w-11 sm:w-16 lg:w-20">
+                        <col class="w-7 sm:w-16 lg:w-20">
                     @endforeach
                 </colgroup>
                 <thead>
                     <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
-                        <th class="py-2 pl-4 pr-1">#</th>
-                        <th class="px-2 py-2">EQUIPO</th>
-                        <th class="px-2 py-2">GRUPO</th>
+                        <th class="py-2 pl-3 pr-1 sm:pl-4">#</th>
+                        <th class="px-1 py-2 sm:px-2">EQUIPO</th>
+                        <th class="px-1 py-2 sm:px-2"><span class="sm:hidden">GR</span><span class="hidden sm:inline">GRUPO</span></th>
                         @foreach (['PJ', 'G', 'E', 'P', 'DG', 'PTS'] as $head)
-                            <th class="px-2 py-2 text-center">{{ $head }}</th>
+                            <th class="px-0.5 py-2 text-center sm:px-2">{{ $head }}</th>
                         @endforeach
                     </tr>
                 </thead>
@@ -192,26 +192,26 @@
                         @php($row = $entry['row'])
                         @php($zone = $cup->thirdsStandingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
                         <tr class="font-display text-sm text-white">
-                            <td class="relative py-2 pl-4 pr-1 text-white/40 tabular-nums">
+                            <td class="relative py-2 pl-3 pr-1 text-white/40 tabular-nums sm:pl-4">
                                 @if ($zone)
                                     <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
                                 @endif
                                 {{ $index + 1 }}
                             </td>
-                            <td class="truncate px-2 py-2">
+                            <td class="truncate px-1 py-2 sm:px-2">
                                 <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id]) }}" class="hover:text-brand">
                                     {{ $row->team->name }}
                                 </a>
                             </td>
-                            <td class="px-2 py-2 font-mono text-[10px] tracking-[0.1em] text-white/45">
+                            <td class="px-1 py-2 font-mono text-[10px] tracking-[0.1em] text-white/45 sm:px-2">
                                 {{ mb_strtoupper($entry['group']->name) }}
                             </td>
-                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->played }}</td>
-                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->won }}</td>
-                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->drawn }}</td>
-                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->lost }}</td>
-                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->goal_difference }}</td>
-                            <td class="px-2 py-2 text-center font-bold text-brand tabular-nums">{{ $row->points }}</td>
+                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->played }}</td>
+                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->won }}</td>
+                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->drawn }}</td>
+                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->lost }}</td>
+                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->goal_difference }}</td>
+                            <td class="px-0.5 py-2 text-center sm:px-2 font-bold text-brand tabular-nums">{{ $row->points }}</td>
                         </tr>
                     @endforeach
                 </tbody>
