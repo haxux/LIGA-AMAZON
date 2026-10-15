@@ -32,7 +32,15 @@ class TransferForm
                     // Al elegir jugador, el club que vende se pone solo: es el
                     // suyo, y tecleándolo a mano es donde se equivoca uno.
                     ->afterStateUpdated(function ($state, Set $set): void {
-                        $set('from_club_id', Player::query()->whereKey($state)->value('club_id'));
+                        $player = Player::query()->find($state);
+
+                        $set('from_club_id', $player?->club_id);
+
+                        // El importe arranca en el valor de mercado del jugador;
+                        // se puede cambiar, es sólo el punto de partida.
+                        if ($player?->market_value !== null) {
+                            $set('fee', $player->market_value);
+                        }
                     })
                     ->options(fn (): array => Player::query()
                         ->with('club')

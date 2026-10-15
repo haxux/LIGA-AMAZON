@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\FcPlayer;
 use App\Models\Offer;
+use App\Models\Player;
 use App\Models\Transfer;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +78,20 @@ final class OfferService
             throw ValidationException::withMessages(['offer' => 'No hay temporada vigente en la que registrar el traspaso.']);
         }
 
+        // Entre la oferta y el apretón de manos el jugador pudo irse cedido.
+        if ($offer->player?->isOnLoan()) {
+            throw ValidationException::withMessages([
+                'offer' => $offer->player->name.' está cedido: no se puede cerrar hasta que acabe la cesión.',
+            ]);
+        }
+
+        // Y que el comprador siga teniendo el dinero que tenía al ofertar.
+        $offer->guardBuyerCanAfford();
+
+        if ($offer->withPresident()) {
+            return $this->proposeWithPresident($offer, $season->getKey());
+        }
+
         $giving = $offer->givingClubId();
 
         // Entre la oferta y el apretón de manos el jugador pudo irse a un
@@ -122,6 +138,71 @@ final class OfferService
         ]);
     }
 
+    /**
+     * El trato con el presidente, escrito como traspaso EXTERNO: él no dirige
+     * ningún club, así que el otro extremo no es una fila de `clubs`.
+     *
+     * - Lo que se pide (compra, cesión): el jugador del catálogo llega al club
+     *   del técnico. Si ya tuvo ficha en la liga y se fue, se reutiliza; si no,
+     *   la crea el presidente al aprobar, con el `fc_id` ya puesto.
+     * - Lo que se ofrece (venta, ceder): sale de la plantilla del técnico y no
+     *   va a ningún sitio concreto; su historia se conserva.
+     *
+     * El proponente es el TÉCNICO, aunque acepte el presidente: es a quien el
+     * traspaso avisa en el chat cuando se resuelve.
+     */
+    private function proposeWithPresident(Offer $offer, int $seasonId): Transfer
+    {
+        $coach = $offer->conversation->participants->first(fn (User $participant) => ! $participant->isAdmin());
+        $type = match ($offer->kind) {
+            Offer::KIND_BUY => Transfer::TYPE_SIGNING,
+            Offer::KIND_SELL => Transfer::TYPE_SALE,
+            Offer::KIND_LOAN_IN => Transfer::TYPE_LOAN_IN,
+            default => Transfer::TYPE_LOAN_OUT,
+        };
+
+        $attributes = [
+            'season_id' => $seasonId,
+            'type' => $type,
+            'scope' => Transfer::SCOPE_EXTERNAL,
+            'status' => Transfer::STATUS_PROPOSED,
+            'fee' => $offer->amount,
+            'loan_term' => $offer->loan_term,
+            'proposed_by' => $coach?->getKey(),
+        ];
+
+        if (! $offer->isAsking()) {
+            // Se ofrece lo propio: tiene que seguir siendo suyo.
+            if ($offer->player === null || (int) $offer->player->club_id !== (int) $offer->from_club_id || $offer->player->left_at !== null) {
+                throw ValidationException::withMessages([
+                    'offer' => 'Ese jugador ya no es de tu plantilla: la oferta se quedó vieja.',
+                ]);
+            }
+
+            return Transfer::create($attributes + [
+                'player_id' => $offer->player_id,
+                'from_club_id' => $offer->from_club_id,
+            ]);
+        }
+
+        if (Player::fcIdIsInLeague((int) $offer->fc_id)) {
+            throw ValidationException::withMessages([
+                'offer' => $offer->external_player.' ya juega en un club de la liga: la oferta se quedó vieja.',
+            ]);
+        }
+
+        $former = Player::query()->where('fc_id', $offer->fc_id)->whereNotNull('left_at')->latest('id')->first();
+        $catalogue = FcPlayer::query()->where('fc_id', $offer->fc_id)->first();
+
+        return Transfer::create($attributes + [
+            'player_id' => $former?->getKey(),
+            'external_player' => $former === null ? $offer->external_player : null,
+            'fc_id' => $offer->fc_id,
+            'to_club_id' => $offer->from_club_id,
+            'external_club' => $catalogue?->club ?: 'Agente libre',
+        ]);
+    }
+
     public function reject(Offer $offer, User $user): Offer
     {
         $this->guardAnswer($offer, $user);
@@ -137,20 +218,44 @@ final class OfferService
      * Reescribir el importe de la anterior borraría por dónde ha pasado la
      * conversación, que es justo lo que un hilo sirve para conservar.
      */
-    public function counter(Offer $offer, User $user, int $amount): Offer
+    public function counter(Offer $offer, User $user, ?int $amount = null, ?string $term = null): Offer
     {
         $this->guardAnswer($offer, $user);
 
         $offer->update(['status' => Offer::STATUS_NEGOTIATING, 'moved_by' => $user->getKey()]);
 
+        // La contraoferta es la misma operación sobre el mismo jugador: lo que
+        // cambia es el importe, o el plazo si es una cesión. Copiar sólo
+        // jugador e importe —como se hacía— convertía cualquier contraoferta en
+        // una compra.
         return Offer::create([
             'conversation_id' => $offer->conversation_id,
             'player_id' => $offer->player_id,
+            'fc_id' => $offer->fc_id,
+            'external_player' => $offer->external_player,
+            'kind' => $offer->kind,
             'from_club_id' => $offer->from_club_id,
-            'amount' => $amount,
+            'amount' => $offer->isFree() ? 0 : $amount,
+            'loan_term' => $offer->isFree() ? ($term ?? $offer->loan_term) : null,
+            'tension' => $offer->tension,
             'status' => Offer::STATUS_SENT,
             'moved_by' => $user->getKey(),
         ]);
+    }
+
+    /**
+     * La tensión de la negociación, de 1 a 100, que fija el presidente sobre la
+     * oferta viva. Es un dato para el técnico: no cierra ni bloquea nada.
+     */
+    public function setTension(Offer $offer, User $user, int $tension): Offer
+    {
+        if (! $user->isAdmin() || ! $offer->conversation->includes($user) || ! $offer->isOpen()) {
+            throw ValidationException::withMessages(['offer' => 'Sólo el presidente fija la tensión de una negociación abierta.']);
+        }
+
+        $offer->update(['tension' => $tension]);
+
+        return $offer;
     }
 
     private function guardAnswer(Offer $offer, User $user): void

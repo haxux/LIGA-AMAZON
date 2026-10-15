@@ -97,6 +97,22 @@
                     </span>
                 </span>
 
+                {{-- La tensión de la negociación abierta, a la vista de los
+                     dos: la fija el presidente y la lee el técnico. --}}
+                @php($live = $this->liveNegotiation())
+                @if ($live && $live->tension !== null)
+                    @php($liveTone = $live->tension >= 70 ? 'bg-rose-500' : ($live->tension >= 40 ? 'bg-amber-400' : 'bg-emerald-500'))
+                    <div class="w-28 shrink-0" title="Tensión de la negociación">
+                        <div class="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-white/50">
+                            <span>Tensión</span>
+                            <span>{{ $live->tension }}%</span>
+                        </div>
+                        <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                            <div class="h-full {{ $liveTone }}" style="width: {{ $live->tension }}%"></div>
+                        </div>
+                    </div>
+                @endif
+
                 {{-- En móvil, donde las dos columnas se apilan, hace falta una
                      salida del hilo para volver a la lista. --}}
                 <button type="button" wire:click="close"
@@ -135,7 +151,7 @@
                                 </div>
 
                                 <div class="mt-1 font-display text-base text-white">
-                                    <span class="font-semibold">{{ $entry->player?->name }}</span>
+                                    <span class="font-semibold">{{ $entry->playerName() }}</span>
                                     @if ($entry->isFree())
                                         <span class="text-white/50">en cesión,</span>
                                         <span class="font-bold text-brand">{{ \App\Models\Transfer::LOAN_TERMS[$entry->loan_term] ?? 'sin plazo' }}</span>
@@ -146,8 +162,36 @@
                                 </div>
 
                                 <div class="mt-0.5 font-mono text-[10px] tracking-[0.08em] text-white/40">
-                                    LA PROPONE {{ mb_strtoupper($entry->fromClub?->name ?? '') }} · {{ $entry->created_at?->format('H:i') }}
+                                    ENVIADA POR {{ mb_strtoupper($entry->mover?->name ?? '') }} · {{ $entry->created_at?->format('H:i') }}
                                 </div>
+
+                                {{-- La tensión que el presidente dice que lleva
+                                     la negociación. Sólo él la mueve. --}}
+                                @if ($entry->withPresident() && ($entry->tension !== null || $entry->isOpen()))
+                                    @php($tension = $entry->tension)
+                                    @php($tone = $tension === null ? 'bg-white/20' : ($tension >= 70 ? 'bg-rose-500' : ($tension >= 40 ? 'bg-amber-400' : 'bg-emerald-500')))
+
+                                    <div class="mt-2" x-data="{ value: {{ $tension ?? 50 }} }">
+                                        <div class="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
+                                            <span>Tensión de la negociación</span>
+                                            <span>{{ $tension === null ? 'Sin valorar' : $tension.'%' }}</span>
+                                        </div>
+                                        <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                            <div class="h-full {{ $tone }}" style="width: {{ $tension ?? 0 }}%"></div>
+                                        </div>
+
+                                        @if ($this->maySetTension($entry))
+                                            <div class="mt-2 flex items-center gap-2">
+                                                <input type="range" min="1" max="100" x-model="value" class="flex-1">
+                                                <span class="w-10 text-right font-mono text-[11px] text-white/70" x-text="value + '%'"></span>
+                                                <button type="button" x-on:click="$wire.setTension({{ $entry->id }}, parseInt(value))"
+                                                        class="rounded-[4px] border border-white/15 px-2 py-1 font-display text-[11px] font-bold uppercase tracking-[0.08em] text-white/80 hover:bg-white/5">
+                                                    Actualizar
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
 
                                 @if ($this->mayAnswer($entry))
                                     <div class="mt-2 flex flex-wrap gap-2">
@@ -167,8 +211,18 @@
 
                                     @if ($counteringOfferId === $entry->id)
                                         <div class="mt-2 flex flex-wrap items-center gap-2">
-                                            <input type="number" min="1" wire:model="counterAmount" placeholder="Contraoferta"
-                                                   class="w-36 rounded-[4px] border border-white/10 bg-surface px-3 py-1.5 text-sm text-white">
+                                            @if ($entry->isFree())
+                                                <select wire:model="counterTerm"
+                                                        class="w-36 rounded-[4px] border border-white/10 bg-surface px-3 py-1.5 text-sm text-white">
+                                                    <option value="">Plazo…</option>
+                                                    @foreach ($this->loanTerms() as $value => $label)
+                                                        <option value="{{ $value }}">{{ $label }}</option>
+                                                    @endforeach
+                                                </select>
+                                            @else
+                                                <input type="number" min="1" wire:model="counterAmount" placeholder="Contraoferta"
+                                                       class="w-36 rounded-[4px] border border-white/10 bg-surface px-3 py-1.5 text-sm text-white">
+                                            @endif
                                             <button type="button" wire:click="sendCounter"
                                                     class="rounded-[4px] bg-brand px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.08em] text-ink hover:opacity-90">
                                                 Enviar
@@ -218,13 +272,41 @@
                                 @endforeach
                             </select>
 
-                            <select wire:model="offerPlayerId"
-                                    class="min-w-[11rem] flex-1 rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
-                                <option value="">{{ $this->asking() ? 'Su jugador…' : 'Tu jugador…' }}</option>
-                                @foreach ($this->offerableOptions() as $id => $name)
-                                    <option value="{{ $id }}">{{ $name }}</option>
-                                @endforeach
-                            </select>
+                            @if ($this->toPresident() && $this->asking())
+                                {{-- Al presidente se le pide del catálogo de EA
+                                     FC: se escribe el nombre y se elige. --}}
+                                <div class="relative min-w-[11rem] flex-1">
+                                    @if ($offerFcId)
+                                        <div class="flex items-center justify-between gap-2 rounded-[4px] border border-brand/40 bg-surface-alt px-3 py-2 text-sm text-white">
+                                            <span class="truncate">{{ $offerFcName }}</span>
+                                            <button type="button" wire:click="$set('offerFcId', null)" class="text-white/50 hover:text-white" title="Quitar">×</button>
+                                        </div>
+                                    @else
+                                        <input type="text" wire:model.live.debounce.300ms="catalogSearch" placeholder="Escribe un nombre: Mbappe, Ekitike…"
+                                               class="w-full rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
+
+                                        @if ($this->catalogResults()->isNotEmpty())
+                                            <div class="absolute bottom-full left-0 z-10 mb-1 max-h-56 w-full overflow-y-auto rounded-[4px] border border-white/10 bg-surface shadow-lg">
+                                                @foreach ($this->catalogResults() as $ficha)
+                                                    <button type="button" wire:click="selectCatalog({{ $ficha->fc_id }})" wire:key="fc-{{ $ficha->fc_id }}"
+                                                            class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-white hover:bg-surface-alt">
+                                                        <span class="truncate">{{ $ficha->nombre() }}</span>
+                                                        <span class="shrink-0 font-mono text-[10px] text-white/50">{{ $ficha->overall_rating }} {{ $ficha->position }} · {{ $ficha->club ?? 'sin club' }}</span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    @endif
+                                </div>
+                            @else
+                                <select wire:model="offerPlayerId"
+                                        class="min-w-[11rem] flex-1 rounded-[4px] border border-white/10 bg-surface-alt px-3 py-2 text-sm text-white">
+                                    <option value="">{{ $this->asking() ? 'Su jugador…' : 'Tu jugador…' }}</option>
+                                    @foreach ($this->offerableOptions() as $id => $name)
+                                        <option value="{{ $id }}">{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                            @endif
 
                             @if ($this->free())
                                 <select wire:model="offerTerm"
@@ -249,6 +331,10 @@
                             {{ $this->free()
                                 ? 'Una cesión no tiene coste: lo que se pacta es el plazo.'
                                 : 'Aceptarla no mueve nada por sí sola: queda acordada y el administrador la cierra.' }}
+                            @if ($this->toPresident() && $this->asking())
+                                Sólo salen jugadores que no juegan ya en un club de la liga.
+                            @endif
+                            Los jugadores cedidos no se negocian hasta que acabe la cesión.
                         </p>
                     </div>
                 @endif

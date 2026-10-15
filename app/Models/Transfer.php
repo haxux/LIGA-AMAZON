@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\TransferObserver;
+use App\Services\BudgetService;
 use Database\Factories\TransferFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -26,7 +27,7 @@ use Illuminate\Validation\ValidationException;
  * hay un club comprador al que apuntar.
  */
 #[Fillable([
-    'player_id', 'external_player', 'season_id', 'type', 'scope', 'status',
+    'player_id', 'external_player', 'fc_id', 'season_id', 'type', 'scope', 'status',
     'from_club_id', 'to_club_id', 'external_club', 'fee', 'loan_term', 'proposed_by',
 ])]
 #[ObservedBy(TransferObserver::class)]
@@ -156,6 +157,25 @@ class Transfer extends Model
                 throw ValidationException::withMessages([
                     'player_id' => 'Un traspaso necesita un jugador: de la liga, o el nombre de uno de fuera.',
                 ]);
+            }
+
+            // El club que paga tiene que tener el dinero. Se mira justo cuando el
+            // traspaso pasa a ejecutado —al crearse así, o al firmarlo el
+            // presidente— y no antes: una propuesta no mueve dinero. Aquí y no
+            // en el observador para que, si falla, no quede ni la fila.
+            if (
+                $transfer->status === self::STATUS_EXECUTED
+                && (! $transfer->exists || $transfer->isDirty('status'))
+                && ! $transfer->isLoan()
+                && $transfer->to_club_id !== null
+                && (int) $transfer->from_club_id !== (int) $transfer->to_club_id
+                && (int) $transfer->fee > 0
+            ) {
+                $buyer = Club::query()->find($transfer->to_club_id);
+
+                if ($buyer !== null) {
+                    app(BudgetService::class)->assertCanAfford($buyer, (int) $transfer->fee);
+                }
             }
 
             if ($transfer->scope === self::SCOPE_INTERNAL) {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\BudgetService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,8 +17,8 @@ use Illuminate\Validation\ValidationException;
  * mueve dinero y jugadores en esta aplicación.
  */
 #[Fillable([
-    'conversation_id', 'player_id', 'kind', 'from_club_id', 'amount', 'loan_term',
-    'status', 'moved_by', 'transfer_id',
+    'conversation_id', 'player_id', 'fc_id', 'external_player', 'kind', 'from_club_id', 'amount',
+    'loan_term', 'tension', 'status', 'moved_by', 'transfer_id',
 ])]
 class Offer extends Model
 {
@@ -43,6 +44,19 @@ class Offer extends Model
         self::KIND_BUY => 'Comprarle un jugador suyo',
         self::KIND_SELL => 'Venderle un jugador mío',
         self::KIND_LOAN_IN => 'Pedirle un jugador cedido',
+        self::KIND_LOAN_OUT => 'Cederle un jugador mío',
+    ];
+
+    /**
+     * Las mismas cuatro, dichas para el hilo con el presidente: lo que se pide
+     * sale del catálogo de EA FC, no de la plantilla de nadie.
+     *
+     * @var array<string, string>
+     */
+    public const KINDS_PRESIDENT = [
+        self::KIND_BUY => 'Pedir un fichaje del catálogo',
+        self::KIND_SELL => 'Venderle un jugador mío',
+        self::KIND_LOAN_IN => 'Pedir una cesión del catálogo',
         self::KIND_LOAN_OUT => 'Cederle un jugador mío',
     ];
 
@@ -103,6 +117,7 @@ class Offer extends Model
     {
         return [
             'amount' => 'integer',
+            'tension' => 'integer',
         ];
     }
 
@@ -130,11 +145,36 @@ class Offer extends Model
                 throw ValidationException::withMessages(['status' => "El estado {$offer->status} no existe."]);
             }
 
+            if ($offer->tension !== null && ($offer->tension < 1 || $offer->tension > 100)) {
+                throw ValidationException::withMessages(['tension' => 'La tensión va de 1 a 100.']);
+            }
+
             if ($offer->exists) {
                 return;
             }
 
-            $ownerClubId = (int) Player::query()->whereKey($offer->player_id)->value('club_id');
+            // Con el presidente se pide a un jugador del catálogo, que todavía
+            // no tiene ficha; entre técnicos, a uno de la plantilla del otro.
+            if ($offer->player_id === null) {
+                $offer->guardCatalogueRequest();
+                $offer->guardBuyerCanAfford();
+
+                return;
+            }
+
+            $player = Player::query()->find($offer->player_id);
+
+            // Un cedido no es de quien lo negocia: ni se compra, ni se vende,
+            // ni se pide. Vale en cualquier hilo, con técnico o con presidente.
+            if ($player?->isOnLoan()) {
+                throw ValidationException::withMessages([
+                    'player_id' => $player->name.' está cedido: no se puede negociar hasta que acabe la cesión.',
+                ]);
+            }
+
+            $offer->guardBuyerCanAfford();
+
+            $ownerClubId = (int) $player?->club_id;
             $mine = $ownerClubId === (int) $offer->from_club_id;
 
             // Pedir es pedir lo del otro; ofrecer es ofrecer lo propio. Al
@@ -151,6 +191,78 @@ class Offer extends Model
                 ]);
             }
         });
+    }
+
+    /**
+     * Quien paga tiene que tener el dinero: el club que compra, que en una
+     * compra es el que propone y en una venta es el otro. Con el presidente
+     * sólo paga el técnico, cuando pide; cuando vende, cobra.
+     *
+     * Se mira al ofertar y otra vez al aceptar, porque entre una cosa y otra el
+     * saldo puede haber bajado.
+     */
+    public function guardBuyerCanAfford(): void
+    {
+        if ($this->isFree() || (int) $this->amount <= 0) {
+            return;
+        }
+
+        $buyerId = $this->isAsking() ? $this->from_club_id : $this->receivingClubIdFor();
+
+        $buyer = $buyerId === null ? null : Club::query()->find($buyerId);
+
+        if ($buyer !== null) {
+            app(BudgetService::class)->assertCanAfford($buyer, (int) $this->amount, 'amount');
+        }
+    }
+
+    /**
+     * Al ofrecer lo propio, el comprador es el otro club del hilo; todavía no
+     * hay ficha que consultar, así que se mira por quién ocupa el hilo.
+     */
+    private function receivingClubIdFor(): ?int
+    {
+        return $this->conversation?->participants
+            ->pluck('club_id')
+            ->filter()
+            ->map(fn ($id): int => (int) $id)
+            ->first(fn (int $id): bool => $id !== (int) $this->from_club_id);
+    }
+
+    /**
+     * Pedir a un jugador del catálogo: sólo se puede pedir (el presidente no
+     * tiene plantilla de la que ofrecer) y sólo si no juega ya en un club.
+     */
+    private function guardCatalogueRequest(): void
+    {
+        if (! $this->isAsking() || $this->fc_id === null || blank($this->external_player)) {
+            throw ValidationException::withMessages([
+                'player_id' => 'Elige un jugador del catálogo para pedírselo al presidente.',
+            ]);
+        }
+
+        if (Player::fcIdIsInLeague((int) $this->fc_id)) {
+            throw ValidationException::withMessages([
+                'player_id' => $this->external_player.' ya juega en un club de la liga: con el presidente sólo se negocia con jugadores libres.',
+            ]);
+        }
+    }
+
+    /**
+     * Si el hilo es con el presidente: un participante administrador. Sin club
+     * al otro lado, el jugador llega de fuera o se va fuera.
+     */
+    public function withPresident(): bool
+    {
+        return $this->conversation?->participants->contains(fn (User $user) => $user->isAdmin()) === true;
+    }
+
+    /**
+     * Cómo se llama el jugador de la oferta, tenga ya ficha o sea del catálogo.
+     */
+    public function playerName(): ?string
+    {
+        return $this->player?->name ?? $this->external_player;
     }
 
     public function conversation(): BelongsTo
@@ -205,6 +317,10 @@ class Offer extends Model
      */
     public function givingClubId(): ?int
     {
+        if ($this->withPresident()) {
+            return $this->isAsking() ? null : $this->from_club_id;
+        }
+
         return $this->player?->club_id === null ? null : (int) $this->player->club_id;
     }
 
@@ -222,6 +338,10 @@ class Offer extends Model
      */
     public function receivingClubId(): ?int
     {
+        if ($this->withPresident()) {
+            return $this->isAsking() ? $this->from_club_id : null;
+        }
+
         $giving = $this->givingClubId();
 
         if ($giving === null) {

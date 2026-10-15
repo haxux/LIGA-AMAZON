@@ -156,6 +156,7 @@ class TransferPanelsTest extends TestCase
             'season_id' => $this->season->id,
             'from_club_id' => $this->selling->id,
             'to_club_id' => $this->buying->id,
+            'fee' => 1_000,
         ]);
 
         Livewire::test(ListTransfers::class)->assertCanSeeTableRecords([$transfer]);
@@ -172,6 +173,7 @@ class TransferPanelsTest extends TestCase
             'season_id' => $this->season->id,
             'from_club_id' => $this->selling->id,
             'to_club_id' => $this->buying->id,
+            'fee' => 1_000,
         ]);
 
         $in = Transfer::factory()->create([
@@ -179,6 +181,7 @@ class TransferPanelsTest extends TestCase
             'season_id' => $this->season->id,
             'from_club_id' => $this->buying->id,
             'to_club_id' => $this->selling->id,
+            'fee' => 1_000,
         ]);
 
         $foreign = Transfer::factory()->create(['season_id' => $this->season->id]);
@@ -202,6 +205,7 @@ class TransferPanelsTest extends TestCase
             'season_id' => $this->season->id,
             'from_club_id' => $this->selling->id,
             'to_club_id' => $this->buying->id,
+            'fee' => 1_000,
         ]);
 
         Livewire::test(ListTransferHistory::class)

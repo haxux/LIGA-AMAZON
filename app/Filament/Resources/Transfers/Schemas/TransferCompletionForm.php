@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Transfers\Schemas;
 
 use App\Filament\Support\FcLookup;
+use App\Models\FcPlayer;
 use App\Models\Player;
 use App\Models\Team;
 use App\Models\Transfer;
@@ -51,6 +52,8 @@ class TransferCompletionForm
      */
     private static function newPlayerFields(Transfer $transfer): array
     {
+        $ficha = $transfer->fc_id === null ? null : FcPlayer::where('fc_id', $transfer->fc_id)->first();
+
         return [
             // El que llega de fuera de la liga se daba de alta tecleándolo
             // entero, y mientras tanto el catálogo de EA FC ya rellenaba fichas
@@ -66,14 +69,17 @@ class TransferCompletionForm
             // Transfer—, así que ya viene puesto, y lo pactado lo dice el
             // técnico que propuso la operación, no EA.
             FcLookup::make('player_name'),
-            FcLookup::idField(),
+            FcLookup::idField()->default($transfer->fc_id),
 
             TextInput::make('player_name')
                 ->label('Player')
                 ->default($transfer->external_player)
                 ->required(),
+            // Si el jugador viene del catálogo (lo pidió un técnico al
+            // presidente), la ficha llega rellena; sigue siendo editable.
             Select::make('position')
                 ->label('Position')
+                ->default($ficha?->posicionEnLaLiga()[0])
                 ->options(array_combine(Player::POSITIONS, Player::POSITIONS))
                 ->required()
                 ->native(false)
@@ -81,12 +87,13 @@ class TransferCompletionForm
                 ->afterStateUpdated(fn (Set $set) => $set('specific_position', null)),
             Select::make('specific_position')
                 ->label('Specific position')
+                ->default($ficha?->posicionEnLaLiga()[1])
                 ->options(fn (Get $get): array => array_combine(
                     Player::specificPositionsFor($get('position')),
                     Player::specificPositionsFor($get('position')),
                 ))
                 ->native(false),
-            DatePicker::make('birth_date')->label('Born'),
+            DatePicker::make('birth_date')->label('Born')->default($ficha?->birthdate),
             TextInput::make('market_value')->label('Value')->numeric()->minValue(0),
             FcLookup::photoField(),
         ];
@@ -154,7 +161,9 @@ class TransferCompletionForm
             TextInput::make('external_club')
                 ->label($transfer->isIncoming() ? 'Club they come from' : 'Club they go to')
                 ->default($transfer->external_club)
-                ->required(),
+                // Una salida pactada con el presidente no va a ningún club
+                // concreto: el jugador sólo deja la plantilla.
+                ->required($transfer->isIncoming() || $transfer->external_club !== null),
         ];
 
         if ($transfer->isLoan()) {

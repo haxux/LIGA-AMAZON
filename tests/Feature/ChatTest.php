@@ -41,8 +41,8 @@ class ChatTest extends TestCase
         parent::setUp();
 
         Season::factory()->create(['is_current' => true, 'name' => '2026/27']);
-        $this->clubA = Club::factory()->create(['name' => 'Manaos FC']);
-        $this->clubB = Club::factory()->create(['name' => 'Tapajós SC']);
+        $this->clubA = Club::factory()->create(['name' => 'Manaos FC', 'initial_balance' => 1_000_000]);
+        $this->clubB = Club::factory()->create(['name' => 'Tapajós SC', 'initial_balance' => 1_000_000]);
         $this->coachA = User::factory()->coachOf($this->clubA)->create(['name' => 'Técnico A']);
         $this->coachB = User::factory()->coachOf($this->clubB)->create(['name' => 'Técnico B']);
     }

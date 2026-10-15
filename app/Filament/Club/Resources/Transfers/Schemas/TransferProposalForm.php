@@ -63,6 +63,15 @@ class TransferProposalForm
                     ->required(fn (Get $get): bool => ! self::incoming($get))
                     ->visible(fn (Get $get): bool => ! self::incoming($get))
                     ->searchable()
+                    ->live()
+                    // El precio arranca en el valor de mercado del jugador.
+                    ->afterStateUpdated(function ($state, Set $set): void {
+                        $value = Player::query()->whereKey($state)->value('market_value');
+
+                        if ($value !== null) {
+                            $set('fee', $value);
+                        }
+                    })
                     ->helperText('De tu plantilla.'),
 
                 TextInput::make('external_club')

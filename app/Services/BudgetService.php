@@ -6,6 +6,7 @@ use App\Models\BudgetMovement;
 use App\Models\Club;
 use App\Models\Season;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 /**
  * El presupuesto de un club (Fase 12, design D7).
@@ -33,6 +34,15 @@ final class BudgetService
     }
 
     /**
+     * Si el club puede pagar esa cifra con lo que tiene aprobado. Lo propuesto
+     * no cuenta: no es dinero todavía.
+     */
+    public function canAfford(Club $club, int $amount): bool
+    {
+        return $this->balanceFor($club) >= $amount;
+    }
+
+    /**
      * Lo que está esperando al administrador, que no cuenta en el saldo pero sí
      * en lo que el técnico tiene pendiente de respuesta.
      *
@@ -46,6 +56,29 @@ final class BudgetService
             ->with('season')
             ->latest('id')
             ->get();
+    }
+
+    /**
+     * Frena la operación si el club no tiene saldo para pagarla. Vive aquí para
+     * que el chat, la firma del presidente y el alta directa de un traspaso
+     * den el mismo veredicto y el mismo mensaje.
+     *
+     * @throws ValidationException
+     */
+    public function assertCanAfford(Club $club, int $amount, string $key = 'fee'): void
+    {
+        if ($amount <= 0 || $this->canAfford($club, $amount)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            $key => sprintf(
+                '%s no tiene saldo suficiente: tiene %s y la operación cuesta %s.',
+                $club->name,
+                number_format($this->balanceFor($club), 0, ',', '.'),
+                number_format($amount, 0, ',', '.'),
+            ),
+        ]);
     }
 
     /**

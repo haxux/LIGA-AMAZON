@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SeasonResolver;
 use Database\Factories\PlayerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -180,6 +181,36 @@ class Player extends Model
             ->whereHas('team', fn ($query) => $query->where('season_id', $season->getKey()))
             ->with('team')
             ->first()?->team;
+    }
+
+    /**
+     * Si está cedido ahora mismo: tiene abierta una pertenencia de tipo
+     * cesión, ya sea en mi plantilla (es de otro) o en la de otro club (es
+     * mío). En los dos casos no se compra, no se vende ni se pide hasta que la
+     * cesión acabe, porque lo que se negociaría no es de quien lo negocia.
+     *
+     * Se mira la temporada vigente, que es donde viven las plantillas.
+     */
+    public function isOnLoan(): bool
+    {
+        $season = app(SeasonResolver::class)->active();
+
+        return $this->memberships()
+            ->where('type', SquadMembership::TYPE_LOAN)
+            ->when($season, fn ($query) => $query->whereHas(
+                'team',
+                fn ($team) => $team->where('season_id', $season->getKey()),
+            ))
+            ->exists();
+    }
+
+    /**
+     * Si el jugador del catálogo ya juega en un club de la liga. Uno que salió
+     * (`left_at`) no cuenta: puede volver a fichar por otro.
+     */
+    public static function fcIdIsInLeague(int $fcId): bool
+    {
+        return self::query()->where('fc_id', $fcId)->whereNull('left_at')->exists();
     }
 
     public function gameEvents(): HasMany

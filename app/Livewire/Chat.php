@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Conversation;
+use App\Models\FcPlayer;
 use App\Models\Message;
 use App\Models\Offer;
 use App\Models\Player;
@@ -41,6 +42,15 @@ class Chat extends Component
     public ?string $offerAmount = null;
 
     public ?string $counterAmount = null;
+
+    public ?string $counterTerm = null;
+
+    /** El jugador del catálogo elegido para pedírselo al presidente. */
+    public ?int $offerFcId = null;
+
+    public ?string $offerFcName = null;
+
+    public string $catalogSearch = '';
 
     public ?int $counteringOfferId = null;
 
@@ -193,19 +203,26 @@ class Chat extends Component
     public function offerableOptions(): array
     {
         $user = $this->user();
-        $otherClub = $this->conversation()?->other($user)?->club;
+        $other = $this->conversation()?->other($user);
 
-        if (! $this->mayOffer() || $otherClub === null) {
+        if (! $this->mayOffer() || $other === null) {
+            return [];
+        }
+
+        // Al presidente no se le pide a nadie de la plantilla: lo que se pide
+        // sale del catálogo (ver `catalogResults()`).
+        if ($this->toPresident() && $this->asking()) {
             return [];
         }
 
         // Pedir es pedir lo del otro; ofrecer es ofrecer lo propio.
-        $club = $this->asking() ? $otherClub->getKey() : $user->club_id;
+        $club = $this->asking() ? $other->club_id : $user->club_id;
 
         $season = app(SeasonResolver::class)->active();
 
         return Player::query()
             ->where('club_id', $club)
+            ->whereNull('left_at')
             ->when($season, fn (Builder $query) => $query->whereHas(
                 'memberships',
                 fn (Builder $memberships) => $memberships->whereHas(
@@ -214,8 +231,53 @@ class Chat extends Component
                 ),
             ))
             ->orderBy('name')
+            ->get()
+            // Un cedido no se negocia: ni se compra ni se vende hasta que
+            // acabe la cesión.
+            ->reject(fn (Player $player) => $player->isOnLoan())
             ->pluck('name', 'id')
             ->all();
+    }
+
+    /**
+     * Si el hilo abierto es con el presidente, que no dirige ningún club.
+     */
+    public function toPresident(): bool
+    {
+        return $this->conversation()?->other($this->user())?->isAdmin() === true;
+    }
+
+    /**
+     * Los jugadores del catálogo de EA FC que se pueden pedir al presidente:
+     * los que coinciden con lo escrito y no juegan ya en un club de la liga.
+     *
+     * @return Collection<int, FcPlayer>
+     */
+    public function catalogResults(): Collection
+    {
+        if (! $this->toPresident() || ! $this->asking() || mb_strlen(trim($this->catalogSearch)) < 2) {
+            return collect();
+        }
+
+        $inLeague = Player::query()->whereNotNull('fc_id')->whereNull('left_at')->pluck('fc_id');
+
+        return FcPlayer::buscar($this->catalogSearch)
+            ->whereNotIn('fc_id', $inLeague)
+            ->limit(8)
+            ->get();
+    }
+
+    public function selectCatalog(int $fcId): void
+    {
+        $ficha = FcPlayer::query()->where('fc_id', $fcId)->first();
+
+        if ($ficha === null) {
+            return;
+        }
+
+        $this->offerFcId = $fcId;
+        $this->offerFcName = $ficha->nombre();
+        $this->catalogSearch = '';
     }
 
     /**
@@ -241,7 +303,7 @@ class Chat extends Component
      */
     public function offerKinds(): array
     {
-        return Offer::KINDS;
+        return $this->toPresident() ? Offer::KINDS_PRESIDENT : Offer::KINDS;
     }
 
     /**
@@ -257,7 +319,23 @@ class Chat extends Component
 
     public function updatedOfferKind(): void
     {
-        $this->reset(['offerPlayerId', 'offerAmount', 'offerTerm', 'error']);
+        $this->reset(['offerPlayerId', 'offerAmount', 'offerTerm', 'offerFcId', 'offerFcName', 'catalogSearch', 'error']);
+    }
+
+    /**
+     * Al elegir jugador, el importe arranca en su valor de mercado. Es el punto
+     * de partida —el técnico lo cambia—, no un precio fijo. Una cesión no
+     * lleva importe.
+     */
+    public function updatedOfferPlayerId(): void
+    {
+        if ($this->free() || blank($this->offerPlayerId)) {
+            return;
+        }
+
+        $value = Player::query()->whereKey($this->offerPlayerId)->value('market_value');
+
+        $this->offerAmount = $value === null ? null : (string) $value;
     }
 
     public function mayOffer(): bool
@@ -266,7 +344,7 @@ class Chat extends Component
 
         return $user?->isCoach() === true
             && $user->club_id !== null
-            && $this->conversation()?->other($user)?->isCoach() === true;
+            && $this->conversation()?->other($user) !== null;
     }
 
     public function sendOffer(): void
@@ -278,7 +356,9 @@ class Chat extends Component
             return;
         }
 
-        if (blank($this->offerPlayerId)) {
+        $catalogue = $this->toPresident() && $this->asking();
+
+        if ($catalogue ? $this->offerFcId === null : blank($this->offerPlayerId)) {
             return;
         }
 
@@ -290,7 +370,9 @@ class Chat extends Component
         try {
             Offer::create([
                 'conversation_id' => $conversation->getKey(),
-                'player_id' => (int) $this->offerPlayerId,
+                'player_id' => $catalogue ? null : (int) $this->offerPlayerId,
+                'fc_id' => $catalogue ? $this->offerFcId : null,
+                'external_player' => $catalogue ? $this->offerFcName : null,
                 'kind' => $this->offerKind,
                 'from_club_id' => $user->club_id,
                 'amount' => $this->free() ? 0 : (int) $this->offerAmount,
@@ -304,7 +386,7 @@ class Chat extends Component
             return;
         }
 
-        $this->reset(['offerPlayerId', 'offerAmount', 'offerTerm', 'error']);
+        $this->reset(['offerPlayerId', 'offerAmount', 'offerTerm', 'offerFcId', 'offerFcName', 'catalogSearch', 'error']);
     }
 
     public function acceptOffer(int $offerId): void
@@ -319,24 +401,68 @@ class Chat extends Component
 
     public function startCounter(int $offerId): void
     {
+        $offer = Offer::query()->find($offerId);
+
         $this->counteringOfferId = $offerId;
-        $this->counterAmount = null;
+        // Se contraoferta sobre el valor de mercado cuando lo hay (un jugador
+        // del catálogo no lo tiene todavía), y si no sobre lo ofrecido.
+        $value = $offer?->player?->market_value ?? ($offer?->amount ?: null);
+        $this->counterAmount = $value === null ? null : (string) $value;
+        $this->counterTerm = null;
     }
 
     public function sendCounter(): void
     {
-        if ($this->counteringOfferId === null || blank($this->counterAmount)) {
+        $offer = $this->counteringOfferId === null ? null : Offer::query()->find($this->counteringOfferId);
+
+        // Una cesión se contraoferta con otro plazo; lo demás, con otro importe.
+        if ($offer === null || ($offer->isFree() ? blank($this->counterTerm) : blank($this->counterAmount))) {
             return;
         }
 
-        $amount = (int) $this->counterAmount;
+        $amount = $offer->isFree() ? null : (int) $this->counterAmount;
+        $term = $offer->isFree() ? $this->counterTerm : null;
 
         $this->answer(
-            $this->counteringOfferId,
-            fn (Offer $offer, User $user) => app(OfferService::class)->counter($offer, $user, $amount),
+            $offer->getKey(),
+            fn (Offer $offer, User $user) => app(OfferService::class)->counter($offer, $user, $amount, $term),
         );
 
-        $this->reset(['counteringOfferId', 'counterAmount']);
+        $this->reset(['counteringOfferId', 'counterAmount', 'counterTerm']);
+    }
+
+    /**
+     * La tensión de la negociación, que sólo fija el presidente.
+     */
+    public function setTension(int $offerId, int $tension): void
+    {
+        $this->answer($offerId, fn (Offer $offer, User $user) => app(OfferService::class)->setTension(
+            $offer,
+            $user,
+            max(1, min(100, $tension)),
+        ));
+    }
+
+    /**
+     * La negociación viva con el presidente, que es la que lleva tensión: su
+     * oferta abierta. Sin ella no hay nada que medir.
+     */
+    public function liveNegotiation(): ?Offer
+    {
+        $conversation = $this->conversation();
+
+        if ($conversation === null || ! $this->toPresident()) {
+            return null;
+        }
+
+        return $conversation->offers()->where('status', Offer::STATUS_SENT)->latest('id')->first();
+    }
+
+    public function maySetTension(Offer $offer): bool
+    {
+        $user = $this->user();
+
+        return $user?->isAdmin() === true && $offer->isOpen();
     }
 
     public function mayAnswer(Offer $offer): bool

@@ -98,7 +98,7 @@ final class TransferService
             'specific_position' => $completion['specific_position'] ?? null,
             'birth_date' => $completion['birth_date'] ?? null,
             'market_value' => $completion['market_value'] ?? null,
-            'fc_id' => $completion['fc_id'] ?? null,
+            'fc_id' => $completion['fc_id'] ?? $transfer->fc_id,
             'photo_path' => $completion['photo_path'] ?? null,
         ]);
     }
@@ -227,7 +227,12 @@ final class TransferService
 
         // Un fichaje cambia de dueño; un préstamo no: el jugador sigue siendo
         // del club que lo cede, y por eso su pertenencia nueva es una cesión.
-        if ($transfer->type === Transfer::TYPE_SIGNING && $transfer->to_club_id !== null) {
+        // Un jugador que salió de la liga y vuelve (fichaje o cesión pactada con
+        // el presidente) reabre su ficha; en la cesión llega con el club que lo
+        // recibe, como cualquier cedido de fuera.
+        $comesBack = $player->left_at !== null && $transfer->type === Transfer::TYPE_LOAN_IN;
+
+        if (($transfer->type === Transfer::TYPE_SIGNING || $comesBack) && $transfer->to_club_id !== null) {
             $player->forceFill([
                 'club_id' => $transfer->to_club_id,
                 'left_at' => null,

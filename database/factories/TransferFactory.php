@@ -24,7 +24,9 @@ class TransferFactory extends Factory
             'type' => Transfer::TYPE_SIGNING,
             'scope' => Transfer::SCOPE_INTERNAL,
             'from_club_id' => Club::factory(),
-            'to_club_id' => Club::factory(),
+            // Con saldo de sobra: un traspaso ejecutado exige que el comprador pueda
+            // pagarlo, y los clubes de prueba nacen a cero.
+            'to_club_id' => Club::factory()->state(['initial_balance' => 100_000_000]),
             'external_club' => null,
             'fee' => fake()->numberBetween(10_000, 2_000_000),
             'loan_term' => null,

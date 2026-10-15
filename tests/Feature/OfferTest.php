@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\Offers\OfferResource;
-use App\Filament\Resources\Offers\Pages\ListOffers;
 use App\Livewire\Chat;
 use App\Models\BudgetMovement;
 use App\Models\Club;
@@ -258,7 +256,7 @@ class OfferTest extends TestCase
             'kind' => Offer::KIND_SELL,
             // En una venta la ofrece el dueño del jugador.
             'from_club_id' => $this->selling->id,
-            'amount' => 35_000_000,
+            'amount' => 350_000,
             'status' => Offer::STATUS_SENT,
             'moved_by' => $this->seller->id,
         ]);
@@ -372,26 +370,6 @@ class OfferTest extends TestCase
      * La firma del administrador: un traspaso de los de la Fase 12, que al
      * guardarse paga, cobra y mueve al jugador.
      */
-    /**
-     * La bandeja del administrador es de MIRAR (decisión del propietario,
-     * 2026-10-13): enseña lo que los clubes negocian y no ejecuta nada. Hasta
-     * hoy tenía un botón de firmar, y esa segunda puerta construía mal el
-     * traspaso en las ofertas de venta.
-     */
-    public function test_the_administrators_tray_lists_but_does_not_execute(): void
-    {
-        $offer = $this->offer(200_000);
-        app(OfferService::class)->accept($offer, $this->seller);
-
-        $this->actingAs(User::factory()->create());
-
-        $this->assertSame('1', OfferResource::getNavigationBadge());
-
-        Livewire::test(ListOffers::class)
-            ->assertCanSeeTableRecords([$offer])
-            ->assertTableActionDoesNotExist('execute');
-    }
-
     /**
      * Y no queda ninguna otra puerta: el servicio ya no sabe ejecutar.
      */

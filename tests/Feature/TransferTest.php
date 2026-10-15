@@ -364,7 +364,7 @@ class TransferTest extends TestCase
             'type' => Transfer::TYPE_SIGNING,
             'from_club_id' => $this->selling->id,
             'to_club_id' => $this->buying->id,
-            'fee' => 35_000_000,
+            'fee' => 350_000,
         ]);
         $transfer->desiredShirtNumber = 21;
         $transfer->save();
@@ -404,7 +404,7 @@ class TransferTest extends TestCase
             'type' => Transfer::TYPE_SIGNING,
             'from_club_id' => $this->selling->id,
             'to_club_id' => $this->buying->id,
-            'fee' => 35_000_000,
+            'fee' => 350_000,
         ]);
 
         $this->assertDatabaseHas('squad_memberships', [
