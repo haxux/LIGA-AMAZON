@@ -22,7 +22,11 @@
         <meta name="vapid-public-key" content="{{ config('services.webpush.public_key') }}">
         <x-push-script />
     </head>
-    <body class="min-h-screen bg-brand-weave font-sans text-ink">
+    {{-- Columna a pantalla completa: el contenido crece (`flex-1`) y empuja el
+         pie al fondo. Con una página corta —una clasificación con pocos
+         equipos— el pie quedaba a media pantalla y debajo se veía el fondo
+         amarillo vacío. --}}
+    <body class="flex min-h-screen flex-col bg-brand-weave font-sans text-ink">
         @php
             // El técnico se lee del guard `club`, el de su panel, que vive en la
             // misma sesión que el sitio: `auth()` a secas devuelve el guard del
@@ -187,13 +191,13 @@
              están: ver App\Enums\CupDesign. --}}
         @php($theme = $theme ?? null)
         @if ($theme)
-            <div class="cup-stage {{ $theme->stageClass() }}" style="{{ $theme->style() }}">
+            <div class="cup-stage {{ $theme->stageClass() }} flex-1" style="{{ $theme->style() }}">
                 <main class="mx-auto max-w-6xl px-6 py-10">
                     {{ $slot }}
                 </main>
             </div>
         @else
-            <main class="mx-auto max-w-6xl px-6 py-10">
+            <main class="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
                 {{ $slot }}
             </main>
         @endif
@@ -208,7 +212,9 @@
                     <p class="mt-3 text-sm leading-relaxed">Clasificación, partidos y goleadores de la liga.</p>
                 </div>
 
-                <div class="flex flex-wrap gap-10">
+                {{-- En el móvil, en rejilla de dos columnas: en fila envolvían sueltas
+                     y el pie quedaba descuadrado. --}}
+                <div class="grid w-full grid-cols-2 gap-x-8 gap-y-6 sm:flex sm:w-auto sm:flex-wrap sm:gap-10">
                     <div class="flex flex-col gap-2">
                         <span class="font-mono text-[9px] tracking-[0.14em] text-brand">COMPETICIÓN</span>
                         <a href="{{ route('site.home') }}" class="text-sm text-white/60 hover:text-brand">Inicio</a>
