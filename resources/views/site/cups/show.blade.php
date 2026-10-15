@@ -103,10 +103,12 @@
                              según sus nombres y las columnas de un grupo no
                              caen bajo las del de al lado. --}}
                         <colgroup>
-                            <col class="w-8 sm:w-12">
+                            <col class="w-8 sm:w-12 lg:w-32">
                             <col>
-                            @foreach (range(1, 6) as $_)
-                                <col class="w-7 sm:w-16 lg:w-20">
+                            {{-- Cinco de 80 px y PTS más ancha, como el diseño que se
+                                 pidió: la cifra de puntos queda más separada de la anterior. --}}
+                            @foreach (range(1, 6) as $n)
+                                <col class="w-7 sm:w-16 {{ $n === 6 ? 'lg:w-[8.3rem]' : 'lg:w-20' }}">
                             @endforeach
                         </colgroup>
                         <thead>
@@ -170,11 +172,11 @@
         <section class="mb-10 overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
             <table class="w-full table-fixed text-left">
                 <colgroup>
-                    <col class="w-8 sm:w-12">
+                    <col class="w-8 sm:w-12 lg:w-32">
                     <col>
                     <col class="w-7 sm:w-16">
-                    @foreach (range(1, 6) as $_)
-                        <col class="w-7 sm:w-16 lg:w-20">
+                    @foreach (range(1, 6) as $n)
+                        <col class="w-7 sm:w-16 {{ $n === 6 ? 'lg:w-[8.3rem]' : 'lg:w-20' }}">
                     @endforeach
                 </colgroup>
                 <thead>
