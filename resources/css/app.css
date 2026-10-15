@@ -66,20 +66,24 @@
     background-attachment: scroll, scroll, scroll, scroll;
 }
 
-/* Quien pasa una eliminatoria: su nombre brilla en el color del acento, en
-   lugar de escribirlo debajo. */
+/* Quien pasa una eliminatoria: su nombre en blanco, más grueso, con un brillo
+   ligero que sigue el contorno de las letras (radios pequeños: uno grande se
+   lee como una luz puesta encima). Es igual en todas las copas salvo la
+   Libertadores, que conserva su dorado (ver abajo), y el que
+   cae sigue apagado. Sin halo ancho: el brillo no debe leerse como un recuadro. */
 .tie-winner {
-    color: var(--color-brand);
+    color: #FFFFFF;
+    font-weight: 800;
     text-shadow:
-        0 0 10px color-mix(in oklab, var(--color-brand) 65%, transparent),
-        0 0 24px color-mix(in oklab, var(--color-brand) 35%, transparent);
+        0 0 2px rgba(255, 255, 255, 0.9),
+        0 0 5px rgba(255, 255, 255, 0.35);
 }
 
-/* En la Sudamericana el acento es azul claro; el nombre del que pasa se
-   ilumina en blanco. */
-.cup-stage-sudamericana .tie-winner {
-    color: #FFFFFF;
+/* En la Libertadores el que pasa conserva el color del acento (el dorado de la
+   copa) en lugar del blanco, con el mismo brillo ligero. */
+.cup-stage-libertadores .tie-winner {
+    color: var(--color-brand);
     text-shadow:
-        0 0 10px rgba(255, 255, 255, 0.65),
-        0 0 24px rgba(255, 255, 255, 0.35);
+        0 0 2px color-mix(in oklab, var(--color-brand) 90%, transparent),
+        0 0 5px color-mix(in oklab, var(--color-brand) 35%, transparent);
 }
