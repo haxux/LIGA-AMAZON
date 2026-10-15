@@ -74,3 +74,12 @@
         0 0 10px color-mix(in oklab, var(--color-brand) 65%, transparent),
         0 0 24px color-mix(in oklab, var(--color-brand) 35%, transparent);
 }
+
+/* En la Sudamericana el acento es azul claro; el nombre del que pasa se
+   ilumina en blanco. */
+.cup-stage-sudamericana .tie-winner {
+    color: #FFFFFF;
+    text-shadow:
+        0 0 10px rgba(255, 255, 255, 0.65),
+        0 0 24px rgba(255, 255, 255, 0.35);
+}
