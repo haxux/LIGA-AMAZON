@@ -9,12 +9,14 @@ use App\Filament\Resources\Cups\RelationManagers\GroupsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\ParticipantsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\RoundsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\StandingZonesRelationManager;
+use App\Filament\Resources\Cups\RelationManagers\ThirdsStandingZonesRelationManager;
 use App\Filament\Resources\CupTies\CupTieResource;
 use App\Filament\Resources\CupTies\Pages\CreateCupTie;
 use App\Filament\Resources\CupTies\Pages\EditCupTie;
 use App\Filament\Resources\CupTies\Pages\ListCupTies;
 use App\Filament\Resources\CupTies\RelationManagers\TieGamesRelationManager;
 use App\Models\Cup;
+use App\Models\CupGroup;
 use App\Models\CupRound;
 use App\Models\CupTeam;
 use App\Models\CupTie;
@@ -124,6 +126,26 @@ class CupPanelTest extends TestCase
             ->setTableActionData(['label' => 'Choca', 'color' => 'red', 'from_position' => 2, 'to_position' => 3])
             ->callMountedTableAction()
             ->assertHasTableActionErrors(['from_position']);
+    }
+
+    public function test_a_thirds_zone_created_in_the_panel_is_filed_under_thirds(): void
+    {
+        foreach (['A', 'B', 'C'] as $name) {
+            CupGroup::create(['cup_id' => $this->cup->id, 'name' => $name]);
+        }
+        $this->cup->update(['has_group_stage' => true]);
+
+        Livewire::test(ThirdsStandingZonesRelationManager::class, [
+            'ownerRecord' => $this->cup,
+            'pageClass' => EditCup::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData(['label' => 'Pasa como mejor tercero', 'color' => 'amber', 'from_position' => 1, 'to_position' => 4])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('standing_zones', ['cup_id' => $this->cup->id, 'stage' => 'thirds', 'label' => 'Pasa como mejor tercero']);
+        $this->assertDatabaseMissing('standing_zones', ['cup_id' => $this->cup->id, 'stage' => 'groups']);
     }
 
     public function test_a_team_is_not_entered_twice(): void

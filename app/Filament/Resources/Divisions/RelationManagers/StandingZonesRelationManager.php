@@ -27,6 +27,9 @@ class StandingZonesRelationManager extends RelationManager
     /** La columna de `standing_zones` que apunta al dueño: división o copa. */
     protected static string $ownerColumn = 'division_id';
 
+    /** Qué tabla de la copa: grupos o mejores terceros. Las divisiones no la usan. */
+    protected static string $stage = 'groups';
+
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -70,14 +73,16 @@ class StandingZonesRelationManager extends RelationManager
     {
         $ownerKey = $this->getOwnerRecord()->getKey();
         $ownerColumn = static::$ownerColumn;
+        $stage = static::$stage;
 
-        return function (string $attribute, mixed $value, Closure $fail) use ($get, $record, $ownerKey, $ownerColumn): void {
+        return function (string $attribute, mixed $value, Closure $fail) use ($get, $record, $ownerKey, $ownerColumn, $stage): void {
             if (blank($value) || blank($get('to_position'))) {
                 return;
             }
 
             $overlapping = StandingZone::query()
                 ->where($ownerColumn, $ownerKey)
+                ->where('stage', $stage)
                 ->when($record, fn ($query) => $query->whereKeyNot($record->getKey()))
                 ->where('from_position', '<=', (int) $get('to_position'))
                 ->where('to_position', '>=', (int) $value)
@@ -102,7 +107,11 @@ class StandingZonesRelationManager extends RelationManager
                 TextColumn::make('to_position')->label('To')->alignCenter(),
             ])
             ->headerActions([
-                CreateAction::make(),
+                // Filament guarda el registro con `save()` sobre la relación, que
+                // sólo pone la clave foránea: lo que la relación filtra (la
+                // etapa) hay que ponerlo a mano, o todo nace como «grupos».
+                CreateAction::make()
+                    ->mutateDataUsing(fn (array $data): array => $data + ['stage' => static::$stage]),
             ])
             ->recordActions([
                 EditAction::make(),

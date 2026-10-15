@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 
-#[Fillable(['division_id', 'cup_id', 'label', 'color', 'from_position', 'to_position'])]
+#[Fillable(['division_id', 'cup_id', 'stage', 'label', 'color', 'from_position', 'to_position'])]
 class StandingZone extends Model
 {
     /** @use HasFactory<StandingZoneFactory> */
@@ -33,6 +33,14 @@ class StandingZone extends Model
         'yellow' => ['label' => 'Yellow', 'hex' => '#F2D94E'],
         'salmon' => ['label' => 'Salmon', 'hex' => '#F28C82'],
     ];
+
+    /** La tabla de cada grupo, y la de los mejores terceros. */
+    public const STAGE_GROUPS = 'groups';
+
+    public const STAGE_THIRDS = 'thirds';
+
+    /** @var array<string, mixed> */
+    protected $attributes = ['stage' => self::STAGE_GROUPS];
 
     protected function casts(): array
     {
@@ -65,6 +73,7 @@ class StandingZone extends Model
             $overlapping = static::query()
                 ->where('division_id', $zone->division_id)
                 ->where('cup_id', $zone->cup_id)
+                ->where('stage', $zone->stage)
                 ->when($zone->exists, fn ($query) => $query->whereKeyNot($zone->getKey()))
                 ->where('from_position', '<=', $zone->to_position)
                 ->where('to_position', '>=', $zone->from_position)

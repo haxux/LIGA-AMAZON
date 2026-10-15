@@ -172,8 +172,14 @@
                 <tbody class="divide-y divide-white/[0.055]">
                     @foreach ($bestThirds as $index => $entry)
                         @php($row = $entry['row'])
+                        @php($zone = $cup->thirdsStandingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
                         <tr class="font-display text-sm text-white">
-                            <td class="px-4 py-2 text-white/40">{{ $index + 1 }}</td>
+                            <td class="relative px-4 py-2 text-white/40">
+                                @if ($zone)
+                                    <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
+                                @endif
+                                {{ $index + 1 }}
+                            </td>
                             <td class="truncate px-2 py-2">
                                 <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id]) }}" class="hover:text-brand">
                                     {{ $row->team->name }}
@@ -192,6 +198,17 @@
                     @endforeach
                 </tbody>
             </table>
+
+            @if ($cup->thirdsStandingZones->isNotEmpty())
+                <div class="flex flex-wrap items-center gap-4 px-4 py-3 font-mono text-[10px] tracking-[0.06em] text-white/40">
+                    @foreach ($cup->thirdsStandingZones as $zone)
+                        <span class="flex items-center gap-1.5">
+                            <span class="size-2 rounded-sm" style="background-color: {{ $zone->hex() }}"></span>
+                            {{ mb_strtoupper($zone->label) }}
+                        </span>
+                    @endforeach
+                </div>
+            @endif
         </section>
     @endif
 

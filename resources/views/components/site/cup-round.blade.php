@@ -59,7 +59,7 @@
                         @if ($side['team'])
                             <x-site.team-crest :team="$side['team']" size="size-[26px]" />
                         @endif
-                        <span class="truncate font-display text-lg sm:text-xl {{ $won ? 'tie-winner font-bold' : ($lost ? 'text-white/45' : 'text-white') }}">
+                        <span class="truncate font-display text-lg sm:text-xl {{ $won ? 'tie-winner' : ($lost ? 'text-white/45' : 'text-white') }}">
                             {{ $side['team']?->name }}
                         </span>
                     </a>

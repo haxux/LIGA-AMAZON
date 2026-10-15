@@ -89,7 +89,29 @@ class Cup extends Model
      */
     public function standingZones(): HasMany
     {
-        return $this->hasMany(StandingZone::class)->orderBy('from_position');
+        return $this->hasMany(StandingZone::class)
+            ->withAttributes(['stage' => StandingZone::STAGE_GROUPS])
+            ->orderBy('from_position');
+    }
+
+    /**
+     * Las bandas de la tabla de los mejores terceros: otra tabla, con sus
+     * propias posiciones (el mejor tercero es el 1.º, sea de qué grupo sea).
+     */
+    public function thirdsStandingZones(): HasMany
+    {
+        return $this->hasMany(StandingZone::class)
+            ->withAttributes(['stage' => StandingZone::STAGE_THIRDS])
+            ->orderBy('from_position');
+    }
+
+    /**
+     * Si la copa tiene mejores terceros: con 3 grupos o más (ver
+     * `CupService::bestThirds()`).
+     */
+    public function hasBestThirds(): bool
+    {
+        return $this->has_group_stage && $this->groups()->count() >= 3;
     }
 
     public function participants(): HasMany

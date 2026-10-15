@@ -26,7 +26,7 @@ class CupController extends SiteController
 {
     public function __invoke(CupService $cups, Cup $cup): View
     {
-        $cup->load(['season', 'standingZones', 'groups.participants.team.club']);
+        $cup->load(['season', 'standingZones', 'thirdsStandingZones', 'groups.participants.team.club']);
 
         [$preliminary, $rounds] = $this->rounds($cups, $cup)
             ->partition(fn (array $entry) => $entry['round']->isPreliminary());

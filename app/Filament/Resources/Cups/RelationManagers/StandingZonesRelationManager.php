@@ -15,6 +15,8 @@ class StandingZonesRelationManager extends DivisionZones
 
     protected static string $ownerColumn = 'cup_id';
 
+    protected static string $stage = 'groups';
+
     protected static ?string $title = 'Group standings zones';
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool

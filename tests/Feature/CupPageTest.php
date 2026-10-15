@@ -215,6 +215,68 @@ class CupPageTest extends TestCase
         StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'label' => 'Otra', 'from_position' => 2, 'to_position' => 3]);
     }
 
+    /**
+     * Tres grupos de tres equipos, para que haya mejores terceros.
+     */
+    private function cupWithThirds(): Cup
+    {
+        $cup = Cup::factory()->withGroups()->create(['season_id' => $this->season->id, 'name' => 'Copa con terceros']);
+        $division = Division::factory()->create(['season_id' => $this->season->id, 'name' => 'Segunda']);
+
+        foreach (['A', 'B', 'C'] as $name) {
+            $group = CupGroup::create(['cup_id' => $cup->id, 'name' => $name]);
+
+            foreach (range(1, 3) as $n) {
+                $team = Team::factory()->create(['season_id' => $this->season->id, 'division_id' => $division->id, 'name' => "{$name}{$n} FC"]);
+                CupTeam::create(['cup_id' => $cup->id, 'team_id' => $team->id, 'cup_group_id' => $group->id]);
+            }
+        }
+
+        return $cup;
+    }
+
+    public function test_best_thirds_zones_band_that_table_and_not_the_groups(): void
+    {
+        $cup = $this->cupWithThirds();
+        StandingZone::factory()->create([
+            'division_id' => null, 'cup_id' => $cup->id, 'stage' => StandingZone::STAGE_THIRDS,
+            'label' => 'Pasa como mejor tercero', 'color' => 'amber', 'from_position' => 1, 'to_position' => 2,
+        ]);
+
+        $this->assertSame(1, $cup->thirdsStandingZones()->count());
+        $this->assertSame(0, $cup->standingZones()->count(), 'La zona de terceros no es de los grupos.');
+
+        $this->get(route('site.cups.show', $cup))
+            ->assertOk()
+            ->assertSee('Mejores terceros')
+            ->assertSee('PASA COMO MEJOR TERCERO')
+            ->assertSee('background-color: #FFB800', false);
+    }
+
+    public function test_group_and_thirds_zones_count_positions_independently(): void
+    {
+        $cup = $this->cupWithThirds();
+
+        StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'label' => 'Pasa', 'from_position' => 1, 'to_position' => 2]);
+        StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'stage' => StandingZone::STAGE_THIRDS, 'label' => 'Pasa', 'from_position' => 1, 'to_position' => 2]);
+
+        $this->assertSame(2, StandingZone::where('cup_id', $cup->id)->count());
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'stage' => StandingZone::STAGE_THIRDS, 'label' => 'Otra', 'from_position' => 2, 'to_position' => 3]);
+    }
+
+    public function test_a_cup_with_fewer_than_three_groups_has_no_thirds_zones_to_define(): void
+    {
+        $cup = Cup::factory()->withGroups()->create(['season_id' => $this->season->id, 'name' => 'Dos grupos']);
+        CupGroup::create(['cup_id' => $cup->id, 'name' => 'A']);
+        CupGroup::create(['cup_id' => $cup->id, 'name' => 'B']);
+
+        $this->assertFalse($cup->hasBestThirds());
+        $this->assertTrue($this->cupWithThirds()->hasBestThirds());
+    }
+
     // ── Donde ya se miran partidos ────────────────────────────────────────
 
     public function test_a_cup_game_reads_as_a_cup_game_in_its_detail(): void
