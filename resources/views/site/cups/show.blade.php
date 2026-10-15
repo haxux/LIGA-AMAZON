@@ -98,10 +98,20 @@
                         Grupo {{ $entry['group']->name }}
                     </h3>
 
-                    <table class="w-full text-left">
+                    <table class="w-full table-fixed text-left">
+                        {{-- Anchos fijos: sin ellos cada tabla reparte el espacio
+                             según sus nombres y las columnas de un grupo no
+                             caen bajo las del de al lado. --}}
+                        <colgroup>
+                            <col class="w-12">
+                            <col>
+                            @foreach (range(1, 6) as $_)
+                                <col class="w-11">
+                            @endforeach
+                        </colgroup>
                         <thead>
                             <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
-                                <th class="px-4 py-2">#</th>
+                                <th class="py-2 pl-4 pr-1">#</th>
                                 <th class="px-2 py-2">EQUIPO</th>
                                 @foreach (['PJ', 'G', 'E', 'P', 'DG', 'PTS'] as $head)
                                     <th class="px-2 py-2 text-center">{{ $head }}</th>
@@ -112,7 +122,7 @@
                             @foreach ($entry['table'] as $index => $row)
                                 @php($zone = $cup->standingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
                                 <tr class="font-display text-sm text-white">
-                                    <td class="relative px-4 py-2 text-white/40">
+                                    <td class="relative py-2 pl-4 pr-1 text-white/40 tabular-nums">
                                         @if ($zone)
                                             {{-- Color de StandingZone::COLORS, una paleta cerrada. --}}
                                             <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
@@ -124,12 +134,12 @@
                                             {{ $row->team->name }}
                                         </a>
                                     </td>
-                                    <td class="px-2 py-2 text-center">{{ $row->played }}</td>
-                                    <td class="px-2 py-2 text-center">{{ $row->won }}</td>
-                                    <td class="px-2 py-2 text-center">{{ $row->drawn }}</td>
-                                    <td class="px-2 py-2 text-center">{{ $row->lost }}</td>
-                                    <td class="px-2 py-2 text-center">{{ $row->goal_difference }}</td>
-                                    <td class="px-2 py-2 text-center font-bold text-brand">{{ $row->points }}</td>
+                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->played }}</td>
+                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->won }}</td>
+                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->drawn }}</td>
+                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->lost }}</td>
+                                    <td class="px-2 py-2 text-center tabular-nums">{{ $row->goal_difference }}</td>
+                                    <td class="px-2 py-2 text-center font-bold text-brand tabular-nums">{{ $row->points }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -158,10 +168,18 @@
         <x-site.cup-heading :fancy="$intl">Mejores terceros</x-site.cup-heading>
 
         <section class="mb-10 overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
-            <table class="w-full text-left">
+            <table class="w-full table-fixed text-left">
+                <colgroup>
+                    <col class="w-12">
+                    <col>
+                    <col class="w-16">
+                    @foreach (range(1, 6) as $_)
+                        <col class="w-11">
+                    @endforeach
+                </colgroup>
                 <thead>
                     <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
-                        <th class="px-4 py-2">#</th>
+                        <th class="py-2 pl-4 pr-1">#</th>
                         <th class="px-2 py-2">EQUIPO</th>
                         <th class="px-2 py-2">GRUPO</th>
                         @foreach (['PJ', 'G', 'E', 'P', 'DG', 'PTS'] as $head)
@@ -174,7 +192,7 @@
                         @php($row = $entry['row'])
                         @php($zone = $cup->thirdsStandingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
                         <tr class="font-display text-sm text-white">
-                            <td class="relative px-4 py-2 text-white/40">
+                            <td class="relative py-2 pl-4 pr-1 text-white/40 tabular-nums">
                                 @if ($zone)
                                     <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
                                 @endif
@@ -188,12 +206,12 @@
                             <td class="px-2 py-2 font-mono text-[10px] tracking-[0.1em] text-white/45">
                                 {{ mb_strtoupper($entry['group']->name) }}
                             </td>
-                            <td class="px-2 py-2 text-center">{{ $row->played }}</td>
-                            <td class="px-2 py-2 text-center">{{ $row->won }}</td>
-                            <td class="px-2 py-2 text-center">{{ $row->drawn }}</td>
-                            <td class="px-2 py-2 text-center">{{ $row->lost }}</td>
-                            <td class="px-2 py-2 text-center">{{ $row->goal_difference }}</td>
-                            <td class="px-2 py-2 text-center font-bold text-brand">{{ $row->points }}</td>
+                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->played }}</td>
+                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->won }}</td>
+                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->drawn }}</td>
+                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->lost }}</td>
+                            <td class="px-2 py-2 text-center tabular-nums">{{ $row->goal_difference }}</td>
+                            <td class="px-2 py-2 text-center font-bold text-brand tabular-nums">{{ $row->points }}</td>
                         </tr>
                     @endforeach
                 </tbody>
