@@ -8,6 +8,7 @@ use App\Filament\Resources\Cups\Pages\ListCups;
 use App\Filament\Resources\Cups\RelationManagers\GroupsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\ParticipantsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\RoundsRelationManager;
+use App\Filament\Resources\Cups\RelationManagers\StandingZonesRelationManager;
 use App\Filament\Resources\CupTies\CupTieResource;
 use App\Filament\Resources\CupTies\Pages\CreateCupTie;
 use App\Filament\Resources\CupTies\Pages\EditCupTie;
@@ -98,6 +99,31 @@ class CupPanelTest extends TestCase
             ->assertHasNoTableActionErrors();
 
         $this->assertDatabaseHas('cup_teams', ['cup_id' => $this->cup->id, 'team_id' => $this->two->id]);
+    }
+
+    public function test_group_zones_are_defined_on_the_cup(): void
+    {
+        $this->cup->update(['has_group_stage' => true]);
+
+        Livewire::test(StandingZonesRelationManager::class, [
+            'ownerRecord' => $this->cup,
+            'pageClass' => EditCup::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData(['label' => 'Pasa a octavos', 'color' => 'green', 'from_position' => 1, 'to_position' => 2])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('standing_zones', ['cup_id' => $this->cup->id, 'division_id' => null, 'label' => 'Pasa a octavos']);
+
+        Livewire::test(StandingZonesRelationManager::class, [
+            'ownerRecord' => $this->cup,
+            'pageClass' => EditCup::class,
+        ])
+            ->mountTableAction('create')
+            ->setTableActionData(['label' => 'Choca', 'color' => 'red', 'from_position' => 2, 'to_position' => 3])
+            ->callMountedTableAction()
+            ->assertHasTableActionErrors(['from_position']);
     }
 
     public function test_a_team_is_not_entered_twice(): void

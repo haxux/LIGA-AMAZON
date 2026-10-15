@@ -82,6 +82,16 @@ class Cup extends Model
         return $this->hasMany(CupGroup::class)->orderBy('name');
     }
 
+    /**
+     * Las bandas de la tabla de cada grupo (pasa a octavos, a la repesca…),
+     * ordenadas de arriba abajo. Son de la copa y no de cada grupo: todos
+     * juegan con las mismas reglas.
+     */
+    public function standingZones(): HasMany
+    {
+        return $this->hasMany(StandingZone::class)->orderBy('from_position');
+    }
+
     public function participants(): HasMany
     {
         return $this->hasMany(CupTeam::class);

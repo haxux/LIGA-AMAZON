@@ -11,6 +11,7 @@ use App\Models\CupTie;
 use App\Models\Division;
 use App\Models\Game;
 use App\Models\Season;
+use App\Models\StandingZone;
 use App\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -183,6 +184,35 @@ class CupPageTest extends TestCase
             ->assertSee('Fase de grupos')
             ->assertSee('Grupo A')
             ->assertSeeInOrder(['Manaos FC', '3']);
+    }
+
+    public function test_group_zones_band_the_tables_and_show_a_legend(): void
+    {
+        $cup = Cup::factory()->withGroups()->create(['season_id' => $this->season->id, 'name' => 'Copa con grupos']);
+        $group = CupGroup::create(['cup_id' => $cup->id, 'name' => 'A']);
+        CupTeam::create(['cup_id' => $cup->id, 'team_id' => $this->home->id, 'cup_group_id' => $group->id]);
+        StandingZone::factory()->create([
+            'division_id' => null, 'cup_id' => $cup->id, 'label' => 'Pasa a octavos', 'color' => 'green',
+            'from_position' => 1, 'to_position' => 2,
+        ]);
+
+        $this->get(route('site.cups.show', $cup))
+            ->assertOk()
+            ->assertSee('PASA A OCTAVOS')
+            ->assertSee('background-color: #2FA36B', false);
+    }
+
+    public function test_a_cup_zone_does_not_clash_with_a_division_zone_on_the_same_positions(): void
+    {
+        $cup = Cup::factory()->withGroups()->create(['season_id' => $this->season->id, 'name' => 'Otra copa']);
+        StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'label' => 'Pasa', 'from_position' => 1, 'to_position' => 2]);
+        StandingZone::factory()->create(['label' => 'Ascenso', 'from_position' => 1, 'to_position' => 2]);
+
+        $this->assertSame(2, StandingZone::count());
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'label' => 'Otra', 'from_position' => 2, 'to_position' => 3]);
     }
 
     // ── Donde ya se miran partidos ────────────────────────────────────────

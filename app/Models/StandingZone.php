@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
 
-#[Fillable(['division_id', 'label', 'color', 'from_position', 'to_position'])]
+#[Fillable(['division_id', 'cup_id', 'label', 'color', 'from_position', 'to_position'])]
 class StandingZone extends Model
 {
     /** @use HasFactory<StandingZoneFactory> */
@@ -64,6 +64,7 @@ class StandingZone extends Model
 
             $overlapping = static::query()
                 ->where('division_id', $zone->division_id)
+                ->where('cup_id', $zone->cup_id)
                 ->when($zone->exists, fn ($query) => $query->whereKeyNot($zone->getKey()))
                 ->where('from_position', '<=', $zone->to_position)
                 ->where('to_position', '>=', $zone->from_position)
@@ -80,6 +81,14 @@ class StandingZone extends Model
     public function division(): BelongsTo
     {
         return $this->belongsTo(Division::class);
+    }
+
+    /**
+     * Una zona de copa vale para la fase de grupos: la misma regla en todos.
+     */
+    public function cup(): BelongsTo
+    {
+        return $this->belongsTo(Cup::class);
     }
 
     public function covers(int $position): bool

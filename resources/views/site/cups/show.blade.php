@@ -110,8 +110,15 @@
                         </thead>
                         <tbody class="divide-y divide-white/[0.055]">
                             @foreach ($entry['table'] as $index => $row)
+                                @php($zone = $cup->standingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
                                 <tr class="font-display text-sm text-white">
-                                    <td class="px-4 py-2 text-white/40">{{ $index + 1 }}</td>
+                                    <td class="relative px-4 py-2 text-white/40">
+                                        @if ($zone)
+                                            {{-- Color de StandingZone::COLORS, una paleta cerrada. --}}
+                                            <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
+                                        @endif
+                                        {{ $index + 1 }}
+                                    </td>
                                     <td class="truncate px-2 py-2">
                                         <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id]) }}" class="hover:text-brand">
                                             {{ $row->team->name }}
@@ -130,6 +137,17 @@
                 </section>
             @endforeach
         </div>
+
+        @if ($cup->standingZones->isNotEmpty())
+            <div class="-mt-6 mb-10 flex flex-wrap items-center gap-4 px-1 font-mono text-[10px] tracking-[0.06em] text-white/40">
+                @foreach ($cup->standingZones as $zone)
+                    <span class="flex items-center gap-1.5">
+                        <span class="size-2 rounded-sm" style="background-color: {{ $zone->hex() }}"></span>
+                        {{ mb_strtoupper($zone->label) }}
+                    </span>
+                @endforeach
+            </div>
+        @endif
     @endif
 
     {{-- Los mejores terceros, sólo con 3 grupos o más: con menos serían todos

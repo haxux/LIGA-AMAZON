@@ -8,6 +8,7 @@ use App\Filament\Resources\Cups\Pages\ListCups;
 use App\Filament\Resources\Cups\RelationManagers\GroupsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\ParticipantsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\RoundsRelationManager;
+use App\Filament\Resources\Cups\RelationManagers\StandingZonesRelationManager;
 use App\Enums\CupDesign;
 use App\Enums\CupScope;
 use App\Models\Cup;
@@ -131,6 +132,7 @@ class CupResource extends Resource
     {
         return [
             GroupsRelationManager::class,
+            StandingZonesRelationManager::class,
             ParticipantsRelationManager::class,
             RoundsRelationManager::class,
         ];

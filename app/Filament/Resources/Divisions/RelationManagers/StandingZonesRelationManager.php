@@ -24,6 +24,9 @@ class StandingZonesRelationManager extends RelationManager
 
     protected static ?string $title = 'Standings zones';
 
+    /** La columna de `standing_zones` que apunta al dueño: división o copa. */
+    protected static string $ownerColumn = 'division_id';
+
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -65,15 +68,16 @@ class StandingZonesRelationManager extends RelationManager
      */
     private function noOverlapRule(Get $get, ?Model $record): Closure
     {
-        $divisionId = $this->getOwnerRecord()->getKey();
+        $ownerKey = $this->getOwnerRecord()->getKey();
+        $ownerColumn = static::$ownerColumn;
 
-        return function (string $attribute, mixed $value, Closure $fail) use ($get, $record, $divisionId): void {
+        return function (string $attribute, mixed $value, Closure $fail) use ($get, $record, $ownerKey, $ownerColumn): void {
             if (blank($value) || blank($get('to_position'))) {
                 return;
             }
 
             $overlapping = StandingZone::query()
-                ->where('division_id', $divisionId)
+                ->where($ownerColumn, $ownerKey)
                 ->when($record, fn ($query) => $query->whereKeyNot($record->getKey()))
                 ->where('from_position', '<=', (int) $get('to_position'))
                 ->where('to_position', '>=', (int) $value)
