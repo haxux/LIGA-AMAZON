@@ -38,6 +38,31 @@ class CoachPublicAccessTest extends TestCase
             ->assertSee('Acceso técnicos');
     }
 
+    public function test_the_login_icon_is_in_the_header_only_for_visitors(): void
+    {
+        $this->get(route('site.standings'))->assertOk()->assertSee('id="coach-login"', false);
+
+        $this->actingAs(User::factory()->coachOf(Club::factory()->create())->create(), 'club');
+
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertDontSee('id="coach-login"', false)
+            ->assertSee('id="coach-club"', false);
+    }
+
+    public function test_an_administrator_gets_a_way_back_to_the_panel(): void
+    {
+        $this->get(route('site.standings'))->assertDontSee('id="admin-panel"', false);
+
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('site.standings'))
+            ->assertOk()
+            ->assertSee('id="admin-panel"', false)
+            ->assertSee(url('/admin'), false)
+            ->assertDontSee('id="coach-login"', false);
+    }
+
     /**
      * El escudo de la liga, en las tres formas que un navegador busca: el .ico
      * para quien pide /favicon.ico a secas, el png grande para la pestaña y el

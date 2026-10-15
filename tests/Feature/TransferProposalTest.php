@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Club\Resources\Budget\BudgetResource;
-use App\Filament\Club\Resources\Transfers\Pages\ProposeTransfer;
+use App\Filament\Club\Resources\Transfers\TransferHistoryResource;
 use App\Filament\Resources\Transfers\Pages\ListTransfers;
 use App\Filament\Resources\Transfers\TransferResource;
 use App\Models\BudgetMovement;
@@ -26,9 +26,8 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * El técnico propone a la dirección, siempre hacia fuera de la liga —lo de
- * dentro se negocia por el chat—, y el administrador acepta rellenando lo que
- * la propuesta no podía saber. Al guardar eso se mueve todo de una vez.
+ * Las propuestas de traspaso (que nacen del chat) las firma el administrador
+ * rellenando lo que la propuesta no podía saber. Al guardar eso se mueve todo de una vez.
  */
 class TransferProposalTest extends TestCase
 {
@@ -89,106 +88,16 @@ class TransferProposalTest extends TestCase
         ]);
     }
 
-    // ── Lo que el técnico propone ─────────────────────────────────────────
+    // ── Lo que el técnico ya no hace desde su panel ───────────────────────
 
-    public function test_the_coach_asks_to_sign_someone_from_outside(): void
+    public function test_the_coach_panel_no_longer_proposes_transfers(): void
     {
         $this->asCoach();
 
-        Livewire::test(ProposeTransfer::class)
-            ->fillForm([
-                'type' => Transfer::TYPE_SIGNING,
-                'external_player' => 'Rivaldo Nunes',
-                'external_club' => 'Palmeiras',
-                'fee' => 300_000,
-            ])
-            ->call('create')
-            ->assertHasNoFormErrors();
-
-        $proposal = Transfer::query()->latest('id')->first();
-
-        $this->assertSame(Transfer::STATUS_PROPOSED, $proposal->status);
-        $this->assertSame(Transfer::SCOPE_EXTERNAL, $proposal->scope);
-        $this->assertSame('Rivaldo Nunes', $proposal->external_player);
-        $this->assertNull($proposal->player_id);
-        $this->assertSame($this->club->id, $proposal->to_club_id);
-        $this->assertNull($proposal->from_club_id);
-        $this->assertSame($this->coach->id, $proposal->proposed_by);
-
-        // Y no ha movido nada: ni ficha, ni dinero.
-        $this->assertSame(1, Player::query()->count());
-        $this->assertSame(0, BudgetMovement::query()->count());
-        $this->assertSame(1_000_000, $this->balance());
-    }
-
-    public function test_the_coach_puts_one_of_theirs_up_for_sale(): void
-    {
-        $this->asCoach();
-
-        Livewire::test(ProposeTransfer::class)
-            ->fillForm([
-                'type' => Transfer::TYPE_SALE,
-                'player_id' => $this->mine->id,
-                'fee' => 500_000,
-            ])
-            ->call('create')
-            ->assertHasNoFormErrors();
-
-        $proposal = Transfer::query()->latest('id')->first();
-
-        $this->assertSame($this->mine->id, $proposal->player_id);
-        $this->assertSame($this->club->id, $proposal->from_club_id);
-        $this->assertNull($proposal->to_club_id);
-        $this->assertNull($this->mine->fresh()->left_at);
-    }
-
-    public function test_a_loan_carries_a_term_and_no_money(): void
-    {
-        $this->asCoach();
-
-        Livewire::test(ProposeTransfer::class)
-            ->fillForm([
-                'type' => Transfer::TYPE_LOAN_IN,
-                'external_player' => 'Cedido Nunes',
-                'external_club' => 'Palmeiras',
-                'loan_term' => Transfer::TERM_ONE_YEAR,
-            ])
-            ->call('create')
-            ->assertHasNoFormErrors();
-
-        $proposal = Transfer::query()->latest('id')->first();
-
-        $this->assertSame(Transfer::TERM_ONE_YEAR, $proposal->loan_term);
-        $this->assertSame(0, $proposal->fee);
-    }
-
-    /**
-     * Fichaje y venta mueven dinero: una propuesta sin cifra no es una
-     * propuesta, es una pregunta.
-     */
-    public function test_the_amount_is_required_when_there_is_money(): void
-    {
-        $this->asCoach();
-
-        Livewire::test(ProposeTransfer::class)
-            ->fillForm([
-                'type' => Transfer::TYPE_SIGNING,
-                'external_player' => 'Rivaldo Nunes',
-                'external_club' => 'Palmeiras',
-            ])
-            ->call('create')
-            ->assertHasFormErrors(['fee']);
-    }
-
-    /**
-     * Desde el panel sólo se propone hacia fuera de la liga, así que no hay
-     * ámbito que elegir: lo de dentro se negocia por el chat.
-     */
-    public function test_the_form_does_not_ask_for_a_scope(): void
-    {
-        $this->asCoach();
-
-        $this->assertNull(Livewire::test(ProposeTransfer::class)->instance()->getSchemaComponent('form.scope'));
+        $this->assertFalse(TransferHistoryResource::canCreate());
+        $this->get('/club/fichajes/proponer')->assertNotFound();
+        $this->assertFalse(Gate::forUser($this->coach)->allows('create', Transfer::class));
+        $this->assertTrue(Gate::forUser($this->admin)->allows('create', Transfer::class));
     }
 
     // ── Lo que el administrador hace con ella ─────────────────────────────
@@ -529,6 +438,5 @@ class TransferProposalTest extends TestCase
 
         $this->assertFalse(BudgetResource::canCreate());
         $this->get('/club/contabilidad/create')->assertNotFound();
-        $this->assertTrue(Gate::forUser($this->coach)->allows('create', Transfer::class));
     }
 }

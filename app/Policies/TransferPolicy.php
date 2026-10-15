@@ -8,7 +8,7 @@ use App\Models\User;
 /**
  * Un traspaso pertenece a DOS clubes, así que la política base por un único
  * club no sirve: el técnico ve los suyos —los que entran y los que salen— y no
- * escribe ninguno, porque registrarlos es del administrador.
+ * escribe ninguno desde su panel.
  */
 class TransferPolicy
 {
@@ -27,13 +27,13 @@ class TransferPolicy
     }
 
     /**
-     * El técnico también crea, pero lo que crea es una PROPUESTA: la página de
-     * su panel fija el estado, y el recurso del administrador —el único que
-     * registra traspasos ya ejecutados— no existe en su panel.
+     * Sólo el administrador registra traspasos. Los del técnico nacen del chat
+     * (al aceptarse una oferta) y no pasan por la política: es el servicio
+     * quien los escribe, como propuesta.
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isCoach();
+        return $user->isAdmin();
     }
 
     public function update(User $user, Transfer $transfer): bool

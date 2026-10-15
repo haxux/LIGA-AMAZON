@@ -3,12 +3,9 @@
 namespace App\Filament\Club\Resources\Transfers;
 
 use App\Filament\Club\Resources\Transfers\Pages\ListTransferHistory;
-use App\Filament\Club\Resources\Transfers\Pages\ProposeTransfer;
-use App\Filament\Club\Resources\Transfers\Schemas\TransferProposalForm;
 use App\Models\Transfer;
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -16,13 +13,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Los fichajes del club: lo que ha entrado y salido, y lo que su técnico ha
- * propuesto.
+ * El historial de fichajes del club: lo que ha entrado y salido.
  *
- * El técnico PROPONE la operación entera —el mismo jugador, el mismo importe y
- * el mismo ámbito que registraría el administrador— y hasta que la firmen no
- * mueve ni plantilla ni dinero. Ejecutar sigue siendo del administrador, porque
- * ejecutar es lo que paga, cobra y cambia de plantilla a un jugador.
+ * Es sólo de lectura. Todo se negocia por el chat —con otro técnico o con el
+ * presidente— y lo acordado llega aquí como traspaso cuando el administrador lo
+ * firma; desde el panel del técnico ya no se propone nada.
  *
  * El mismo traspaso se lee distinto según el lado: fichaje para quien recibe,
  * venta para quien cede. Es una fila leída desde los dos lados (design D8).
@@ -45,14 +40,7 @@ class TransferHistoryResource extends Resource
 
     public static function canCreate(): bool
     {
-        // Proponer sí; ejecutar no. Lo que se crea aquí nace en estado
-        // propuesto (ver ProposeTransfer).
-        return auth()->user()?->isCoach() === true;
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return TransferProposalForm::configure($schema);
+        return false;
     }
 
     public static function getEloquentQuery(): Builder
@@ -108,14 +96,13 @@ class TransferHistoryResource extends Resource
                 SelectFilter::make('status')->label('Estado')->options(Transfer::STATUSES),
             ])
             ->emptyStateHeading('Todavía sin movimientos')
-            ->emptyStateDescription('Propón un fichaje y el administrador lo firmará.');
+            ->emptyStateDescription('Los fichajes se negocian por el chat; aquí quedan registrados cuando se cierran.');
     }
 
     public static function getPages(): array
     {
         return [
             'index' => ListTransferHistory::route('/'),
-            'create' => ProposeTransfer::route('/proponer'),
         ];
     }
 }

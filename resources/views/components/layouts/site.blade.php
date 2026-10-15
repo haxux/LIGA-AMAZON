@@ -35,6 +35,12 @@
             $coachClub = $coach?->isCoach() ? $coach->club : null;
             $coachSeason = app(App\Services\SeasonResolver::class)->active();
 
+            // El administrador que mira el sitio público: un botón para volver
+            // a su panel. Y quien no ha entrado de ninguna manera: un icono
+            // para hacerlo, que antes estaba sólo en el pie.
+            $adminUser = auth()->user()?->isAdmin() ? auth()->user() : null;
+            $isGuest = $coachClub === null && $adminUser === null;
+
             // El chat es de técnicos Y presidentes, así que aquí valen las dos
             // puertas. Con las dos sesiones abiertas manda la del técnico, que
             // es la que el sitio usa para todo lo demás.
@@ -181,6 +187,27 @@
                         <span class="hidden max-w-[9rem] truncate font-display text-xs font-semibold uppercase tracking-[0.08em] text-white lg:block">
                             {{ $coachClub->short_name ?: $coachClub->name }}
                         </span>
+                    </a>
+                @endif
+
+                @if ($adminUser)
+                    {{-- De vuelta al panel de administración, desde cualquier
+                         página pública. --}}
+                    <a id="admin-panel" href="{{ url('/admin') }}"
+                       class="order-2 flex shrink-0 items-center gap-2 rounded-[4px] border border-brand/40 bg-brand/10 px-2.5 py-2.5 text-brand hover:bg-brand/20 lg:order-3 lg:py-1.5"
+                       title="Ir al panel de administración" aria-label="Panel de administración">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 4.3a1.7 1.7 0 0 1 3.4 0 1.7 1.7 0 0 0 2.5 1l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1 2.5 1.7 1.7 0 0 1 0 3.4 1.7 1.7 0 0 0-1 2.5l.1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.5 1 1.7 1.7 0 0 1-3.4 0 1.7 1.7 0 0 0-2.5-1l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1-2.5 1.7 1.7 0 0 1 0-3.4 1.7 1.7 0 0 0 1-2.5l-.1-.1A1.7 1.7 0 0 1 7.8 5.2l.1.1a1.7 1.7 0 0 0 2.5-1Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span class="hidden font-display text-xs font-semibold uppercase tracking-[0.08em] lg:block">Panel</span>
+                    </a>
+                @endif
+
+                @if ($isGuest)
+                    {{-- La puerta de entrada del técnico, ahora a la vista en la
+                         cabecera: un icono, sin texto que ocupe sitio. --}}
+                    <a id="coach-login" href="{{ route('filament.club.auth.login') }}"
+                       class="order-2 flex size-10 shrink-0 items-center justify-center rounded-[4px] border border-white/10 bg-white/[0.06] text-white/80 hover:bg-white/[0.12] hover:text-white lg:order-3"
+                       title="Acceso técnicos" aria-label="Acceso técnicos">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
                     </a>
                 @endif
             </div>

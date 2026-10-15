@@ -214,17 +214,16 @@ class TransferPanelsTest extends TestCase
     }
 
     /**
-     * El técnico propone —y para eso su panel le deja crear—, pero lo que nace
-     * de su mano es una propuesta; ejecutar sigue siendo del administrador, y su
-     * recurso no existe en el panel del técnico (ver TransferProposalTest).
+     * El técnico sólo lee: lo suyo se negocia por el chat, y ni proponer ni
+     * ejecutar se hace desde su panel.
      */
-    public function test_the_coach_proposes_but_does_not_execute(): void
+    public function test_the_coach_only_reads_the_history(): void
     {
         $coach = User::factory()->coachOf($this->selling)->create();
         $this->actingAs($coach, 'club');
 
-        $this->assertTrue(TransferHistoryResource::canCreate());
-        $this->assertTrue(Gate::forUser($coach)->allows('create', Transfer::class));
+        $this->assertFalse(TransferHistoryResource::canCreate());
+        $this->assertFalse(Gate::forUser($coach)->allows('create', Transfer::class));
 
         $this->get('/admin/transfers/create')->assertRedirect();
     }
