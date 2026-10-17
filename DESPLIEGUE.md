@@ -261,6 +261,10 @@ Implementado y cubierto por tests:
 | Rutas públicas a 60 req/min por IP | `routes/web.php` | `SecurityHeadersTest` |
 | Plantilla de producción segura por construcción | `.env.production.example` | `ProductionEnvTemplateTest` |
 | `/admin` fuera de los buscadores | `public/robots.txt` | — |
+| Salir de una puerta (`/admin` o `/club`) no cierra la otra | `GuardLogoutController` | `LoginLifecycleTest` |
+| Tras entrar sólo se sigue una URL pendiente si es de esa puerta | `PanelLoginResponse` | `LoginLifecycleTest` |
+| Tope de 10 fallos / 15 min por cuenta y puerta, además del de 5/min por IP; fallos al log (`login.failed`, `login.locked`) | `App\Filament\Auth\Login` | `LoginLifecycleTest` |
+| Contraseñas nuevas de 10 caracteres como mínimo | `UserForm` | — |
 
 Del framework: login con límite de intentos, CSRF, cookies cifradas, bcrypt
 coste 12, Eloquent parametrizado, Blade escapado, `#[Fillable]` en los modelos.

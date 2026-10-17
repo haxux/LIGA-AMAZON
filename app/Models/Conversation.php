@@ -146,7 +146,11 @@ class Conversation extends Model
     public function timeline(): Collection
     {
         return $this->messages()->with('author')->get()
-            ->concat($this->offers()->with(['player', 'fromClub', 'mover'])->get())
+            ->concat($this->offers()->with(['player', 'fromClub', 'mover'])->get()
+                // La oferta pregunta a su hilo si es con el presidente y quién
+                // participa: se le da el que ya está cargado, en vez de que
+                // cada una vaya a buscarlo.
+                ->each(fn (Offer $offer) => $offer->setRelation('conversation', $this)))
             // El id sólo desempata dentro del mismo segundo, y ahí el orden
             // entre un mensaje y una oferta da igual: pasaron a la vez.
             ->sortBy(fn ($entry) => [$entry->created_at?->getTimestamp() ?? 0, $entry->getKey()])

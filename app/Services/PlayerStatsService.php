@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Club;
+use App\Models\Game;
 use App\Models\GameEvent;
+use App\Models\Matchday;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\SquadMembership;
@@ -24,6 +26,15 @@ use Illuminate\Support\Collection;
  */
 final class PlayerStatsService
 {
+    /**
+     * Los premios no son eventos —no ocurren en un minuto del partido—, así que
+     * no tienen un `TYPE_` de GameEvent: salen de columnas del partido y de la
+     * jornada. Viajan en los mismos totales para que la ficha los pinte igual.
+     */
+    public const MVP = 'mvp';
+
+    public const WEEK_MVP = 'week_mvp';
+
     /**
      * Los totales de una temporada, o de toda la carrera si no se pasa ninguna.
      *
@@ -49,7 +60,25 @@ final class PlayerStatsService
             ->groupBy('type')
             ->pluck('total', 'type');
 
+        // El MVP de un partido cuenta en la competición del partido, igual que
+        // un gol. El Week MVP es de la jornada, que sólo existe en la liga: en
+        // una copa no hay nada que contar.
+        $mvps = Game::query()
+            ->where('mvp_player_id', $player->getKey())
+            ->when($season, fn (Builder $query, Season $season) => $competition->applyTo($query->inSeason($season)))
+            ->when(! $season, fn (Builder $query) => $competition->applyTo($query))
+            ->count();
+
+        $weekMvps = $competition->isAll() || $competition->isLeague()
+            ? Matchday::query()
+                ->where('week_mvp_player_id', $player->getKey())
+                ->when($season, fn (Builder $query, Season $season) => $query->where('season_id', $season->getKey()))
+                ->count()
+            : 0;
+
         return [
+            self::MVP => $mvps,
+            self::WEEK_MVP => $weekMvps,
             GameEvent::TYPE_GOAL => (int) ($counts[GameEvent::TYPE_GOAL] ?? 0),
             GameEvent::TYPE_OWN_GOAL => (int) ($counts[GameEvent::TYPE_OWN_GOAL] ?? 0),
             GameEvent::TYPE_ASSIST => (int) ($counts[GameEvent::TYPE_ASSIST] ?? 0),

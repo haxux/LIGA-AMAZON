@@ -33,4 +33,11 @@
         <x-site.scorer-list title="Máximos asistentes" :rows="$assisters" />
         <x-site.scorer-list title="Máximas porterías a cero" :rows="$cleanSheets" />
     </div>
+
+    {{-- Los premios, aparte de los eventos: salen de la columna del partido y
+         de la jornada. --}}
+    <div class="grid gap-6 md:grid-cols-3">
+        <x-site.scorer-list title="MVP del partido" :rows="$mvps" />
+        <x-site.scorer-list title="Week MVP" :rows="$weekMvps" />
+    </div>
 </x-layouts.site>

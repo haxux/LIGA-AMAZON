@@ -256,11 +256,13 @@ class ScorersPageTest extends TestCase
         $old = Season::factory()->create(['is_current' => false]);
         $oldDivision = Division::factory()->create(['season_id' => $old->id]);
         $this->golEn($old, $oldDivision, 1, 'Goleador De Antes');
+        // La división vigente sale en el menú de Equipos de la cabecera, así que lo
+        // que no debe aparecer es su goleador, no su nombre.
 
         $this->get('/estadisticas?temporada='.$old->id.'&division='.$currentDivision->id)
             ->assertOk()
             ->assertSee('Goleador De Antes')
-            ->assertDontSee('Primera De Ahora');
+            ->assertDontSee('Goleador De Ahora');
     }
 
     /**

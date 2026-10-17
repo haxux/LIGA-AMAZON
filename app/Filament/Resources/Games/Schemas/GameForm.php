@@ -7,6 +7,7 @@ use App\Models\CupGroup;
 use App\Models\CupTie;
 use App\Models\Game;
 use App\Models\Matchday;
+use App\Models\SquadMembership;
 use App\Models\Team;
 use Closure;
 use Filament\Forms\Components\DateTimePicker;
@@ -177,7 +178,43 @@ class GameForm
             TextInput::make('away_score')
                 ->numeric()
                 ->minValue(0),
+            // No es un evento: es una elección sobre el partido entero, y
+            // opcional. Sólo ofrece a quienes estuvieron en uno de los dos
+            // equipos, por eso depende de ellos.
+            Select::make('mvp_player_id')
+                ->label('MVP of the match')
+                ->options(fn (Get $get): array => static::mvpOptions($get))
+                ->searchable()
+                ->preload()
+                ->placeholder('No MVP')
+                ->helperText('Optional. Pick the two teams first.'),
         ];
+    }
+
+    /**
+     * Los jugadores de las plantillas de los dos equipos, con su equipo al lado.
+     * Se mira la pertenencia —abierta o cerrada— y no el club propietario: con
+     * una cesión, quien jugó para un equipo no es de su club.
+     *
+     * @return array<int, string>
+     */
+    private static function mvpOptions(Get $get): array
+    {
+        $teams = array_filter([$get('home_team_id'), $get('away_team_id')]);
+
+        if ($teams === []) {
+            return [];
+        }
+
+        return SquadMembership::query()
+            ->whereIn('team_id', $teams)
+            ->with(['player', 'team'])
+            ->get()
+            ->sortBy(fn (SquadMembership $membership) => [$membership->team?->name, $membership->player?->name])
+            ->mapWithKeys(fn (SquadMembership $membership) => [
+                $membership->player_id => "{$membership->player?->name} · {$membership->team?->name}",
+            ])
+            ->all();
     }
 
     /**

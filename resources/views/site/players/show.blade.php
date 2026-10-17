@@ -10,6 +10,8 @@
         GameEvent::TYPE_YELLOW_CARD => 'Amarillas',
         GameEvent::TYPE_RED_CARD => 'Rojas',
         GameEvent::TYPE_CLEAN_SHEET => 'Porterías a cero',
+        'mvp' => 'MVP del partido',
+        'week_mvp' => 'Week MVP',
     ];
 
     $eventLabels = [
@@ -35,6 +37,8 @@
         GameEvent::TYPE_YELLOW_CARD => 'TA',
         GameEvent::TYPE_RED_CARD => 'TR',
         GameEvent::TYPE_CLEAN_SHEET => 'PC',
+        'mvp' => 'MVP',
+        'week_mvp' => 'WM',
     ];
 @endphp
 
@@ -120,7 +124,7 @@
                 <h3 class="mb-2 font-mono text-[10px] tracking-[0.14em] text-white/45">{{ mb_strtoupper($block['title']) }}</h3>
             @endif
 
-            <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
                 @foreach ($labels as $type => $label)
                     <div class="rounded-[5px] bg-surface-alt p-4 text-center">
                         <span class="block font-mono text-[9px] tracking-[0.14em] text-white/40">{{ mb_strtoupper($label) }}</span>

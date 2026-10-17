@@ -53,6 +53,72 @@ final class GoalscorersService
     }
 
     /**
+     * Quienes más veces han sido MVP de un partido. No sale de `game_events`
+     * —no es un evento— sino de la columna del propio partido, y por eso
+     * acepta los mismos filtros que las demás listas.
+     *
+     * @return Collection<int, ScorerRow>
+     */
+    public function topMvps(Season $season, ?int $limit = 10, ?Competition $competition = null, ?int $divisionId = null, ?int $matchdayNumber = null): Collection
+    {
+        $competition ??= Competition::all();
+
+        $counts = \App\Models\Game::query()
+            ->whereNotNull('mvp_player_id')
+            ->tap(fn (Builder $query) => $competition->applyTo($query->inSeason($season)))
+            ->when($divisionId, fn (Builder $games) => $games->whereHas('matchday', fn (Builder $matchday) => $matchday->where('division_id', $divisionId)))
+            ->when($matchdayNumber, fn (Builder $games) => $games->whereHas('matchday', fn (Builder $matchday) => $matchday->where('number', $matchdayNumber)))
+            ->groupBy('mvp_player_id')
+            ->pluck(DB::raw('COUNT(*)'), 'mvp_player_id');
+
+        return $this->rowsFrom($season, $counts, $limit);
+    }
+
+    /**
+     * Quienes más veces han sido jugador de la jornada (Week MVP). La jornada
+     * sólo existe en la liga: con una copa elegida no hay nada que contar.
+     *
+     * @return Collection<int, ScorerRow>
+     */
+    public function topWeekMvps(Season $season, ?int $limit = 10, ?Competition $competition = null, ?int $divisionId = null, ?int $matchdayNumber = null): Collection
+    {
+        $competition ??= Competition::all();
+
+        if (! ($competition->isAll() || $competition->isLeague())) {
+            return collect();
+        }
+
+        $counts = \App\Models\Matchday::query()
+            ->whereNotNull('week_mvp_player_id')
+            ->where('season_id', $season->getKey())
+            ->when($divisionId, fn (Builder $matchdays) => $matchdays->where('division_id', $divisionId))
+            ->when($matchdayNumber, fn (Builder $matchdays) => $matchdays->where('number', $matchdayNumber))
+            ->groupBy('week_mvp_player_id')
+            ->pluck(DB::raw('COUNT(*)'), 'week_mvp_player_id');
+
+        return $this->rowsFrom($season, $counts, $limit);
+    }
+
+    /**
+     * De unos recuentos por jugador a filas ordenadas, con el club de la
+     * temporada ya resuelto.
+     *
+     * @param  Collection<int|string, int|string>  $counts  jugador => total
+     * @return Collection<int, ScorerRow>
+     */
+    private function rowsFrom(Season $season, Collection $counts, ?int $limit): Collection
+    {
+        $players = $this->hydrate($season, $counts->keys()->all());
+
+        $rows = collect($players)
+            ->map(fn (array $entry, int $id) => new ScorerRow($entry['player'], (int) $counts[$id], $entry['club']))
+            ->sortBy([['count', 'desc']])
+            ->values();
+
+        return $limit === null ? $rows : $rows->take($limit);
+    }
+
+    /**
      * Las cabeceras de VARIAS listas a la vez, en una sola pasada.
      *
      * Existe por la portada, que pide tres —goleadores, asistentes y porterías

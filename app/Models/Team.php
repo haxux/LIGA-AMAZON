@@ -46,6 +46,11 @@ class Team extends Model
         return $this->club?->founded_year;
     }
 
+    public function news(): HasMany
+    {
+        return $this->hasMany(News::class);
+    }
+
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);

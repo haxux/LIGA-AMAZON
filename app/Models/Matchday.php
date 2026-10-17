@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
-#[Fillable(['season_id', 'division_id', 'number', 'date'])]
+#[Fillable(['season_id', 'division_id', 'number', 'date', 'week_mvp_player_id'])]
 class Matchday extends Model
 {
     /** @use HasFactory<MatchdayFactory> */
@@ -40,6 +40,23 @@ class Matchday extends Model
     protected static function booted(): void
     {
         static::saving(function (Matchday $matchday): void {
+            // El jugador de la jornada tiene que ser de un equipo de ESA
+            // división en esa temporada: es quien compite en ella.
+            if ($matchday->week_mvp_player_id !== null && $matchday->isDirty(['week_mvp_player_id', 'season_id', 'division_id'])) {
+                $belongs = SquadMembership::query()
+                    ->where('player_id', $matchday->week_mvp_player_id)
+                    ->whereHas('team', fn ($team) => $team
+                        ->where('season_id', $matchday->season_id)
+                        ->where('division_id', $matchday->division_id))
+                    ->exists();
+
+                if (! $belongs) {
+                    throw ValidationException::withMessages([
+                        'week_mvp_player_id' => 'El Week MVP tiene que ser de un equipo de esa división.',
+                    ]);
+                }
+            }
+
             if (! $matchday->isDirty(['season_id', 'division_id'])) {
                 return;
             }
@@ -61,6 +78,14 @@ class Matchday extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    /**
+     * El jugador de la jornada, si el administrador eligió uno.
+     */
+    public function weekMvp(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'week_mvp_player_id');
     }
 
     public function division(): BelongsTo

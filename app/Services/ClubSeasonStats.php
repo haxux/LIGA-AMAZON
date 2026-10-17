@@ -23,6 +23,8 @@ final class ClubSeasonStats
         public readonly int $yellow_cards = 0,
         public readonly int $red_cards = 0,
         public readonly int $clean_sheets = 0,
+        public readonly int $mvps = 0,
+        public readonly int $week_mvps = 0,
     ) {
         // Derivados en el constructor, como en StandingRow, para que no puedan
         // discrepar de los contadores de los que salen.

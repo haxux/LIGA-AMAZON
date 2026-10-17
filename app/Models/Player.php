@@ -205,6 +205,36 @@ class Player extends Model
     }
 
     /**
+     * De entre unos jugadores, los que están cedidos ahora mismo: la misma
+     * pregunta que `isOnLoan()`, hecha de una vez para toda una lista.
+     *
+     * @param  array<int, int>  $ids
+     * @return array<int, int>
+     */
+    public static function loanedAmong(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $season = app(SeasonResolver::class)->active();
+
+        return SquadMembership::query()
+            ->whereIn('player_id', $ids)
+            ->whereNull('left_at')
+            ->where('type', SquadMembership::TYPE_LOAN)
+            ->when($season, fn ($query) => $query->whereHas(
+                'team',
+                fn ($team) => $team->where('season_id', $season->getKey()),
+            ))
+            ->pluck('player_id')
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * Si el jugador del catálogo ya juega en un club de la liga. Uno que salió
      * (`left_at`) no cuenta: puede volver a fichar por otro.
      */

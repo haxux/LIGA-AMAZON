@@ -57,6 +57,30 @@ class Chat extends Component
     public ?string $error = null;
 
     /**
+     * Lo ya calculado en ESTA petición. Una pantalla de chat se repinta cada 5
+     * segundos y la vista pregunta lo mismo muchas veces —el hilo abierto, la
+     * lista, quién puede ofertar—; sin esto cada pregunta era una consulta, y
+     * un hilo de cuarenta mensajes se repintaba con más de trescientas. Eso es
+     * lo que hacía que la pantalla se quedara pensando justo cuando se
+     * mandaba algo. No es público: no viaja al navegador, y cada petición
+     * empieza vacío.
+     *
+     * @var array<string, mixed>
+     */
+    private array $memo = [];
+
+    /**
+     * @template T
+     *
+     * @param  callable(): T  $compute
+     * @return T
+     */
+    private function once(string $key, callable $compute): mixed
+    {
+        return $this->memo[$key] ??= $compute();
+    }
+
+    /**
      * Quien está mirando, venga por donde venga: el técnico entra por el guard
      * `club` y el presidente por `web`, y esta pantalla es de los dos. Con las
      * dos sesiones abiertas manda la del técnico, que es la que el sitio usa
@@ -75,10 +99,14 @@ class Chat extends Component
             return null;
         }
 
-        $conversation = Conversation::query()->with('participants')->find($this->conversationId);
+        // Con el id en la clave: al abrir otro hilo dentro de la misma
+        // petición no se devuelve el anterior.
+        return $this->once('conversation:'.$this->conversationId, function () use ($user): ?Conversation {
+            $conversation = Conversation::query()->with('participants.club')->find($this->conversationId);
 
-        // Segunda cerradura: el hilo de otros no se abre ni tecleando su id.
-        return $conversation?->includes($user) ? $conversation : null;
+            // Segunda cerradura: el hilo de otros no se abre ni tecleando su id.
+            return $conversation?->includes($user) ? $conversation : null;
+        });
     }
 
     /**
@@ -94,12 +122,12 @@ class Chat extends Component
             return collect();
         }
 
-        return Conversation::query()
+        return $this->once('conversations', fn () => Conversation::query()
             ->whereHas('participants', fn (Builder $query) => $query->whereKey($user->getKey()))
             ->with(['participants.club', 'latestMessage'])
             ->get()
             ->sortByDesc(fn (Conversation $conversation) => $conversation->latestMessage?->created_at ?? $conversation->created_at)
-            ->values();
+            ->values());
     }
 
     /**
@@ -117,12 +145,12 @@ class Chat extends Component
             return collect();
         }
 
-        return User::query()
+        return $this->once('contacts', fn () => User::query()
             ->whereKeyNot($user->getKey())
             ->when($user->isAdmin(), fn (Builder $query) => $query->where('role', User::ROLE_COACH))
             ->with('club')
             ->orderBy('name')
-            ->get();
+            ->get());
     }
 
     /**
@@ -192,6 +220,8 @@ class Chat extends Component
 
         $this->body = '';
         $conversation->markReadBy($user);
+
+        $this->dispatch('chat-sent');
     }
 
     /**
@@ -220,7 +250,15 @@ class Chat extends Component
 
         $season = app(SeasonResolver::class)->active();
 
-        return Player::query()
+        return $this->once('options:'.$club, fn () => $this->playersOf($club, $season));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function playersOf(?int $club, mixed $season): array
+    {
+        $players = Player::query()
             ->where('club_id', $club)
             ->whereNull('left_at')
             ->when($season, fn (Builder $query) => $query->whereHas(
@@ -231,10 +269,14 @@ class Chat extends Component
                 ),
             ))
             ->orderBy('name')
-            ->get()
-            // Un cedido no se negocia: ni se compra ni se vende hasta que
-            // acabe la cesión.
-            ->reject(fn (Player $player) => $player->isOnLoan())
+            ->get();
+
+        // Un cedido no se negocia: ni se compra ni se vende hasta que acabe la
+        // cesión. Se pregunta de una vez por todos y no jugador a jugador.
+        $loaned = Player::loanedAmong($players->modelKeys());
+
+        return $players
+            ->reject(fn (Player $player) => in_array($player->getKey(), $loaned, true))
             ->pluck('name', 'id')
             ->all();
     }
@@ -358,12 +400,20 @@ class Chat extends Component
 
         $catalogue = $this->toPresident() && $this->asking();
 
+        // Antes salía sin decir nada y la pantalla parecía no haber hecho caso:
+        // quien escribía un nombre sin elegirlo de la lista, o dejaba el
+        // importe en blanco, no veía ni oferta ni motivo.
         if ($catalogue ? $this->offerFcId === null : blank($this->offerPlayerId)) {
+            $this->error = $catalogue
+                ? 'Elige al jugador de la lista del catálogo: escribir su nombre no basta.'
+                : 'Elige un jugador para la oferta.';
+
             return;
         }
 
-        // Una cesión se pacta por plazo; lo demás, por dinero.
         if ($this->free() ? blank($this->offerTerm) : blank($this->offerAmount)) {
+            $this->error = $this->free() ? 'Elige el plazo de la cesión.' : 'Pon el importe de la oferta.';
+
             return;
         }
 
@@ -387,6 +437,10 @@ class Chat extends Component
         }
 
         $this->reset(['offerPlayerId', 'offerAmount', 'offerTerm', 'offerFcId', 'offerFcName', 'catalogSearch', 'error']);
+
+        // El panel se cierra y la pantalla baja a la oferta SÓLO ahora, cuando
+        // ya existe: cerrarlo al pulsar lo hacía desaparecer aunque fallara.
+        $this->dispatch('chat-sent', offer: true);
     }
 
     public function acceptOffer(int $offerId): void

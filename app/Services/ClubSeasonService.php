@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Game;
 use App\Models\GameEvent;
+use App\Models\Matchday;
+use App\Models\SquadMembership;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -147,6 +149,8 @@ final class ClubSeasonService
                 'yellow_cards' => $events[GameEvent::TYPE_YELLOW_CARD] ?? 0,
                 'red_cards' => $events[GameEvent::TYPE_RED_CARD] ?? 0,
                 'clean_sheets' => $events[GameEvent::TYPE_CLEAN_SHEET] ?? 0,
+                'mvps' => $this->mvpCount($team, $competition),
+                'week_mvps' => $this->weekMvpCount($team, $competition),
             ],
         );
     }
@@ -179,6 +183,47 @@ final class ClubSeasonService
             ->pluck('total', 'type')
             ->map(fn ($total) => (int) $total)
             ->all();
+    }
+
+    /**
+     * Los MVP de partido que se llevaron jugadores de ESTA plantilla. Se mira la
+     * pertenencia y no el club propietario, por lo mismo que las tarjetas: un
+     * cedido ganó el premio jugando para el equipo que lo alineó.
+     */
+    private function mvpCount(Team $team, Competition $competition): int
+    {
+        $mvpIds = $this->games($team)
+            ->filter(fn (Game $game) => $competition->matches($game) && $game->mvp_player_id !== null)
+            ->pluck('mvp_player_id');
+
+        if ($mvpIds->isEmpty()) {
+            return 0;
+        }
+
+        $mine = SquadMembership::query()
+            ->where('team_id', $team->getKey())
+            ->whereIn('player_id', $mvpIds->unique())
+            ->pluck('player_id');
+
+        return $mvpIds->filter(fn ($id) => $mine->contains($id))->count();
+    }
+
+    /**
+     * Los Week MVP de la división de este equipo que eran de su plantilla. La
+     * jornada sólo existe en la liga: en una copa no hay nada que contar.
+     */
+    private function weekMvpCount(Team $team, Competition $competition): int
+    {
+        if (! ($competition->isAll() || $competition->isLeague()) || $team->division_id === null) {
+            return 0;
+        }
+
+        return Matchday::query()
+            ->where('season_id', $team->season_id)
+            ->where('division_id', $team->division_id)
+            ->whereNotNull('week_mvp_player_id')
+            ->whereIn('week_mvp_player_id', SquadMembership::query()->where('team_id', $team->getKey())->select('player_id'))
+            ->count();
     }
 
     private function isPlayed(Game $game): bool

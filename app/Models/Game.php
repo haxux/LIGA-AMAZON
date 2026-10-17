@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 #[Fillable([
     'matchday_id', 'cup_tie_id', 'cup_group_id', 'group_matchday',
     'home_team_id', 'away_team_id', 'kickoff_at', 'home_score', 'away_score', 'voided_at', 'voided_against',
+    'mvp_player_id',
 ])]
 #[ObservedBy(GameObserver::class)]
 class Game extends Model
@@ -82,7 +83,9 @@ class Game extends Model
     {
         $this->events()->delete();
 
+        // Un partido que no se jugó no tiene MVP.
         $this->update([
+            'mvp_player_id' => null,
             'home_score' => $against === 'home' ? 0 : ($against === 'away' ? self::FORFEIT_SCORE : 0),
             'away_score' => $against === 'away' ? 0 : ($against === 'home' ? self::FORFEIT_SCORE : 0),
             'voided_at' => now(),
@@ -109,6 +112,22 @@ class Game extends Model
     protected static function booted(): void
     {
         static::saving(function (Game $game): void {
+            // El MVP tiene que haber sido de uno de los dos equipos: con una
+            // cesión pudo jugar para uno que no es su club, así que se mira la
+            // plantilla (aunque ya la haya dejado) y no el club propietario.
+            if ($game->mvp_player_id !== null && $game->isDirty(['mvp_player_id', 'home_team_id', 'away_team_id'])) {
+                $belongs = SquadMembership::query()
+                    ->where('player_id', $game->mvp_player_id)
+                    ->whereIn('team_id', array_filter([$game->home_team_id, $game->away_team_id]))
+                    ->exists();
+
+                if (! $belongs) {
+                    throw ValidationException::withMessages([
+                        'mvp_player_id' => 'El MVP tiene que ser de uno de los dos equipos del partido.',
+                    ]);
+                }
+            }
+
             if ($game->away_team_id !== null && (int) $game->home_team_id === (int) $game->away_team_id) {
                 throw ValidationException::withMessages([
                     'away_team_id' => 'A team cannot play against itself.',
@@ -275,6 +294,23 @@ class Game extends Model
     public function awayTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'away_team_id');
+    }
+
+    /**
+     * El MVP del partido, si el administrador eligió uno. No es un evento: no
+     * ocurre en un minuto, se elige al final.
+     */
+    public function mvp(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'mvp_player_id');
+    }
+
+    /**
+     * Lo que los técnicos han dicho del partido, lo último primero.
+     */
+    public function comments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(GameComment::class)->latest('id');
     }
 
     public function events(): HasMany

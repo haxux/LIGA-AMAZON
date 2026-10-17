@@ -8,6 +8,7 @@ use App\Http\Controllers\Site\ClubsController;
 use App\Http\Controllers\Site\CupController;
 use App\Http\Controllers\Site\CupsController;
 use App\Http\Controllers\Site\FixturesController;
+use App\Http\Controllers\Site\GameCommentController;
 use App\Http\Controllers\Site\GameController;
 use App\Http\Controllers\Site\HistoryController;
 use App\Http\Controllers\Site\HomeController;
@@ -38,6 +39,12 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/partidos', FixturesController::class)->name('site.fixtures');
     // El detalle de un partido, al que se llega desde cualquier tarjeta.
     Route::get('/partidos/{game}', GameController::class)->name('site.games.show');
+    // Los comentarios de los técnicos sobre el partido. Con un tope propio
+    // además del general: es lo único que el sitio deja escribir.
+    Route::post('/partidos/{game}/comentarios', [GameCommentController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('site.games.comments.store');
+    Route::delete('/comentarios/{comment}', [GameCommentController::class, 'destroy'])->name('site.comments.destroy');
     Route::get('/estadisticas', ScorersController::class)->name('site.scorers');
     // La ficha de un jugador, a la que se llega desde la plantilla de un club y
     // desde las listas de goleadores y asistentes.

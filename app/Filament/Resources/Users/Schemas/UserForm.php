@@ -10,6 +10,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 /**
  * Las cuentas las crea el administrador, no hay registro público (es la
@@ -34,6 +35,9 @@ class UserForm
                     ->label('Contraseña')
                     ->password()
                     ->revealable()
+                    // Diez como mínimo: es la clave de una cuenta que puede
+                    // abrir /admin o mover el dinero de un club.
+                    ->rule(Password::min(10))
                     ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Hash::make($state) : null)
                     // Al editar, un campo vacío significa "no la cambies", no
                     // "ponla en blanco".

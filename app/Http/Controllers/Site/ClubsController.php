@@ -36,10 +36,18 @@ class ClubsController extends SiteController
             ->sortBy(fn (Team $team) => $team->club?->name)
             ->values();
 
+        $groups = $this->groupByDivision($teams, $season);
+
+        // ?division elige una sola; una que no sea de esta temporada (o que no
+        // exista) se ignora y se enseñan todas, como con la temporada.
+        $division = collect($groups)->firstWhere('id', $request->integer('division'));
+
         return view('site.clubs.index', [
             'seasons' => $seasons,
             'selectedSeason' => $season,
-            'groups' => $this->groupByDivision($teams, $season),
+            'groups' => $division ? [$division] : $groups,
+            'divisions' => collect($groups)->map(fn (array $group) => ['id' => $group['id'], 'name' => $group['heading']]),
+            'selectedDivision' => $division['id'] ?? null,
         ]);
     }
 
@@ -47,7 +55,7 @@ class ClubsController extends SiteController
      * Una sección por división, en el orden del panel.
      *
      * @param  Collection<int, Team>  $teams
-     * @return array<int, array{heading: string|null, teams: Collection<int, Team>}>
+     * @return array<int, array{id: int, heading: string|null, teams: Collection<int, Team>}>
      */
     private function groupByDivision(Collection $teams, Season $season): array
     {
@@ -55,6 +63,7 @@ class ClubsController extends SiteController
             ->orderBy('id')
             ->get()
             ->map(fn (Division $division) => [
+                'id' => $division->getKey(),
                 'heading' => $division->name,
                 'teams' => $teams->where('division_id', $division->getKey())->values(),
             ])

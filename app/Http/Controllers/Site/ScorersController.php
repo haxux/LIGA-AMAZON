@@ -42,6 +42,8 @@ class ScorersController extends SiteController
             'scorers' => $goalscorers->topScorers($season, 10, null, $competition, $division?->getKey(), $number),
             'assisters' => $goalscorers->topAssisters($season, 10, null, $competition, $division?->getKey(), $number),
             'cleanSheets' => $goalscorers->topCleanSheets($season, 10, null, $competition, $division?->getKey(), $number),
+            'mvps' => $goalscorers->topMvps($season, 10, $competition, $division?->getKey(), $number),
+            'weekMvps' => $goalscorers->topWeekMvps($season, 10, $competition, $division?->getKey(), $number),
             'seasons' => $seasons,
             'selectedSeason' => $season,
             'competition' => $competition,

@@ -37,7 +37,7 @@ class FixturesController extends SiteController
 
         $matchdays = $season->matchdays()
             ->when($division, fn ($query) => $query->where('division_id', $division->getKey()))
-            ->with(['division', 'games.homeTeam', 'games.awayTeam'])
+            ->with(['division', 'games.homeTeam', 'games.awayTeam', 'weekMvp.club'])
             ->orderBy('number')
             ->get();
 

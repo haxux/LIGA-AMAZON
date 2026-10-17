@@ -26,6 +26,8 @@ class GameController extends SiteController
             'awayTeam.club',
             'events.player',
             'events.assist.player',
+            'comments.user.club',
+            'mvp.club',
         ]);
 
         return view('site.games.show', [

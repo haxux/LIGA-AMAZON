@@ -56,6 +56,12 @@
                 && request()->routeIs('site.clubs.show')
                 && (int) $boundClubId === (int) $coachClub->getKey();
 
+            // Las divisiones de la temporada vigente que ya tienen equipos: lo que
+            // el menú de Equipos ofrece.
+            $navDivisions = $coachSeason
+                ? App\Models\Division::query()->where('season_id', $coachSeason->getKey())->has('teams')->orderBy('id')->get()
+                : collect();
+
             $nav = [
                 // Historia cuelga de Clasificación, así que resalta con ella:
                 // quien está mirando una tabla de 2025 sigue estando en la
@@ -63,7 +69,16 @@
                 ['label' => 'Clasificación', 'url' => route('site.standings'), 'active' => request()->routeIs('site.standings') || request()->routeIs('site.history')],
                 ['label' => 'Partidos', 'url' => route('site.fixtures'), 'active' => request()->routeIs('site.fixtures')],
                 ['label' => 'Estadísticas', 'url' => route('site.scorers'), 'active' => request()->routeIs('site.scorers')],
-                ['label' => 'Equipos', 'url' => route('site.clubs.index'), 'active' => request()->routeIs('site.clubs.*') && ! $onOwnClub],
+                // Equipos abre un menú, como Copas: una división por entrada, y
+                // la lista de cada una gana el espacio de toda la página.
+                ['label' => 'Equipos', 'url' => route('site.clubs.index'), 'active' => request()->routeIs('site.clubs.*') && ! $onOwnClub, 'children' => array_merge(
+                    [['label' => 'Todas las divisiones', 'url' => route('site.clubs.index'), 'active' => request()->routeIs('site.clubs.index') && ! request()->filled('division')]],
+                    $navDivisions->map(fn ($division) => [
+                        'label' => $division->name,
+                        'url' => route('site.clubs.index', ['division' => $division->getKey()]),
+                        'active' => request()->routeIs('site.clubs.index') && (int) request('division') === (int) $division->getKey(),
+                    ])->all(),
+                )],
                 // Copas abre un menú: las de casa y las internacionales viven en
                 // listados distintos.
                 ['label' => 'Copas', 'url' => route('site.cups.index'), 'active' => request()->routeIs('site.cups.*'), 'children' => [

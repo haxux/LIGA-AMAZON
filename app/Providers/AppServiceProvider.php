@@ -12,7 +12,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // El ciclo de acceso común a las dos puertas. Filament registra sus
+        // piezas por contrato y por clase, y aquí se sustituyen las dos que se
+        // enredaban: ver cada una.
+        $this->app->bind(\Filament\Auth\Http\Controllers\LogoutController::class, \App\Http\Controllers\Auth\GuardLogoutController::class);
+        $this->app->bind(\Filament\Auth\Http\Responses\Contracts\LoginResponse::class, \App\Http\Responses\PanelLoginResponse::class);
     }
 
     /**

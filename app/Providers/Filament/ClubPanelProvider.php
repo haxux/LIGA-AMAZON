@@ -51,7 +51,7 @@ class ClubPanelProvider extends PanelProvider
             // esto, un administrador con sesión abierta impide que un técnico
             // llegue siquiera al formulario de acceso.
             ->authGuard('club')
-            ->login()
+            ->login(\App\Filament\Auth\Login::class)
             // Sólo la foto (ver `EditProfile`): el nombre y el correo los fija
             // el administrador, y la contraseña se cambia desde su panel.
             ->profile(EditProfile::class, isSimple: false)

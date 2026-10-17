@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(\App\Filament\Auth\Login::class)
             // El mismo escudo que el sitio: el panel es la misma casa.
             ->favicon(asset('favicon.png'))
             ->colors([

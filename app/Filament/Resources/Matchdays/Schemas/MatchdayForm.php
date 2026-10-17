@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Matchdays\Schemas;
 
+use App\Models\SquadMembership;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -50,6 +51,36 @@ class MatchdayForm
                     ),
                 DatePicker::make('date')
                     ->helperText('Nominal label — Game.kickoff_at is authoritative.'),
+                // El jugador de la jornada, opcional. Sale de los equipos de la
+                // división de esta jornada: por eso hay que elegirla antes.
+                Select::make('week_mvp_player_id')
+                    ->label('Week MVP')
+                    ->options(fn (Get $get): array => static::weekMvpOptions($get('season_id'), $get('division_id')))
+                    ->searchable()
+                    ->placeholder('No Week MVP')
+                    ->helperText('Optional. Player of the matchday — pick season and division first.'),
             ]);
+    }
+
+    /**
+     * Quienes juegan en esa división esa temporada, con su equipo al lado.
+     *
+     * @return array<int, string>
+     */
+    private static function weekMvpOptions(mixed $seasonId, mixed $divisionId): array
+    {
+        if (blank($seasonId) || blank($divisionId)) {
+            return [];
+        }
+
+        return SquadMembership::query()
+            ->whereHas('team', fn (Builder $team) => $team->where('season_id', $seasonId)->where('division_id', $divisionId))
+            ->with(['player', 'team'])
+            ->get()
+            ->sortBy(fn (SquadMembership $membership) => [$membership->team?->name, $membership->player?->name])
+            ->mapWithKeys(fn (SquadMembership $membership) => [
+                $membership->player_id => "{$membership->player?->name} · {$membership->team?->name}",
+            ])
+            ->all();
     }
 }

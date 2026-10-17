@@ -16,8 +16,18 @@
 
     // Color estable por nombre: el mismo interlocutor sale siempre igual, y dos
     // distintos rara vez coinciden.
-    $tones = ['bg-amber-500', 'bg-emerald-600', 'bg-sky-600', 'bg-violet-600', 'bg-rose-600', 'bg-teal-600'];
-    $tone = $user?->isAdmin() ? 'bg-gray-600' : $tones[crc32((string) $user?->name) % count($tones)];
+    $tones = [
+        'bg-gradient-to-br from-amber-400 to-amber-600',
+        'bg-gradient-to-br from-emerald-500 to-emerald-700',
+        'bg-gradient-to-br from-sky-500 to-sky-700',
+        'bg-gradient-to-br from-violet-500 to-violet-700',
+        'bg-gradient-to-br from-rose-500 to-rose-700',
+        'bg-gradient-to-br from-teal-500 to-teal-700',
+    ];
+    // El presidente, en el acento de la casa: se distingue de un vistazo.
+    $tone = $user?->isAdmin()
+        ? 'bg-gradient-to-br from-slate-500 to-slate-700 ring-2 ring-brand/70'
+        : $tones[crc32((string) $user?->name) % count($tones)];
 @endphp
 
 @if ($club?->crest_path)

@@ -57,6 +57,14 @@
                         @if ($matchday->date)
                             <span class="text-ink/45">· {{ $matchday->date->format('d/m/Y') }}</span>
                         @endif
+                        {{-- El jugador de la jornada, si lo hay: una insignia
+                             discreta junto al título. --}}
+                        @if ($matchday->weekMvp)
+                            <a href="{{ route('site.players.show', $matchday->weekMvp) }}"
+                               class="rounded-full bg-ink px-2.5 py-0.5 text-[10px] tracking-[0.12em] text-brand hover:opacity-90">
+                                ★ WEEK MVP · {{ mb_strtoupper($matchday->weekMvp->name) }}
+                            </a>
+                        @endif
                     </h3>
 
                     @if ($matchday->games->isEmpty())

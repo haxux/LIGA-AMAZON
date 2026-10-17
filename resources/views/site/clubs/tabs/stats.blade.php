@@ -31,7 +31,14 @@
             'AMARILLAS' => $stats->yellow_cards,
             'ROJAS' => $stats->red_cards,
             'PORTERÍAS A CERO' => $stats->clean_sheets,
+            'MVP DEL PARTIDO' => $stats->mvps,
         ];
+
+        // El Week MVP es de la jornada, que sólo existe en la liga: en una copa
+        // no se enseña.
+        if ($block['competition']->isAll() || $block['competition']->isLeague()) {
+            $discipline['WEEK MVP'] = $stats->week_mvps;
+        }
     @endphp
 
     <section @class(['mt-8' => ! $loop->first])>
@@ -78,7 +85,7 @@
                 </colgroup>
                 <thead>
                     <tr class="bg-surface-alt font-mono text-[9px] tracking-[0.14em] text-white/40">
-                        <th class="py-2 pl-4 pr-2">DISCIPLINA Y PORTERÍA</th>
+                        <th class="py-2 pl-4 pr-2">DISCIPLINA Y PREMIOS</th>
                         <th class="py-2 pl-2 pr-4 text-right">TOTAL</th>
                     </tr>
                 </thead>
