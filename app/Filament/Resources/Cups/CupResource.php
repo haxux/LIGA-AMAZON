@@ -80,8 +80,8 @@ class CupResource extends Resource
                             ->required()
                             ->native(false)
                             ->helperText('Sets the colours of the cup page, its matches and its listing.'),
-                        self::imageField('logo_path', 'Logo', 'cups/logos'),
-                        self::imageField('background_path', 'Header background', 'cups/backgrounds'),
+                        self::imageField('logo_path', 'Logo', 'cups/logos', 600),
+                        self::imageField('background_path', 'Header background', 'cups/backgrounds', 1920),
                     ]),
             ]);
     }
@@ -90,13 +90,21 @@ class CupResource extends Resource
      * Las imágenes oficiales las sube el administrador. Sólo raster: un SVG
      * subido puede llevar script y se serviría desde el mismo origen (misma
      * razón que la portada de las noticias).
+     *
+     * Se encogen en el navegador antes de subirse, a `$maxWidth`: un banner
+     * oficial suele llegar a 4000 px, y el móvil tenía que decodificar eso
+     * entero para pintarlo a 400. Nunca se agrandan.
      */
-    private static function imageField(string $name, string $label, string $directory): FileUpload
+    private static function imageField(string $name, string $label, string $directory, int $maxWidth): FileUpload
     {
         return FileUpload::make($name)
             ->label($label)
             ->image()
             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->automaticallyResizeImagesMode('contain')
+            ->automaticallyResizeImagesToWidth((string) $maxWidth)
+            ->automaticallyResizeImagesToHeight((string) $maxWidth)
+            ->automaticallyUpscaleImagesWhenResizing(false)
             ->maxSize(2048)
             ->disk(config('filesystems.uploads'))
             ->directory($directory)

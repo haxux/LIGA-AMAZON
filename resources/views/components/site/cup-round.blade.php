@@ -23,7 +23,7 @@
 
         {{-- Los nombres en los extremos y el global en el centro, con la ida
              y la vuelta al lado. Quién pasó no se escribe: su nombre brilla. --}}
-        <div class="mb-3 rounded-[5px] bg-surface-alt px-4 py-4 sm:px-6 {{ $intl ? 'border-l-[3px] border-brand backdrop-blur-sm' : '' }}">
+        <div class="mb-3 rounded-[5px] bg-surface-alt px-4 py-4 sm:px-6 {{ $intl ? 'border-l-[3px] border-brand' : '' }}">
             {{-- En el móvil, los dos nombres arriba y el marcador debajo, a lo
                  ancho: puestos en tres columnas, el centro (global, ida y vuelta)
                  se comía el sitio y los nombres no se veían. --}}

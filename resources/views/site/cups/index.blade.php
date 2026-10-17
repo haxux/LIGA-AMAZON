@@ -46,11 +46,11 @@
                    style="{{ $cup->themeStyle() }}"
                    class="cup-banner {{ $cup->theme()->stageClass() }} group flex flex-col overflow-hidden rounded-md border-b-4 border-brand shadow-lg transition hover:-translate-y-0.5 hover:shadow-2xl">
                     @if ($background)
-                        <img src="{{ $background }}" alt="" class="block aspect-[16/8] w-full object-cover transition group-hover:scale-[1.02]">
+                        <img src="{{ $background }}" loading="lazy" decoding="async" alt="" class="block aspect-[16/8] w-full object-cover transition group-hover:scale-[1.02]">
                     @else
                         <span class="flex aspect-[16/8] items-center justify-center">
                             @if ($logo)
-                                <img src="{{ $logo }}" alt="" class="h-28 w-auto object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,.5)] transition group-hover:scale-105">
+                                <img src="{{ $logo }}" loading="lazy" decoding="async" alt="" class="h-28 w-auto object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,.5)] transition group-hover:scale-105">
                             @else
                                 <span class="font-display text-7xl text-brand drop-shadow" aria-hidden="true">&#9819;</span>
                             @endif
@@ -59,7 +59,7 @@
 
                     <span class="flex items-center gap-3 bg-surface-alt px-5 py-4">
                         @if ($logo && $background)
-                            <img src="{{ $logo }}" alt="" class="h-10 w-auto shrink-0 object-contain">
+                            <img src="{{ $logo }}" loading="lazy" decoding="async" alt="" class="h-10 w-auto shrink-0 object-contain">
                         @endif
                         <span class="min-w-0">
                             <span class="block font-mono text-[9px] tracking-[0.3em] text-brand">{{ mb_strtoupper($cup->theme()->label()) }}</span>

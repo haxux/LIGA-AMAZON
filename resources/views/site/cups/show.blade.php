@@ -24,12 +24,12 @@
              logo y el nombre van en el centro, sobre el escenario. --}}
         @if ($background)
             <header class="mb-10 overflow-hidden rounded-lg border border-brand/30 bg-surface-alt shadow-2xl">
-                <img src="{{ $background }}" alt="{{ $cup->name }}" class="block aspect-[16/9] w-full object-cover sm:aspect-[16/7]">
+                <img src="{{ $background }}" decoding="async" alt="{{ $cup->name }}" class="block aspect-[16/9] w-full object-cover sm:aspect-[16/7]">
 
                 <div class="flex flex-wrap items-center justify-between gap-4 border-t-4 border-brand px-6 py-5">
                     <div class="flex min-w-0 items-center gap-4">
                         @if ($logo)
-                            <img src="{{ $logo }}" alt="" class="h-14 w-auto shrink-0 object-contain">
+                            <img src="{{ $logo }}" decoding="async" alt="" class="h-14 w-auto shrink-0 object-contain">
                         @endif
                         <div class="min-w-0">
                             <div class="font-mono text-[10px] tracking-[0.3em] text-brand">{{ mb_strtoupper($design->label()) }}</div>
@@ -44,7 +44,7 @@
         @else
             <header class="mb-10 flex min-h-[20rem] flex-col items-center justify-center px-6 py-12 text-center sm:min-h-[24rem]">
                 @if ($logo)
-                    <img src="{{ $logo }}" alt="{{ $cup->name }}" class="mb-6 h-36 w-auto object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,.55)] sm:h-48">
+                    <img src="{{ $logo }}" decoding="async" alt="{{ $cup->name }}" class="mb-6 h-36 w-auto object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,.55)] sm:h-48">
                 @else
                     <span class="mb-4 font-display text-8xl text-brand drop-shadow-[0_10px_30px_rgba(0,0,0,.55)]" aria-hidden="true">&#9819;</span>
                 @endif
@@ -64,7 +64,7 @@
                 ['value' => $groups->count() ?: '—', 'label' => 'GRUPOS'],
                 ['value' => ($preliminaryRounds->count() + $rounds->count()) ?: '—', 'label' => 'RONDAS'],
             ] as $stat)
-                <div class="rounded-md border border-brand/25 bg-surface px-3 py-4 backdrop-blur-sm">
+                <div class="rounded-md border border-brand/25 bg-surface px-3 py-4">
                     <div class="font-display text-3xl font-bold text-brand sm:text-4xl">{{ $stat['value'] }}</div>
                     <div class="mt-1 font-mono text-[9px] tracking-[0.2em] text-ink/60">{{ $stat['label'] }}</div>
                 </div>
@@ -93,7 +93,7 @@
 
         <div class="mb-10 grid gap-4">
             @foreach ($groups as $entry)
-                <section class="overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
+                <section class="overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25' : '' }}">
                     <h3 class="font-display bg-surface-alt px-4 py-2 text-base uppercase tracking-wide text-brand">
                         Grupo {{ $entry['group']->name }}
                     </h3>
@@ -169,7 +169,7 @@
     @if ($bestThirds->isNotEmpty())
         <x-site.cup-heading :fancy="$intl">Mejores terceros</x-site.cup-heading>
 
-        <section class="mb-10 overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25 backdrop-blur-sm' : '' }}">
+        <section class="mb-10 overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25' : '' }}">
             <table class="w-full table-fixed text-left">
                 <colgroup>
                     <col class="w-8 sm:w-12 lg:w-32">

@@ -36,34 +36,103 @@
  * Copas internacionales: el escenario que envuelve el contenido de la página
  * (no la cabecera ni el pie) al entrar en una. Los tokens de color los pone
  * App\Enums\CupDesign::style() en línea; aquí sólo vive el dibujo del fondo.
- * El fondo va fijo para que la página entera se mueva por encima, como un
- * telón; donde el navegador no lo soporta, simplemente se desplaza.
+ *
+ * El fondo se queda quieto y la página se mueve por encima, como un telón. NO
+ * con `background-attachment: fixed`, que es lo que había y lo que trababa el
+ * desplazamiento en el móvil: obliga a repintar el fondo entero en cada
+ * fotograma (el navegador no puede desplazar la página en la GPU), y en iOS,
+ * que lo ignora, `cover` escalaba el SVG al alto de la página entera. Encima,
+ * cada tarjeta con `backdrop-blur` tenía que volver a desenfocar lo de detrás
+ * en cada fotograma, porque lo de detrás se movía.
+ *
+ * En su lugar, la escena es una capa `position: fixed` del tamaño de la
+ * pantalla (`::before`), que se pinta una vez y el compositor sólo desplaza.
+ * `clip-path` la recorta al escenario: sin él taparía el pie al llegar abajo.
+ * Los resplandores sí se desplazan con la página, como antes, y van en
+ * `::after`, encima de la escena.
  */
 .cup-stage {
     color: var(--color-ink);
     min-height: 100vh;
+    position: relative;
+    isolation: isolate;
+    clip-path: inset(0);
 }
 
-.cup-stage-libertadores {
-    background:
-        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(240, 182, 76, 0.18), transparent 70%),
-        url('../images/cups/libertadores-arcos.svg') center top / cover no-repeat fixed,
-        linear-gradient(180deg, #4C3B23 0%, #2A2013 45%, #0B0805 100%) fixed;
+.cup-stage::before,
+.cup-stage::after {
+    content: '';
+    pointer-events: none;
+    z-index: -1;
+}
+
+.cup-stage::before {
+    position: fixed;
+    /* `bottom` es el respaldo de quien no entienda `lvh`: el compilador de
+       CSS se come un `height: 100vh` repetido delante. */
+    inset: 0;
+    /* La pantalla grande del móvil (con la barra de direcciones recogida): así
+       la capa no cambia de tamaño —ni se vuelve a pintar— al recogerse. */
+    height: 100lvh;
+    will-change: transform;
+}
+
+.cup-stage::after {
+    position: absolute;
+    inset: 0;
+}
+
+/* El color de fondo también en el escenario, por si la capa no se pintara:
+   mejor una copa a oscuras que el amarillo del sitio asomando. */
+.cup-stage.cup-stage-libertadores {
     background-color: #0B0805;
 }
 
-.cup-stage-sudamericana {
-    background:
-        radial-gradient(circle at 8% 22%, rgba(190, 225, 255, 0.45) 0, rgba(120, 170, 255, 0.12) 6%, transparent 22%),
-        radial-gradient(ellipse 70% 50% at 70% 10%, rgba(80, 140, 255, 0.25), transparent 70%),
-        url('../images/cups/sudamericana-esquirlas.svg') center / cover no-repeat fixed,
-        linear-gradient(160deg, #1449E0 0%, #0B32B4 45%, #061A6E 100%) fixed;
+.cup-stage.cup-stage-sudamericana {
     background-color: #061A6E;
 }
 
-/* La misma escena metida en una tarjeta: ahí el fondo va con ella. */
-.cup-banner {
-    background-attachment: scroll, scroll, scroll, scroll;
+.cup-stage-libertadores::before {
+    background:
+        url('../images/cups/libertadores-arcos.svg') center top / cover no-repeat,
+        linear-gradient(180deg, #4C3B23 0%, #2A2013 45%, #0B0805 100%);
+    background-color: #0B0805;
+}
+
+.cup-stage-libertadores::after {
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(240, 182, 76, 0.18), transparent 70%);
+}
+
+.cup-stage-sudamericana::before {
+    background:
+        url('../images/cups/sudamericana-esquirlas.svg') center / cover no-repeat,
+        linear-gradient(160deg, #1449E0 0%, #0B32B4 45%, #061A6E 100%);
+    background-color: #061A6E;
+}
+
+.cup-stage-sudamericana::after {
+    background:
+        radial-gradient(circle at 8% 22%, rgba(190, 225, 255, 0.45) 0, rgba(120, 170, 255, 0.12) 6%, transparent 22%),
+        radial-gradient(ellipse 70% 50% at 70% 10%, rgba(80, 140, 255, 0.25), transparent 70%);
+}
+
+/* La misma escena metida en una tarjeta del listado de copas: ahí el fondo va
+   con ella, en una sola capa y sin pseudoelementos. */
+.cup-banner.cup-stage-libertadores {
+    background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(240, 182, 76, 0.18), transparent 70%),
+        url('../images/cups/libertadores-arcos.svg') center top / cover no-repeat,
+        linear-gradient(180deg, #4C3B23 0%, #2A2013 45%, #0B0805 100%);
+    background-color: #0B0805;
+}
+
+.cup-banner.cup-stage-sudamericana {
+    background:
+        radial-gradient(circle at 8% 22%, rgba(190, 225, 255, 0.45) 0, rgba(120, 170, 255, 0.12) 6%, transparent 22%),
+        radial-gradient(ellipse 70% 50% at 70% 10%, rgba(80, 140, 255, 0.25), transparent 70%),
+        url('../images/cups/sudamericana-esquirlas.svg') center / cover no-repeat,
+        linear-gradient(160deg, #1449E0 0%, #0B32B4 45%, #061A6E 100%);
+    background-color: #061A6E;
 }
 
 /* Quien pasa una eliminatoria: su nombre en blanco, más grueso, con un brillo
