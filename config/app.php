@@ -79,9 +79,17 @@ return [
     | will be used by the PHP date and date-time functions. The timezone
     | is set to "UTC" by default as it is suitable for most use cases.
     |
+    | La de la liga, no UTC: el administrador escribe la hora de los partidos
+    | y de las noticias programadas como la lee en su reloj, en Bogotá, y
+    | todo lo que compara con `now()` —anular un partido vencido, los
+    | recordatorios, publicar una programada— tiene que entenderla igual.
+    | En UTC se adelantaba cinco horas: un partido de las 20:00 se podía
+    | anular una hora después de empezar. Ver la migración
+    | 2026_10_17_000003_move_automatic_timestamps_to_the_league_timezone.
+    |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Bogota'),
 
     /*
     |--------------------------------------------------------------------------

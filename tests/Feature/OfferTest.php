@@ -79,6 +79,32 @@ class OfferTest extends TestCase
         ]);
     }
 
+    /**
+     * Dos clics en «Aceptar»: la segunda respuesta tiene que ver la oferta
+     * como está ahora —ya aceptada— y no la que trajo la pantalla, o se
+     * propone el mismo traspaso dos veces.
+     */
+    public function test_a_second_answer_from_a_stale_screen_is_refused(): void
+    {
+        $offer = $this->offer();
+        $otherTab = Offer::query()->with('conversation.participants')->find($offer->id);
+
+        app(OfferService::class)->accept($offer, $this->seller);
+
+        foreach (['accept', 'reject', 'counter'] as $move) {
+            try {
+                app(OfferService::class)->{$move}($otherTab, $this->seller, ...($move === 'counter' ? [200_000] : []));
+                $this->fail("«{$move}» sobre una oferta ya aceptada tenía que rechazarse");
+            } catch (ValidationException) {
+                // lo esperado
+            }
+        }
+
+        $this->assertSame(1, Transfer::query()->count(), 'Una sola propuesta de traspaso');
+        $this->assertSame(1, Offer::query()->count(), 'Y ninguna contraoferta nueva');
+        $this->assertSame(Offer::STATUS_ACCEPTED, $offer->fresh()->status);
+    }
+
     public function test_a_coach_offers_for_a_player_of_the_other_club(): void
     {
         $this->actingAs($this->buyer, 'club');

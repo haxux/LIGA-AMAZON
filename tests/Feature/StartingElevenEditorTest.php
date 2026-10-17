@@ -165,6 +165,46 @@ class StartingElevenEditorTest extends TestCase
             ->assertSet('picks.1', null);
     }
 
+    /**
+     * Quien se fue de la plantilla —vendido, o de vuelta de una cesión—
+     * conserva su fila cerrada como historia, pero ya no es candidato.
+     */
+    public function test_a_player_who_left_the_squad_cannot_be_placed(): void
+    {
+        $this->asCoach();
+        $gone = $this->squad(2)->first();
+        SquadMembership::query()->where('player_id', $gone->id)->first()->close();
+
+        $this->editor()
+            ->call('place', 1, $gone->id)
+            ->assertSet('picks', []);
+    }
+
+    /**
+     * Un once guardado antes de que alguien se fuera lo trae al abrirse. Al
+     * guardarlo otra vez se dice quién sobra, en vez de guardarlo sin más.
+     */
+    public function test_saving_an_eleven_with_someone_who_left_names_them(): void
+    {
+        $this->asCoach();
+        $players = $this->squad(2);
+        $gone = $players->first();
+        $gone->update(['name' => 'Se Fue']);
+
+        $lineup = Lineup::create(['team_id' => $this->team->id, 'formation' => '4-4-2']);
+        LineupSlot::create(['lineup_id' => $lineup->id, 'player_id' => $gone->id, 'slot' => 1]);
+        LineupSlot::create(['lineup_id' => $lineup->id, 'player_id' => $players->last()->id, 'slot' => 2]);
+
+        SquadMembership::query()->where('player_id', $gone->id)->first()->close();
+
+        $this->editor()
+            ->call('save')
+            ->assertSet('saved', false)
+            ->assertSet('error', 'Ya no está en la plantilla: Se Fue. Cámbialo antes de guardar.');
+
+        $this->assertSame(2, LineupSlot::query()->count(), 'El once guardado no se toca');
+    }
+
     public function test_changing_formation_keeps_whoever_still_fits(): void
     {
         $this->asCoach();

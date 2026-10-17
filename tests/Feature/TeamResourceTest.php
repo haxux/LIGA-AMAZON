@@ -225,8 +225,10 @@ class TeamResourceTest extends TestCase
             ->call('create')
             ->assertHasFormErrors(['division_id']);
 
+        // Por la temporada y no por el nombre: el nombre vive en `clubs` desde
+        // la Fase 9, y `teams.name` ya no existe.
         $this->assertDatabaseMissing('teams', [
-            'name' => 'Foreign Division FC',
+            'season_id' => $seasonA->id,
         ]);
     }
 }

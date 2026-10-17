@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -37,7 +38,7 @@ class LoginLifecycleTest extends TestCase
     }
 
     /** Abre el formulario de acceso de una puerta. */
-    private function door(string $panel): \Livewire\Features\SupportTesting\Testable
+    private function door(string $panel): Testable
     {
         Filament::setCurrentPanel($panel);
 

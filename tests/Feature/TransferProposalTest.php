@@ -217,6 +217,36 @@ class TransferProposalTest extends TestCase
         $this->assertSame(720_000, $this->balance());
     }
 
+    /**
+     * Dos clics en «Aprobar», o dos pestañas: las dos pantallas traen la
+     * propuesta abierta. La segunda firma tiene que ver la fila como está
+     * ahora —ya ejecutada— y no la que cargó, o el dinero se mueve dos veces.
+     */
+    public function test_a_second_approval_from_a_stale_screen_moves_nothing(): void
+    {
+        $proposal = $this->proposal([
+            'type' => Transfer::TYPE_SIGNING,
+            'external_player' => 'Rivaldo Nunes',
+            'external_club' => 'Palmeiras',
+            'fee' => 300_000,
+        ]);
+        $otherTab = Transfer::query()->find($proposal->id);
+        $completion = ['player_name' => 'Rivaldo Nunes', 'position' => 'Forward', 'external_club' => 'Palmeiras', 'fee' => 300_000];
+
+        app(TransferService::class)->approve($proposal, $this->admin, $completion);
+
+        try {
+            app(TransferService::class)->approve($otherTab, $this->admin, $completion);
+            $this->fail('La segunda firma tenía que rechazarse');
+        } catch (ValidationException) {
+            // lo esperado
+        }
+
+        $this->assertSame(700_000, $this->balance(), 'El fichaje se cobra una sola vez');
+        $this->assertSame(1, Player::query()->where('name', 'Rivaldo Nunes')->count(), 'Y su ficha nace una sola vez');
+        $this->assertSame(1, BudgetMovement::query()->where('transfer_id', $proposal->id)->count());
+    }
+
     public function test_approving_a_sale_collects_and_marks_the_player_as_gone(): void
     {
         $proposal = $this->proposal([

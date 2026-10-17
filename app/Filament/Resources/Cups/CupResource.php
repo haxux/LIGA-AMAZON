@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Cups;
 
+use App\Enums\CupDesign;
+use App\Enums\CupScope;
 use App\Filament\Resources\Cups\Pages\CreateCup;
 use App\Filament\Resources\Cups\Pages\EditCup;
 use App\Filament\Resources\Cups\Pages\ListCups;
@@ -10,8 +12,6 @@ use App\Filament\Resources\Cups\RelationManagers\ParticipantsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\RoundsRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\StandingZonesRelationManager;
 use App\Filament\Resources\Cups\RelationManagers\ThirdsStandingZonesRelationManager;
-use App\Enums\CupDesign;
-use App\Enums\CupScope;
 use App\Models\Cup;
 use BackedEnum;
 use Filament\Actions\DeleteAction;

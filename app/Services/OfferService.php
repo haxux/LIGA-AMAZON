@@ -54,6 +54,8 @@ final class OfferService
         $this->guardAnswer($offer, $user);
 
         return DB::transaction(function () use ($offer, $user): Offer {
+            $this->lockOpen($offer, $user);
+
             $transfer = $this->propose($offer, $user);
 
             $offer->update([
@@ -207,9 +209,13 @@ final class OfferService
     {
         $this->guardAnswer($offer, $user);
 
-        $offer->update(['status' => Offer::STATUS_REJECTED, 'moved_by' => $user->getKey()]);
+        return DB::transaction(function () use ($offer, $user): Offer {
+            $this->lockOpen($offer, $user);
 
-        return $offer;
+            $offer->update(['status' => Offer::STATUS_REJECTED, 'moved_by' => $user->getKey()]);
+
+            return $offer;
+        });
     }
 
     /**
@@ -222,25 +228,29 @@ final class OfferService
     {
         $this->guardAnswer($offer, $user);
 
-        $offer->update(['status' => Offer::STATUS_NEGOTIATING, 'moved_by' => $user->getKey()]);
+        return DB::transaction(function () use ($offer, $user, $amount, $term): Offer {
+            $this->lockOpen($offer, $user);
 
-        // La contraoferta es la misma operación sobre el mismo jugador: lo que
-        // cambia es el importe, o el plazo si es una cesión. Copiar sólo
-        // jugador e importe —como se hacía— convertía cualquier contraoferta en
-        // una compra.
-        return Offer::create([
-            'conversation_id' => $offer->conversation_id,
-            'player_id' => $offer->player_id,
-            'fc_id' => $offer->fc_id,
-            'external_player' => $offer->external_player,
-            'kind' => $offer->kind,
-            'from_club_id' => $offer->from_club_id,
-            'amount' => $offer->isFree() ? 0 : $amount,
-            'loan_term' => $offer->isFree() ? ($term ?? $offer->loan_term) : null,
-            'tension' => $offer->tension,
-            'status' => Offer::STATUS_SENT,
-            'moved_by' => $user->getKey(),
-        ]);
+            $offer->update(['status' => Offer::STATUS_NEGOTIATING, 'moved_by' => $user->getKey()]);
+
+            // La contraoferta es la misma operación sobre el mismo jugador: lo que
+            // cambia es el importe, o el plazo si es una cesión. Copiar sólo
+            // jugador e importe —como se hacía— convertía cualquier contraoferta en
+            // una compra.
+            return Offer::create([
+                'conversation_id' => $offer->conversation_id,
+                'player_id' => $offer->player_id,
+                'fc_id' => $offer->fc_id,
+                'external_player' => $offer->external_player,
+                'kind' => $offer->kind,
+                'from_club_id' => $offer->from_club_id,
+                'amount' => $offer->isFree() ? 0 : $amount,
+                'loan_term' => $offer->isFree() ? ($term ?? $offer->loan_term) : null,
+                'tension' => $offer->tension,
+                'status' => Offer::STATUS_SENT,
+                'moved_by' => $user->getKey(),
+            ]);
+        });
     }
 
     /**
@@ -256,6 +266,21 @@ final class OfferService
         $offer->update(['tension' => $tension]);
 
         return $offer;
+    }
+
+    /**
+     * `guardAnswer()` otra vez, contra la fila de AHORA y bloqueada hasta el
+     * final de la transacción: con el modelo que trajo la pantalla, dos clics
+     * en «Aceptar» la veían abierta los dos y proponían el traspaso dos veces.
+     */
+    private function lockOpen(Offer $offer, User $user): void
+    {
+        $current = Offer::query()->lockForUpdate()->find($offer->getKey());
+
+        $offer->forceFill(['status' => $current?->status, 'moved_by' => $current?->moved_by])
+            ->syncOriginalAttributes(['status', 'moved_by']);
+
+        $this->guardAnswer($offer, $user);
     }
 
     private function guardAnswer(Offer $offer, User $user): void

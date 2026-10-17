@@ -16,11 +16,22 @@ use Illuminate\Validation\ValidationException;
 #[ObservedBy(MessageObserver::class)]
 class Message extends Model
 {
+    /**
+     * Un mensaje de chat, no una carta. Sin tope, uno solo podía ocupar
+     * megas, viajar entero en cada repintado de los dos y llegar recortado al
+     * aviso push. Mismo criterio que `GameComment::MAX_LENGTH`.
+     */
+    public const MAX_LENGTH = 2000;
+
     protected static function booted(): void
     {
         static::saving(function (Message $message): void {
             if (blank($message->body)) {
                 throw ValidationException::withMessages(['body' => 'Un mensaje vacío no se envía.']);
+            }
+
+            if (mb_strlen($message->body) > self::MAX_LENGTH) {
+                throw ValidationException::withMessages(['body' => 'Un mensaje admite como mucho '.self::MAX_LENGTH.' caracteres.']);
             }
         });
     }

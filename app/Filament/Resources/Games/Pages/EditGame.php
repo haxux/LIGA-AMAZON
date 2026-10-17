@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Games\Pages;
 
-use App\Filament\Resources\Games\GameResource;
 use App\Filament\Resources\Games\Actions\VoidGameActions;
+use App\Filament\Resources\Games\GameResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 

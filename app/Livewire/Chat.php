@@ -13,6 +13,7 @@ use App\Services\OfferService;
 use App\Services\SeasonResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -274,6 +275,16 @@ class Chat extends Component
             return;
         }
 
+        if (mb_strlen($this->body) > Message::MAX_LENGTH) {
+            $this->error = 'Un mensaje admite como mucho '.Message::MAX_LENGTH.' caracteres.';
+
+            return;
+        }
+
+        if (! $this->withinSendingPace($user)) {
+            return;
+        }
+
         Message::create([
             'conversation_id' => $conversation->getKey(),
             'user_id' => $user->getKey(),
@@ -281,6 +292,7 @@ class Chat extends Component
         ]);
 
         $this->body = '';
+        $this->error = null;
         $conversation->markReadBy($user);
 
         $this->dispatch('chat-sent');
@@ -460,6 +472,10 @@ class Chat extends Component
             return;
         }
 
+        if (! $this->withinSendingPace($user)) {
+            return;
+        }
+
         $catalogue = $this->toPresident() && $this->asking();
 
         // Antes salía sin decir nada y la pantalla parecía no haber hecho caso:
@@ -517,7 +533,16 @@ class Chat extends Component
 
     public function startCounter(int $offerId): void
     {
-        $offer = Offer::query()->find($offerId);
+        $offer = Offer::query()->with('conversation.participants')->find($offerId);
+        $user = $this->user();
+
+        // Sólo sobre una oferta que le toca responder. Sin esto cualquier
+        // usuario con sesión cargaba la de un hilo ajeno con sólo cambiar el
+        // id, y el importe o el valor de mercado le llegaban en
+        // `counterAmount`.
+        if ($offer === null || $user === null || ! app(OfferService::class)->mayAnswer($offer, $user)) {
+            return;
+        }
 
         $this->counteringOfferId = $offerId;
         // Se contraoferta sobre el valor de mercado cuando lo hay (un jugador
@@ -614,6 +639,31 @@ class Chat extends Component
         $user = $this->user();
 
         return array_sum($this->unreadCounts());
+    }
+
+    /**
+     * Cuántos mensajes y ofertas puede mandar alguien por minuto.
+     *
+     * Las acciones de Livewire entran por su propio endpoint y no pasan por el
+     * `throttle` de las rutas del sitio, así que sin esto un hilo se podía
+     * inundar —y con él, el móvil del otro a avisos push— a la velocidad de
+     * un bucle. Treinta por minuto no lo nota quien escribe a mano.
+     */
+    private const SENDS_PER_MINUTE = 30;
+
+    private function withinSendingPace(User $user): bool
+    {
+        $key = 'chat-send:'.$user->getKey();
+
+        if (RateLimiter::tooManyAttempts($key, self::SENDS_PER_MINUTE)) {
+            $this->error = 'Vas muy rápido: espera '.RateLimiter::availableIn($key).' segundos antes de mandar otro.';
+
+            return false;
+        }
+
+        RateLimiter::hit($key, 60);
+
+        return true;
     }
 
     public function render()

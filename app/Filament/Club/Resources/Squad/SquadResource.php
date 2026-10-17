@@ -22,6 +22,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * La plantilla del club que dirige el técnico.
@@ -166,16 +167,43 @@ class SquadResource extends Resource
      */
     private static function currentMembership(Player $player): ?SquadMembership
     {
-        $season = app(SeasonResolver::class)->active();
+        return static::currentMemberships($player->club_id)->get($player->getKey());
+    }
 
-        if ($season === null) {
-            return null;
-        }
+    /**
+     * Las pertenencias VIVAS del equipo del club en la temporada vigente, por
+     * jugador, cargadas una vez por petición.
+     *
+     * Dos cosas que antes no estaban:
+     *
+     * - Sólo las de SU equipo y sólo las vivas. Buscando la del jugador en la
+     *   temporada sin más, un cedido devolvía la pertenencia del club que lo
+     *   tiene prestado, y su técnico de origen podía ponerle o quitarle la
+     *   capitanía en una plantilla ajena —y veía allí su dorsal—. Una cerrada
+     *   (salió en enero) tampoco cuenta: ya no está en la plantilla.
+     * - Una sola consulta para toda la tabla. La columna del dorsal, la del
+     *   nombre y las tres partes del botón de capitán preguntaban cada una por
+     *   su cuenta: unas cinco consultas por jugador en cada repintado.
+     *
+     * @return Collection<int, SquadMembership>
+     */
+    private static function currentMemberships(?int $clubId): Collection
+    {
+        return once(function () use ($clubId): Collection {
+            $season = app(SeasonResolver::class)->active();
 
-        return SquadMembership::query()
-            ->where('player_id', $player->getKey())
-            ->whereHas('team', fn (Builder $query) => $query->where('season_id', $season->getKey()))
-            ->first();
+            if ($season === null || $clubId === null) {
+                return collect();
+            }
+
+            return SquadMembership::query()
+                ->active()
+                ->whereHas('team', fn (Builder $query) => $query
+                    ->where('season_id', $season->getKey())
+                    ->where('club_id', $clubId))
+                ->get()
+                ->keyBy('player_id');
+        });
     }
 
     public static function getPages(): array

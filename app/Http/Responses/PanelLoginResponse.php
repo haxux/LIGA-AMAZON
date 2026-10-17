@@ -20,7 +20,7 @@ use Livewire\Features\SupportRedirects\Redirector;
  */
 class PanelLoginResponse implements Responsable
 {
-    public function toResponse($request): RedirectResponse | Redirector
+    public function toResponse($request): RedirectResponse|Redirector
     {
         $home = Filament::getUrl();
         $intended = session()->pull('url.intended');

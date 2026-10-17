@@ -14,6 +14,7 @@ use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -334,9 +335,73 @@ class ChatTest extends TestCase
     {
         $this->asCoach($this->coachB);
 
-        $this->expectException(\Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException::class);
+        $this->expectException(CannotUpdateLockedPropertyException::class);
 
         Livewire::test(Chat::class)->set('historyLimit', 100000);
+    }
+
+    public function test_a_message_over_the_limit_is_refused_with_a_reason(): void
+    {
+        $this->asCoach($this->coachA);
+
+        Livewire::test(Chat::class)
+            ->call('openWith', $this->coachB->id)
+            ->set('body', str_repeat('a', Message::MAX_LENGTH + 1))
+            ->call('send')
+            ->assertSet('error', 'Un mensaje admite como mucho '.Message::MAX_LENGTH.' caracteres.');
+
+        $this->assertSame(0, Message::query()->count());
+    }
+
+    /**
+     * Las acciones de Livewire no pasan por el `throttle` de las rutas: el
+     * propio chat pone el ritmo, y lo dice en vez de tragarse el mensaje.
+     */
+    public function test_sending_too_fast_is_paced(): void
+    {
+        $this->asCoach($this->coachA);
+
+        $chat = Livewire::test(Chat::class)->call('openWith', $this->coachB->id);
+
+        for ($i = 1; $i <= 31; $i++) {
+            $chat->set('body', "Mensaje {$i}")->call('send');
+        }
+
+        $this->assertSame(30, Message::query()->count());
+        $this->assertStringStartsWith('Vas muy rápido', (string) $chat->get('error'));
+        $chat->assertSet('body', 'Mensaje 31');
+    }
+
+    /**
+     * Preparar una contraoferta carga el importe de la oferta: sólo vale para
+     * una que a quien mira le toca responder, no para la de un hilo ajeno.
+     */
+    public function test_a_counter_cannot_be_prepared_on_someone_elses_offer(): void
+    {
+        $outsider = User::factory()->coachOf(Club::factory()->create())->create();
+        $player = Player::factory()->create(['club_id' => $this->clubB->id, 'market_value' => 400_000]);
+        $offer = Offer::create([
+            'conversation_id' => Conversation::between($this->coachA, $this->coachB)->id,
+            'player_id' => $player->id,
+            'from_club_id' => $this->clubA->id,
+            'amount' => 350_000,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->coachA->id,
+        ]);
+
+        $this->asCoach($outsider);
+
+        Livewire::test(Chat::class)
+            ->call('startCounter', $offer->id)
+            ->assertSet('counterAmount', null)
+            ->assertSet('counteringOfferId', null);
+
+        // Quien sí le toca la prepara sobre el valor de mercado.
+        $this->asCoach($this->coachB);
+
+        Livewire::test(Chat::class)
+            ->call('startCounter', $offer->id)
+            ->assertSet('counterAmount', '400000');
     }
 
     /**

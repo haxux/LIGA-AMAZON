@@ -14,6 +14,7 @@ use App\Models\Season;
 use App\Models\StandingZone;
 use App\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
@@ -210,7 +211,7 @@ class CupPageTest extends TestCase
 
         $this->assertSame(2, StandingZone::count());
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
 
         StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'label' => 'Otra', 'from_position' => 2, 'to_position' => 3]);
     }
@@ -262,7 +263,7 @@ class CupPageTest extends TestCase
 
         $this->assertSame(2, StandingZone::where('cup_id', $cup->id)->count());
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
 
         StandingZone::factory()->create(['division_id' => null, 'cup_id' => $cup->id, 'stage' => StandingZone::STAGE_THIRDS, 'label' => 'Otra', 'from_position' => 2, 'to_position' => 3]);
     }

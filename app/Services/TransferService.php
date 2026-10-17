@@ -55,7 +55,9 @@ final class TransferService
     {
         $this->guardApproval($transfer, $admin);
 
-        DB::transaction(function () use ($transfer, $completion): void {
+        DB::transaction(function () use ($transfer, $admin, $completion): void {
+            $this->lockProposal($transfer, $admin);
+
             // Si entra alguien de fuera, su ficha nace aquí: hasta ahora era un
             // nombre en una propuesta, y sin fila no hay a quién mover.
             if ($transfer->isIncoming() && $transfer->player_id === null) {
@@ -151,9 +153,32 @@ final class TransferService
     {
         $this->guardApproval($transfer, $admin);
 
-        $transfer->update(['status' => Transfer::STATUS_REJECTED]);
+        DB::transaction(function () use ($transfer, $admin): void {
+            $this->lockProposal($transfer, $admin);
+
+            $transfer->update(['status' => Transfer::STATUS_REJECTED]);
+        });
 
         $this->announce($transfer->fresh(), $admin, false);
+    }
+
+    /**
+     * La misma comprobación, pero contra la fila tal como está AHORA y
+     * bloqueada hasta el final de la transacción.
+     *
+     * La de fuera mira el modelo que trajo la pantalla, que puede llevar un
+     * rato abierta: dos clics seguidos en «Aprobar» —o dos pestañas— lo
+     * encontraban propuesto las dos veces, y el traspaso se ejecutaba dos
+     * veces con su dinero. Con la fila bloqueada, la segunda espera a que la
+     * primera termine y entonces ya la ve contestada.
+     */
+    private function lockProposal(Transfer $transfer, User $admin): void
+    {
+        $current = Transfer::query()->lockForUpdate()->find($transfer->getKey());
+
+        $transfer->forceFill(['status' => $current?->status])->syncOriginalAttribute('status');
+
+        $this->guardApproval($transfer, $admin);
     }
 
     private function guardApproval(Transfer $transfer, User $admin): void

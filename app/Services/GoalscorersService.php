@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Game;
 use App\Models\GameEvent;
+use App\Models\Matchday;
 use App\Models\Player;
 use App\Models\Season;
 use App\Models\Team;
@@ -63,7 +65,7 @@ final class GoalscorersService
     {
         $competition ??= Competition::all();
 
-        $counts = \App\Models\Game::query()
+        $counts = Game::query()
             ->whereNotNull('mvp_player_id')
             ->tap(fn (Builder $query) => $competition->applyTo($query->inSeason($season)))
             ->when($divisionId, fn (Builder $games) => $games->whereHas('matchday', fn (Builder $matchday) => $matchday->where('division_id', $divisionId)))
@@ -88,7 +90,7 @@ final class GoalscorersService
             return collect();
         }
 
-        $counts = \App\Models\Matchday::query()
+        $counts = Matchday::query()
             ->whereNotNull('week_mvp_player_id')
             ->where('season_id', $season->getKey())
             ->when($divisionId, fn (Builder $matchdays) => $matchdays->where('division_id', $divisionId))

@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Http\Controllers\Auth\GuardLogoutController;
+use App\Http\Responses\PanelLoginResponse;
+use Filament\Auth\Http\Controllers\LogoutController;
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,8 +19,8 @@ class AppServiceProvider extends ServiceProvider
         // El ciclo de acceso común a las dos puertas. Filament registra sus
         // piezas por contrato y por clase, y aquí se sustituyen las dos que se
         // enredaban: ver cada una.
-        $this->app->bind(\Filament\Auth\Http\Controllers\LogoutController::class, \App\Http\Controllers\Auth\GuardLogoutController::class);
-        $this->app->bind(\Filament\Auth\Http\Responses\Contracts\LoginResponse::class, \App\Http\Responses\PanelLoginResponse::class);
+        $this->app->bind(LogoutController::class, GuardLogoutController::class);
+        $this->app->bind(LoginResponse::class, PanelLoginResponse::class);
     }
 
     /**

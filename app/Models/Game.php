@@ -308,7 +308,7 @@ class Game extends Model
     /**
      * Lo que los técnicos han dicho del partido, lo último primero.
      */
-    public function comments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function comments(): HasMany
     {
         return $this->hasMany(GameComment::class)->latest('id');
     }

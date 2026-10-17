@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\Login;
 use App\Filament\Club\Pages\EditProfile;
 use App\Http\Middleware\UseClubGuard;
 use Filament\Http\Middleware\Authenticate;
@@ -51,7 +52,7 @@ class ClubPanelProvider extends PanelProvider
             // esto, un administrador con sesión abierta impide que un técnico
             // llegue siquiera al formulario de acceso.
             ->authGuard('club')
-            ->login(\App\Filament\Auth\Login::class)
+            ->login(Login::class)
             // Sólo la foto (ver `EditProfile`): el nombre y el correo los fija
             // el administrador, y la contraseña se cambia desde su panel.
             ->profile(EditProfile::class, isSimple: false)

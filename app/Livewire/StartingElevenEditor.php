@@ -10,8 +10,8 @@ use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\SeasonResolver;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -113,6 +113,10 @@ class StartingElevenEditor extends Component
      * La plantilla de esta temporada, que es entre quienes se elige, con el
      * dorsal de esa misma plantilla pegado a cada jugador.
      *
+     * Sólo los que SIGUEN en ella: una pertenencia cerrada es alguien que se
+     * fue —vendido, o de vuelta de una cesión—, y su fila se conserva como
+     * historia, no como candidato al once.
+     *
      * @return Collection<int, Player>
      */
     public function squad(): Collection
@@ -120,12 +124,13 @@ class StartingElevenEditor extends Component
         $team = $this->team();
 
         $memberships = SquadMembership::query()
+            ->active()
             ->where('team_id', $team->getKey())
             ->get()
             ->keyBy('player_id');
 
         return Player::query()
-            ->whereHas('memberships', fn (Builder $query) => $query->where('team_id', $team->getKey()))
+            ->whereIn('id', $memberships->keys())
             ->orderBy('name')
             ->get()
             ->each(function (Player $player) use ($memberships) {
@@ -226,18 +231,35 @@ class StartingElevenEditor extends Component
             return;
         }
 
-        $lineup = Lineup::updateOrCreate(
-            ['team_id' => $team->getKey()],
-            ['formation' => $this->formation],
-        );
+        // Un once guardado antes puede llevar a alguien que se fue desde
+        // entonces: `place()` ya no deja ponerlo, pero seguía en `$picks`
+        // desde el `mount()`. Se dice quién, en vez de guardarlo sin más.
+        $gone = $chosen->diff($this->squad()->modelKeys());
 
-        $lineup->slots()->delete();
+        if ($gone->isNotEmpty()) {
+            $this->error = 'Ya no está en la plantilla: '
+                .Player::query()->whereIn('id', $gone->unique())->pluck('name')->implode(', ')
+                .'. Cámbialo antes de guardar.';
 
-        $chosen->each(fn (int $playerId, int $slot) => LineupSlot::create([
-            'lineup_id' => $lineup->getKey(),
-            'player_id' => $playerId,
-            'slot' => $slot,
-        ]));
+            return;
+        }
+
+        // Todo o nada: borrar los huecos y no llegar a escribir los nuevos
+        // dejaba a la vista de todos un once vacío.
+        DB::transaction(function () use ($team, $chosen): void {
+            $lineup = Lineup::updateOrCreate(
+                ['team_id' => $team->getKey()],
+                ['formation' => $this->formation],
+            );
+
+            $lineup->slots()->delete();
+
+            $chosen->each(fn (int $playerId, int $slot) => LineupSlot::create([
+                'lineup_id' => $lineup->getKey(),
+                'player_id' => $playerId,
+                'slot' => $slot,
+            ]));
+        });
 
         $this->saved = true;
         $this->error = null;

@@ -133,4 +133,50 @@ class ClubSquadResourceTest extends TestCase
 
         Livewire::test(ListSquad::class)->assertTableColumnStateSet('shirt_number', 17, $player);
     }
+
+    /**
+     * Un jugador suyo cedido a otro club juega allí: su pertenencia viva es la
+     * del equipo que lo tiene prestado. Desde su plantilla no se le ve ese
+     * dorsal ni se le toca la capitanía, que es de la plantilla ajena.
+     */
+    public function test_a_player_out_on_loan_cannot_be_made_captain_of_the_other_squad(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        $mine = Team::factory()->create(['club_id' => $this->club->id, 'season_id' => $season->id]);
+        $borrower = Team::factory()->create(['season_id' => $season->id]);
+        $player = Player::factory()->create(['club_id' => $this->club->id]);
+
+        // Salió de aquí al irse cedido, y allí lleva el 9.
+        SquadMembership::factory()->create(['team_id' => $mine->id, 'player_id' => $player->id, 'shirt_number' => 4, 'left_at' => now()->subMonth()]);
+        $there = SquadMembership::factory()->create([
+            'team_id' => $borrower->id,
+            'player_id' => $player->id,
+            'shirt_number' => 9,
+            'type' => SquadMembership::TYPE_LOAN,
+        ]);
+
+        Livewire::test(ListSquad::class)
+            ->assertTableColumnStateNotSet('shirt_number', 9, $player)
+            ->assertTableActionHidden('captain', $player);
+
+        $this->assertFalse((bool) $there->fresh()->is_captain);
+    }
+
+    public function test_the_coach_makes_and_unmakes_a_captain(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        $team = Team::factory()->create(['club_id' => $this->club->id, 'season_id' => $season->id]);
+        $player = Player::factory()->create(['club_id' => $this->club->id]);
+        $membership = SquadMembership::factory()->create(['team_id' => $team->id, 'player_id' => $player->id, 'shirt_number' => 8]);
+
+        Livewire::test(ListSquad::class)
+            ->assertTableActionVisible('captain', $player)
+            ->callTableAction('captain', $player);
+
+        $this->assertTrue((bool) $membership->fresh()->is_captain);
+
+        Livewire::test(ListSquad::class)->callTableAction('captain', $player);
+
+        $this->assertFalse((bool) $membership->fresh()->is_captain);
+    }
 }

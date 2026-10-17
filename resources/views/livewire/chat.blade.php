@@ -478,7 +478,7 @@
                         </button>
                     @endif
 
-                    <textarea wire:model="body" rows="1" placeholder="Escribe un mensaje"
+                    <textarea wire:model="body" rows="1" maxlength="{{ \App\Models\Message::MAX_LENGTH }}" placeholder="Escribe un mensaje"
                               class="max-h-28 min-h-11 w-full resize-none rounded-3xl border border-white/10 bg-surface px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/15"></textarea>
 
                     <button type="submit" wire:loading.attr="disabled" wire:target="send"
