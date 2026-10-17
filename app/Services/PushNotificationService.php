@@ -21,7 +21,8 @@ use Throwable;
  *
  * No hay cola ni worker en producción (ver `.env.production.example`,
  * `QUEUE_CONNECTION=sync`): cada envío ocurre en la misma petición que lo
- * dispara, uno por suscripción. Para una liga de doce clubes el volumen es
+ * dispara —ya con la respuesta entregada, ver `broadcast()`—, uno por
+ * suscripción. Para una liga de doce clubes el volumen es
  * bajo y no justifica la cola que el despliegue no tiene.
  */
 class PushNotificationService
@@ -120,7 +121,10 @@ class PushNotificationService
 
     private function sendToTopic(string $topic, string $title, string $body, string $url): void
     {
-        $subscriptions = PushSubscription::query()->get()->filter(fn (PushSubscription $sub) => $sub->hasTopic($topic));
+        // El tema se filtra en la base y no trayendo todas las suscripciones
+        // para mirarlas aquí: las de partidos y noticias son anónimas y no
+        // tienen más tope que los visitantes que las activen.
+        $subscriptions = PushSubscription::query()->whereJsonContains('topics', $topic)->get();
 
         $this->broadcast($subscriptions, $title, $body, $url);
     }
@@ -129,8 +133,8 @@ class PushNotificationService
     {
         $subscriptions = PushSubscription::query()
             ->where('user_id', $user->getKey())
-            ->get()
-            ->filter(fn (PushSubscription $sub) => $sub->hasTopic($topic));
+            ->whereJsonContains('topics', $topic)
+            ->get();
 
         $this->broadcast($subscriptions, $title, $body, $url);
     }
@@ -152,6 +156,30 @@ class PushNotificationService
 
         $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url]);
 
+        // La entrega, DESPUÉS de responder: hablar con los servicios push de
+        // cada navegador son peticiones HTTP a terceros, y antes las esperaba
+        // quien disparaba el aviso —el técnico al pulsar «Enviar» en el chat,
+        // el administrador al guardar un resultado—. `defer()` lo corre al
+        // terminar la petición (o el comando de consola) que lo pidió, y sólo
+        // si ésta acabó bien. Lo de arriba sigue siendo síncrono a propósito:
+        // qué se anuncia y a quién ya está decidido al volver de aquí.
+        //
+        // Lo que falle ahí ya no tiene a quién contestarle: se apunta y sigue,
+        // para no llevarse por delante los demás avisos diferidos.
+        defer(function () use ($client, $subscriptions, $payload): void {
+            try {
+                $this->deliver($client, $subscriptions, $payload);
+            } catch (Throwable $exception) {
+                Log::error('Push delivery failed', ['exception' => $exception->getMessage()]);
+            }
+        });
+    }
+
+    /**
+     * @param  Collection<int, PushSubscription>  $subscriptions
+     */
+    private function deliver(WebPush $client, Collection $subscriptions, string $payload): void
+    {
         foreach ($subscriptions as $subscription) {
             $client->queueNotification(
                 Subscription::create([

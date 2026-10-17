@@ -28,8 +28,9 @@
 @endphp
 
 {{-- Sondeo, no websockets (design D11): este despliegue escala a cero y no
-     tiene un proceso permanente donde sostenerlos. --}}
-<div class="overflow-hidden rounded-2xl bg-surface shadow-2xl ring-1 ring-white/[0.06] md:grid md:h-[40rem] md:grid-cols-[18rem_1fr] xl:grid-cols-[21rem_1fr]" wire:poll.5s>
+     tiene un proceso permanente donde sostenerlos. `.visible`: con el chat
+     fuera de la pantalla no se pregunta nada. --}}
+<div class="overflow-hidden rounded-2xl bg-surface shadow-2xl ring-1 ring-white/[0.06] md:grid md:h-[40rem] md:grid-cols-[18rem_1fr] xl:grid-cols-[21rem_1fr]" wire:poll.5s.visible>
 
     {{-- ─── Los hilos ─────────────────────────────────────────────────── --}}
     {{-- En el móvil se ve una cosa a la vez: la lista, o el hilo abierto. --}}
@@ -76,7 +77,7 @@
         <div class="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 pb-3">
             @forelse ($this->conversations() as $thread)
                 @php($with = $thread->other($me))
-                @php($unread = $thread->unreadFor($me))
+                @php($unread = $this->unreadCounts()[$thread->id] ?? 0)
                 @php($last = $thread->latestMessage)
                 @php($isOpen = $conversation?->is($thread))
 
@@ -188,7 +189,20 @@
                 @php($lastDay = null)
                 @php($prev = null)
 
-                @php($entries = $conversation->timeline())
+                @php($timeline = $this->timeline())
+                @php($entries = $timeline['entries'])
+                @php($earlier = $timeline['earlier'])
+
+                {{-- Sólo lo último del hilo viaja en cada repintado; lo de
+                     antes, a petición. --}}
+                @if ($earlier)
+                    <div class="mb-4 flex justify-center">
+                        <button type="button" wire:click="showEarlier"
+                                class="rounded-full bg-white/[0.06] px-4 py-1.5 font-mono text-[10px] tracking-[0.14em] text-white/55 transition hover:bg-white/[0.1] hover:text-white/80">
+                            VER ANTERIORES
+                        </button>
+                    </div>
+                @endif
 
                 @foreach ($entries as $entry)
                     @php($day = $entry->created_at?->format('d/m/Y'))

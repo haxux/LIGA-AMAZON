@@ -92,10 +92,19 @@ final class StandingsService
             return [['heading' => null, 'rows' => $this->forSeason($season), 'zones' => collect()]];
         }
 
+        // Los partidos de la temporada, UNA vez para todas las divisiones: son
+        // los mismos para cada una —lo que cambia es qué equipos tienen fila—,
+        // y pedirlos por división repetía la misma consulta.
+        $games = $this->leagueGames($season->getKey());
+
         return $divisions
             ->map(fn (Division $division) => [
                 'heading' => $division->name,
-                'rows' => $this->forDivision($division),
+                'rows' => $this->buildTable(
+                    Team::query()->where('division_id', $division->getKey())->with('club')->orderBy('id')->get(),
+                    $season->getKey(),
+                    $games,
+                ),
                 // Las franjas de ascenso y descenso son de la división, así que
                 // la tabla sin división de arriba simplemente no tiene.
                 'zones' => $division->standingZones,
@@ -103,7 +112,7 @@ final class StandingsService
             ->all();
     }
 
-    private function buildTable(Collection $teams, int $seasonId): Collection
+    private function buildTable(Collection $teams, int $seasonId, ?Collection $games = null): Collection
     {
         $rows = $teams
             ->mapWithKeys(fn (Team $team) => [$team->getKey() => [
@@ -117,6 +126,14 @@ final class StandingsService
             ]])
             ->all();
 
+        return $this->fold($rows, $games ?? $this->leagueGames($seasonId));
+    }
+
+    /**
+     * @return Collection<int, Game>
+     */
+    private function leagueGames(int $seasonId): Collection
+    {
         // Sólo los de liga: desde la Fase 15 un partido puede ser de copa, y
         // ésos no cuentan para la tabla de una división.
         //
@@ -126,14 +143,12 @@ final class StandingsService
         // tabla entera: a un equipo con tres anulados le salían ocho partidos
         // jugados en vez de diez, y sólo porque uno de los tres conservaba su
         // 0-0 y los otros dos lo habían perdido.
-        $games = Game::query()
+        return Game::query()
             ->where(fn (Builder $query) => $query
                 ->where(fn (Builder $scored) => $scored->whereNotNull('home_score')->whereNotNull('away_score'))
                 ->orWhereNotNull('voided_at'))
             ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $seasonId))
             ->get(['home_team_id', 'away_team_id', 'home_score', 'away_score', 'voided_at', 'voided_against']);
-
-        return $this->fold($rows, $games);
     }
 
     /**

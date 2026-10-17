@@ -173,11 +173,12 @@ class ClubProfileController extends SiteController
     private function statsTab(Team $team, ClubSeasonService $clubSeason): array
     {
         $competitions = Competition::forTeam($team);
+        $games = $clubSeason->games($team);
 
         // Sin copas manda la liga, que es la única con puntos: un club que no
         // juega copa no debería perder su casilla de puntos.
         if ($competitions->count() <= 2) {
-            return ['statBlocks' => collect([$this->statBlock($team, $clubSeason, Competition::league(), null)])];
+            return ['statBlocks' => collect([$this->statBlock($team, $clubSeason, Competition::league(), null, $games)])];
         }
 
         return ['statBlocks' => $competitions->map(fn (Competition $competition) => $this->statBlock(
@@ -185,18 +186,19 @@ class ClubProfileController extends SiteController
             $clubSeason,
             $competition,
             $competition->isAll() ? 'General' : $competition->label,
+            $games,
         ))];
     }
 
     /**
      * @return array{competition: Competition, title: ?string, stats: ClubSeasonStats}
      */
-    private function statBlock(Team $team, ClubSeasonService $clubSeason, Competition $competition, ?string $title): array
+    private function statBlock(Team $team, ClubSeasonService $clubSeason, Competition $competition, ?string $title, Collection $games): array
     {
         return [
             'competition' => $competition,
             'title' => $title,
-            'stats' => $clubSeason->stats($team, $competition),
+            'stats' => $clubSeason->stats($team, $competition, $games),
         ];
     }
 

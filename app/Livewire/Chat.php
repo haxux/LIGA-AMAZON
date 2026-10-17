@@ -14,6 +14,7 @@ use App\Services\SeasonResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -55,6 +56,22 @@ class Chat extends Component
     public ?int $counteringOfferId = null;
 
     public ?string $error = null;
+
+    /**
+     * Cuántas entradas del hilo abierto se pintan, contando desde la última.
+     * Empieza en {@see self::HISTORY_PAGE} y crece de tanto en tanto con «Ver
+     * anteriores»; abrir otro hilo lo devuelve al principio. Bloqueada: sólo
+     * la mueve el servidor, que un navegador no pida el hilo entero de golpe.
+     */
+    #[Locked]
+    public int $historyLimit = self::HISTORY_PAGE;
+
+    /**
+     * El tramo de historial que se pinta de una vez. Cada repintado (cada 5
+     * segundos) viaja entero al navegador, así que un hilo de una temporada
+     * completa no puede ir todo en cada uno.
+     */
+    public const HISTORY_PAGE = 50;
 
     /**
      * Lo ya calculado en ESTA petición. Una pantalla de chat se repinta cada 5
@@ -188,7 +205,7 @@ class Chat extends Component
     public function open(int $conversationId): void
     {
         $this->conversationId = $conversationId;
-        $this->reset(['body', 'offerPlayerId', 'offerAmount', 'counterAmount', 'counteringOfferId', 'error']);
+        $this->reset(['body', 'offerPlayerId', 'offerAmount', 'counterAmount', 'counteringOfferId', 'error', 'historyLimit']);
 
         $user = $this->user();
         $conversation = $this->conversation();
@@ -196,6 +213,51 @@ class Chat extends Component
         if ($user !== null && $conversation !== null) {
             $conversation->markReadBy($user);
         }
+    }
+
+    /**
+     * Lo último del hilo abierto, hasta `$historyLimit` entradas.
+     *
+     * Se pide UNA de más para saber si queda algo por encima sin contar el hilo
+     * entero: si llega, hay anteriores, y esa sobrante no se pinta.
+     *
+     * @return array{entries: Collection<int, Message|Offer>, earlier: bool}
+     */
+    public function timeline(): array
+    {
+        $conversation = $this->conversation();
+
+        if ($conversation === null) {
+            return ['entries' => collect(), 'earlier' => false];
+        }
+
+        return $this->once('timeline:'.$conversation->getKey(), function () use ($conversation): array {
+            $entries = $conversation->timeline($this->historyLimit + 1);
+            $earlier = $entries->count() > $this->historyLimit;
+
+            return [
+                'entries' => $earlier ? $entries->slice(1)->values() : $entries,
+                'earlier' => $earlier,
+            ];
+        });
+    }
+
+    public function showEarlier(): void
+    {
+        $this->historyLimit += self::HISTORY_PAGE;
+    }
+
+    /**
+     * Lo que le falta por leer, hilo por hilo, para la lista: una consulta para
+     * todos en vez de una por hilo.
+     *
+     * @return array<int, int>
+     */
+    public function unreadCounts(): array
+    {
+        $user = $this->user();
+
+        return $user === null ? [] : $this->once('unread', fn () => Conversation::unreadCountsFor($user));
     }
 
     public function close(): void
@@ -551,7 +613,7 @@ class Chat extends Component
     {
         $user = $this->user();
 
-        return $user === null ? 0 : Conversation::unreadTotalFor($user);
+        return array_sum($this->unreadCounts());
     }
 
     public function render()

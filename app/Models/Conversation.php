@@ -100,11 +100,35 @@ class Conversation extends Model
      */
     public static function unreadTotalFor(User $user): int
     {
-        return self::query()
-            ->whereHas('participants', fn ($query) => $query->whereKey($user->getKey()))
-            ->with('participants')
-            ->get()
-            ->sum(fn (self $conversation) => $conversation->unreadFor($user));
+        return array_sum(self::unreadCountsFor($user));
+    }
+
+    /**
+     * Lo que le falta por leer a alguien, hilo por hilo, en UNA consulta.
+     *
+     * Es la misma regla que `unreadFor()` —mensajes del otro posteriores a la
+     * última lectura—, pero agrupada: la lista del chat la pinta cada 5
+     * segundos y la cabecera del sitio en cada página, y con un COUNT por hilo
+     * eran tantas consultas como conversaciones.
+     *
+     * @return array<int, int> id de conversación => no leídos (sólo los que tienen alguno)
+     */
+    public static function unreadCountsFor(User $user): array
+    {
+        return Message::query()
+            ->join('conversation_user', function ($join) use ($user): void {
+                $join->on('conversation_user.conversation_id', '=', 'messages.conversation_id')
+                    ->where('conversation_user.user_id', '=', $user->getKey());
+            })
+            ->where('messages.user_id', '!=', $user->getKey())
+            ->where(fn ($query) => $query
+                ->whereNull('conversation_user.last_read_at')
+                ->orWhereColumn('messages.created_at', '>', 'conversation_user.last_read_at'))
+            ->groupBy('messages.conversation_id')
+            ->selectRaw('messages.conversation_id, count(*) as unread')
+            ->pluck('unread', 'conversation_id')
+            ->map(fn ($count): int => (int) $count)
+            ->all();
     }
 
     /**
@@ -143,10 +167,16 @@ class Conversation extends Model
      *
      * @return Collection<int, Message|Offer>
      */
-    public function timeline(): Collection
+    public function timeline(?int $limit = null): Collection
     {
-        return $this->messages()->with('author')->get()
-            ->concat($this->offers()->with(['player', 'fromClub', 'mover'])->get()
+        // Con tope, sólo lo último: el chat se repinta cada 5 segundos y un
+        // hilo de una temporada entera viajaba completo en cada repintado. Se
+        // piden `$limit` de cada clase porque no se sabe de antemano cuántos de
+        // los últimos son mensajes y cuántos ofertas; al mezclarlos se recorta.
+        $latest = fn ($query) => $limit === null ? $query : $query->latest('id')->limit($limit);
+
+        $entries = $latest($this->messages()->with('author'))->get()
+            ->concat($latest($this->offers()->with(['player', 'fromClub', 'mover']))->get()
                 // La oferta pregunta a su hilo si es con el presidente y quién
                 // participa: se le da el que ya está cargado, en vez de que
                 // cada una vaya a buscarlo.
@@ -155,5 +185,7 @@ class Conversation extends Model
             // entre un mensaje y una oferta da igual: pasaron a la vez.
             ->sortBy(fn ($entry) => [$entry->created_at?->getTimestamp() ?? 0, $entry->getKey()])
             ->values();
+
+        return $limit === null ? $entries : $entries->slice(-$limit)->values();
     }
 }

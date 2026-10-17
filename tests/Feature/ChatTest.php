@@ -266,6 +266,80 @@ class ChatTest extends TestCase
     }
 
     /**
+     * Los no leídos de todos los hilos salen de UNA consulta agrupada, y tienen
+     * que decir lo mismo que la cuenta hilo a hilo: lo nuevo del otro desde la
+     * última lectura, nada de lo propio, y todo si el hilo nunca se abrió.
+     */
+    public function test_the_grouped_unread_counts_agree_with_each_thread(): void
+    {
+        $coachC = User::factory()->coachOf(Club::factory()->create())->create();
+        $read = Conversation::between($this->coachA, $this->coachB);
+        $neverOpened = Conversation::between($coachC, $this->coachB);
+
+        $this->travelTo(now()->subHour());
+        Message::create(['conversation_id' => $read->id, 'user_id' => $this->coachA->id, 'body' => 'Viejo']);
+        $read->markReadBy($this->coachB);
+        $this->travelBack();
+
+        Message::create(['conversation_id' => $read->id, 'user_id' => $this->coachA->id, 'body' => 'Nuevo']);
+        Message::create(['conversation_id' => $read->id, 'user_id' => $this->coachB->id, 'body' => 'Mío']);
+        Message::create(['conversation_id' => $neverOpened->id, 'user_id' => $coachC->id, 'body' => 'Uno']);
+        Message::create(['conversation_id' => $neverOpened->id, 'user_id' => $coachC->id, 'body' => 'Dos']);
+
+        $counts = Conversation::unreadCountsFor($this->coachB);
+
+        $this->assertSame(1, $counts[$read->id], 'Sólo lo del otro posterior a la última lectura');
+        $this->assertSame(2, $counts[$neverOpened->id], 'Un hilo nunca abierto, entero');
+        $this->assertSame($read->load('participants')->unreadFor($this->coachB), $counts[$read->id]);
+        $this->assertSame($neverOpened->load('participants')->unreadFor($this->coachB), $counts[$neverOpened->id]);
+        $this->assertSame(3, Conversation::unreadTotalFor($this->coachB));
+        $this->assertSame([], Conversation::unreadCountsFor($coachC), 'Lo suyo no le cuenta como no leído');
+    }
+
+    /**
+     * Cada repintado (cada 5 segundos) viaja entero, así que el hilo abierto
+     * pinta sólo su último tramo y lo anterior se pide con un botón.
+     */
+    public function test_a_long_thread_shows_its_latest_entries_and_offers_the_earlier_ones(): void
+    {
+        $conversation = Conversation::between($this->coachA, $this->coachB);
+        $total = Chat::HISTORY_PAGE + 3;
+
+        for ($i = 1; $i <= $total; $i++) {
+            Message::create(['conversation_id' => $conversation->id, 'user_id' => $this->coachA->id, 'body' => "Mensaje número {$i}."]);
+        }
+
+        $this->asCoach($this->coachB);
+
+        $chat = Livewire::test(Chat::class)->call('open', $conversation->id);
+
+        $chat->assertSee('VER ANTERIORES')
+            ->assertSee("Mensaje número {$total}.")
+            ->assertSee('Mensaje número 4.')
+            ->assertDontSee('Mensaje número 3.');
+
+        $chat->call('showEarlier')
+            ->assertDontSee('VER ANTERIORES')
+            ->assertSee('Mensaje número 1.');
+
+        // Otro hilo, o el mismo reabierto, vuelve a empezar por lo último.
+        $chat->call('open', $conversation->id)->assertSet('historyLimit', Chat::HISTORY_PAGE);
+    }
+
+    /**
+     * El tramo se mueve sólo desde el servidor: un navegador no puede pedir el
+     * hilo entero de golpe tocando la propiedad.
+     */
+    public function test_the_history_window_cannot_be_set_from_the_browser(): void
+    {
+        $this->asCoach($this->coachB);
+
+        $this->expectException(\Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException::class);
+
+        Livewire::test(Chat::class)->set('historyLimit', 100000);
+    }
+
+    /**
      * REGRESIÓN: el hilo se pintaba bien con una entrada y reventaba con dos.
      * El comparador del multiorden de `Collection` sólo se ejecuta cuando hay
      * algo que comparar, así que ningún test lo tocaba — y en el navegador

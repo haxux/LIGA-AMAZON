@@ -22,15 +22,24 @@ final class BudgetService
 {
     public function balanceFor(Club $club): int
     {
+        // La suma, en la base: es la misma regla que `signedAmount()` —el
+        // ingreso suma, el egreso resta, y sólo lo aprobado cuenta—, pero sin
+        // traer el libro entero para sumarlo aquí. El saldo se consulta al
+        // ofertar, al aceptar y al ejecutar cada traspaso.
         $approved = BudgetMovement::query()
             ->where('club_id', $club->getKey())
             ->where('status', BudgetMovement::STATUS_APPROVED)
-            // `status` va en el SELECT aunque el WHERE ya lo acote: signedAmount()
-            // lo lee, y una columna no seleccionada llega como null — que aquí
-            // significaría "no aprobado" y dejaría el saldo siempre en el inicial.
-            ->get(['type', 'amount', 'status']);
+            // Dos sumas restadas, sin operar fila a fila sobre `amount`: la
+            // columna es UNSIGNED, y la aritmética con ella en MariaDB es
+            // terreno resbaladizo. SUM ya devuelve DECIMAL, que se resta sin
+            // más. Comprobado contra MariaDB 11 (ingreso 100, egreso 250 → -150).
+            ->selectRaw(
+                'coalesce(sum(case when type = ? then amount else 0 end), 0) - coalesce(sum(case when type = ? then 0 else amount end), 0) as balance',
+                [BudgetMovement::TYPE_INCOME, BudgetMovement::TYPE_INCOME],
+            )
+            ->value('balance');
 
-        return $club->initial_balance + $approved->sum(fn (BudgetMovement $movement) => $movement->signedAmount());
+        return $club->initial_balance + (int) $approved;
     }
 
     /**

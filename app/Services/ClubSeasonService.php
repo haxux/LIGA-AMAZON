@@ -114,12 +114,18 @@ final class ClubSeasonService
      * una copa (Fase 15). Sin acotar son todas juntas, que es como estaban —y
      * mal, porque los goles de copa ya sumaban aquí mientras las tarjetas de
      * copa no, al contarse éstas por la jornada que un partido de copa no tiene.
+     *
+     * `$games` son los de `games($team)`, si quien llama ya los tiene: la
+     * pestaña de estadísticas pide un bloque por competición, y cargarlos en
+     * cada uno repetía la misma consulta con sus cinco relaciones.
+     *
+     * @param  Collection<int, Game>|null  $games
      */
-    public function stats(Team $team, ?Competition $competition = null): ClubSeasonStats
+    public function stats(Team $team, ?Competition $competition = null, ?Collection $games = null): ClubSeasonStats
     {
         $competition ??= Competition::all();
 
-        $played = $this->games($team)
+        $played = ($games ?? $this->games($team))
             ->filter(fn (Game $game) => $competition->matches($game) && $this->isPlayed($game));
 
         $counters = ['won' => 0, 'drawn' => 0, 'lost' => 0, 'goals_for' => 0, 'goals_against' => 0];

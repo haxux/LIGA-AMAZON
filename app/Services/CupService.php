@@ -94,13 +94,20 @@ final class CupService
      */
     public function groupTable(CupGroup $group): Collection
     {
-        $teams = Team::query()
-            ->whereIn('id', $group->participants()->pluck('team_id'))
-            ->with('club')
-            ->orderBy('id')
-            ->get();
+        // Lo que venga ya cargado se aprovecha: la página de una copa pide la
+        // tabla de cada grupo dos veces —la suya y la de mejores terceros— y,
+        // preguntando siempre a la base, eran tres consultas por grupo y vez.
+        $teams = $group->relationLoaded('participants')
+            ? $group->participants->pluck('team')->filter()->sortBy('id')->values()
+            : Team::query()
+                ->whereIn('id', $group->participants()->pluck('team_id'))
+                ->with('club')
+                ->orderBy('id')
+                ->get();
 
-        return $this->standings->fromGames($teams, $group->games()->get());
+        $games = $group->relationLoaded('games') ? $group->games : $group->games()->get();
+
+        return $this->standings->fromGames($teams, $games);
     }
 
     /**
