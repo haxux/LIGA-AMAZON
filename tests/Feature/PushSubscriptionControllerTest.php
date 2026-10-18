@@ -13,7 +13,7 @@ class PushSubscriptionControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function payload(string $topic, string $endpoint = 'https://push.example/abc'): array
+    private function payload(string $topic, string $endpoint = 'https://fcm.googleapis.com/fcm/send/abc'): array
     {
         return [
             'endpoint' => $endpoint,
@@ -58,7 +58,7 @@ class PushSubscriptionControllerTest extends TestCase
     {
         $club = Club::factory()->create();
         $coach = User::factory()->coachOf($club)->create();
-        $endpoint = 'https://push.example/same-browser';
+        $endpoint = 'https://fcm.googleapis.com/fcm/send/same-browser';
 
         $this->postJson('/push/subscribe', $this->payload(PushSubscription::TOPIC_MATCHES, $endpoint))->assertOk();
         $this->actingAs($coach, 'club')
@@ -73,7 +73,7 @@ class PushSubscriptionControllerTest extends TestCase
 
     public function test_unsubscribing_from_one_topic_keeps_the_other(): void
     {
-        $endpoint = 'https://push.example/two-topics';
+        $endpoint = 'https://fcm.googleapis.com/fcm/send/two-topics';
         $club = Club::factory()->create();
         $coach = User::factory()->coachOf($club)->create();
 
@@ -92,7 +92,7 @@ class PushSubscriptionControllerTest extends TestCase
 
     public function test_unsubscribing_from_the_last_topic_deletes_the_row(): void
     {
-        $endpoint = 'https://push.example/only-topic';
+        $endpoint = 'https://fcm.googleapis.com/fcm/send/only-topic';
         $this->postJson('/push/subscribe', $this->payload(PushSubscription::TOPIC_MATCHES, $endpoint))->assertOk();
 
         $this->deleteJson('/push/subscribe', ['endpoint' => $endpoint, 'topic' => PushSubscription::TOPIC_MATCHES])
@@ -184,5 +184,53 @@ class PushSubscriptionControllerTest extends TestCase
         $this->get(route('site.standings'))
             ->assertOk()
             ->assertSee('js/push.js?v='.filemtime(public_path('js/push.js')), false);
+    }
+
+    /**
+     * El servidor le hace un POST al endpoint en cada aviso, y lo manda un
+     * visitante anónimo: sólo vale el de un servicio push de un navegador.
+     */
+    public function test_an_endpoint_that_is_not_a_browser_push_service_is_refused(): void
+    {
+        foreach ([
+            'http://127.0.0.1:8080/admin',
+            'https://127.0.0.1/x',
+            'https://192.168.1.10/x',
+            'https://evil.example/collect',
+            'https://fcm.googleapis.com.evil.example/x',
+            'https://notfcm.googleapis.com/x',
+            'http://fcm.googleapis.com/fcm/send/abc',
+            'fcm.googleapis.com/fcm/send/abc',
+        ] as $endpoint) {
+            $this->postJson('/push/subscribe', $this->payload(PushSubscription::TOPIC_MATCHES, $endpoint))
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('endpoint');
+        }
+
+        $this->assertDatabaseCount('push_subscriptions', 0);
+    }
+
+    public function test_the_push_services_of_every_browser_are_accepted(): void
+    {
+        foreach ([
+            'https://fcm.googleapis.com/fcm/send/chrome',
+            'https://updates.push.services.mozilla.com/wpush/v2/firefox',
+            'https://wns2-par02p.notify.windows.com/w/?token=edge',
+            'https://web.push.apple.com/safari',
+        ] as $endpoint) {
+            $this->postJson('/push/subscribe', $this->payload(PushSubscription::TOPIC_MATCHES, $endpoint))->assertOk();
+        }
+
+        $this->assertDatabaseCount('push_subscriptions', 4);
+    }
+
+    public function test_oversized_keys_are_refused(): void
+    {
+        $payload = $this->payload(PushSubscription::TOPIC_MATCHES);
+        $payload['keys']['p256dh'] = str_repeat('a', 5000);
+
+        $this->postJson('/push/subscribe', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('keys.p256dh');
     }
 }

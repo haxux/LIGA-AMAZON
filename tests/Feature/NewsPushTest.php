@@ -99,12 +99,12 @@ class NewsPushTest extends TestCase
     public function test_anyone_can_subscribe_to_news_without_a_session(): void
     {
         $this->postJson('/push/subscribe', [
-            'endpoint' => 'https://example.test/endpoint-noticias',
+            'endpoint' => 'https://fcm.googleapis.com/fcm/send/endpoint-noticias',
             'keys' => ['p256dh' => 'clave', 'auth' => 'token'],
             'topic' => PushSubscription::TOPIC_NEWS,
         ])->assertOk();
 
-        $sub = PushSubscription::query()->where('endpoint', 'https://example.test/endpoint-noticias')->first();
+        $sub = PushSubscription::query()->where('endpoint', 'https://fcm.googleapis.com/fcm/send/endpoint-noticias')->first();
 
         $this->assertNotNull($sub);
         $this->assertTrue($sub->hasTopic(PushSubscription::TOPIC_NEWS));

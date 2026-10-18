@@ -16,12 +16,35 @@ use Illuminate\Validation\Rule;
  */
 class PushSubscriptionController extends Controller
 {
+    /**
+     * Los servicios push de los navegadores: Chrome, Edge, Opera y Android van
+     * por Google; Firefox, por Mozilla; Edge en Windows, por Microsoft; Safari,
+     * por Apple. El endpoint lo da el navegador (`pushManager.subscribe()`), así
+     * que uno de verdad siempre cuelga de alguno de éstos.
+     *
+     * @var list<string>
+     */
+    private const PUSH_SERVICES = [
+        'fcm.googleapis.com',
+        'android.googleapis.com',
+        'push.services.mozilla.com',
+        'notify.windows.com',
+        'push.apple.com',
+    ];
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'endpoint' => ['required', 'string', 'max:500'],
-            'keys.p256dh' => ['required', 'string'],
-            'keys.auth' => ['required', 'string'],
+            // Sólo un servicio push de verdad, por https. El servidor le hace
+            // un POST a esta dirección cada vez que avisa de algo, y la manda
+            // un visitante anónimo: sin esto, cualquiera apuntaba el servidor
+            // a una dirección interna (127.0.0.1, la red de Hostinger) o
+            // ajena, y lo usaba para golpearla en cada partido terminado.
+            'endpoint' => ['required', 'string', 'max:500', 'url:https', $this->pushServiceRule()],
+            // Una clave P-256 en base64url son 87 caracteres, y el secreto,
+            // 22. El tope deja margen y no deja meter megas.
+            'keys.p256dh' => ['required', 'string', 'max:255'],
+            'keys.auth' => ['required', 'string', 'max:255'],
             'topic' => ['required', Rule::in([PushSubscription::TOPIC_MATCHES, PushSubscription::TOPIC_NEWS, PushSubscription::TOPIC_CHAT])],
         ]);
 
@@ -43,6 +66,21 @@ class PushSubscriptionController extends Controller
         ])->save();
 
         return response()->json(['status' => 'subscribed', 'topics' => $topics]);
+    }
+
+    private function pushServiceRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            $host = strtolower((string) parse_url((string) $value, PHP_URL_HOST));
+
+            $known = collect(self::PUSH_SERVICES)->contains(
+                fn (string $service): bool => $host === $service || str_ends_with($host, '.'.$service),
+            );
+
+            if (! $known) {
+                $fail('Ese no es un servicio de notificaciones de un navegador.');
+            }
+        };
     }
 
     public function destroy(Request $request): JsonResponse

@@ -104,9 +104,54 @@ class DatosBaseSeederTest extends TestCase
 
         $antes = [Club::count(), Player::count(), SquadMembership::count(), Game::count(), GameEvent::count()];
 
-        $this->seed(DatosBaseSeeder::class);
+        // Forzado, para que de verdad recorra la instantánea otra vez.
+        putenv('SEMBRAR_SOBRE_DATOS=1');
+
+        try {
+            $this->seed(DatosBaseSeeder::class);
+        } finally {
+            putenv('SEMBRAR_SOBRE_DATOS');
+        }
 
         $this->assertSame($antes, [Club::count(), Player::count(), SquadMembership::count(), Game::count(), GameEvent::count()]);
+    }
+
+    /**
+     * Lo que pasó el día que se probó: un jugador traspasado después de la
+     * instantánea ya no está donde el JSON lo pone, y volver a sembrar le
+     * creaba una segunda ficha en el club viejo. Sobre una liga en marcha, el
+     * seeder no siembra.
+     */
+    public function test_it_refuses_to_seed_over_a_league_in_progress(): void
+    {
+        $this->seed(DatosBaseSeeder::class);
+
+        $player = Player::query()->whereNull('left_at')->firstOrFail();
+        $otherClub = Club::query()->whereKeyNot($player->club_id)->firstOrFail();
+        $player->update(['club_id' => $otherClub->id]);
+        $players = Player::count();
+
+        $this->seed(DatosBaseSeeder::class);
+
+        $this->assertSame($players, Player::count(), 'Ninguna ficha nueva');
+        $this->assertSame(1, Player::query()->where('name', $player->name)->count());
+    }
+
+    public function test_over_a_league_in_progress_it_still_creates_the_admin(): void
+    {
+        $this->seed(DatosBaseSeeder::class);
+
+        putenv('SEED_ADMIN_EMAIL=jefe@liga.test');
+        putenv('SEED_ADMIN_PASSWORD=una-clave-larga');
+
+        try {
+            $this->seed(DatosBaseSeeder::class);
+        } finally {
+            putenv('SEED_ADMIN_EMAIL');
+            putenv('SEED_ADMIN_PASSWORD');
+        }
+
+        $this->assertTrue(User::query()->where('email', 'jefe@liga.test')->exists());
     }
 
     /**

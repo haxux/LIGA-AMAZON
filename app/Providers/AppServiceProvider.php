@@ -28,11 +28,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Fixes generated URLs only. This is not a redirect, and it does not by
-        // itself trust a proxy's forwarded headers — ->trustProxies() in
-        // bootstrap/app.php is the matching piece, and its correct value
-        // depends on the host, so it is recorded in DESPLIEGUE.md rather than
-        // guessed at here. Applying one without the other is a half fix.
+        // Fixes generated URLs only. This is not a redirect, and it does not
+        // trust any proxy's forwarded headers: that is TRUSTED_PROXIES
+        // (config/trustedproxy.php), empty in Hostinger because nothing sits
+        // in front of the web server — see bootstrap/app.php.
         if (config('app.force_https')) {
             URL::forceScheme('https');
         }

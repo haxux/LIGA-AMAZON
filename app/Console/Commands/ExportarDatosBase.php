@@ -27,8 +27,8 @@ use Illuminate\Console\Command;
  *
  * NADA de identificadores: todo se nombra por su clave natural —la temporada por
  * su nombre, el club por el suyo, el jugador por su club y su nombre—, porque los
- * ids de la base de origen no son los que tendra la de destino. TiDB, ademas, los
- * reparte a saltos (1, 30001, 60001).
+ * ids de la base de origen no son los que tendra la de destino (la primera, en
+ * TiDB, los repartia a saltos: 1, 30001, 60001).
  *
  * Los USUARIOS no se exportan, a proposito: este repositorio es publico, y los
  * correos de los tecnicos no estan publicados en el sitio como si lo estan los
@@ -147,9 +147,10 @@ class ExportarDatosBase extends Command
             ->map(fn (Club $c) => [
                 'nombre' => $c->name,
                 'nombre_corto' => $c->short_name,
-                // La ruta se conserva, pero el fichero vive en el bucket: al
-                // sembrar en otro sitio hay que llevarselo aparte o volver a
-                // subir el escudo desde el panel.
+                // La ruta se conserva, pero el fichero no viaja: vive en el
+                // disco de subidas del servidor, y al sembrar en otro sitio hay
+                // que llevarselo aparte o volver a subir el escudo desde el
+                // panel.
                 'escudo' => $c->crest_path,
                 'fundado' => $c->founded_year,
                 'saldo_inicial' => $c->initial_balance,

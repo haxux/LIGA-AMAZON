@@ -45,8 +45,10 @@ use Illuminate\Support\Facades\Hash;
  * base en funcionamiento, así que ya cumplen los invariantes que los guards
  * vigilan.
  *
- * Es idempotente: cada fila se busca por su clave natural antes de crearse, de
- * modo que correrlo dos veces no duplica nada. Los eventos de un partido son la
+ * Es para la carga INICIAL: sobre una base que ya tiene la liga se niega (ver
+ * `run()`), porque un jugador traspasado después de la instantánea acabaría
+ * duplicado. Sobre la misma instantánea sí es idempotente: cada fila se busca
+ * por su clave natural antes de crearse. Los eventos de un partido son la
  * excepción y se explica en su método: no tienen clave natural, así que la
  * comprobación se hace por partido.
  *
@@ -59,8 +61,8 @@ use Illuminate\Support\Facades\Hash;
  *   alta en `/admin`, que es el camino de siempre.
  * - Las **conversaciones** del chat, que son mensajes privados entre personas.
  * - Los **ficheros** de escudos y portadas. Las rutas sí viajan, pero las
- *   imágenes viven en el bucket: hay que copiarlas al disco de subidas del
- *   destino, o volver a subirlas desde el panel.
+ *   imágenes viven en el disco de subidas del servidor de origen: hay que
+ *   copiarlas al del destino, o volver a subirlas desde el panel.
  */
 class DatosBaseSeeder extends Seeder
 {
@@ -96,6 +98,22 @@ class DatosBaseSeeder extends Seeder
 
         if (! is_file($ruta)) {
             $this->command?->error('No existe '.$ruta.'. Genéralo con: php artisan liga:exportar-base');
+
+            return;
+        }
+
+        // Sobre una liga que ya está en marcha, NO. Cada fila se busca por su
+        // clave natural, y para un jugador ésa es su club y su nombre: el que
+        // se traspasó después de la instantánea ya no está donde el JSON lo
+        // pone, así que se creaba OTRA ficha suya en el club viejo, con
+        // plantilla viva —comprobado el 2026-10-17—. Y lo que el administrador
+        // borró (una noticia, un movimiento) volvía a aparecer.
+        //
+        // El administrador sí se crea: es la forma documentada de dar de alta
+        // al primero (DESPLIEGUE.md §6) y no pisa nada de la liga.
+        if (Club::query()->exists() && ! env('SEMBRAR_SOBRE_DATOS')) {
+            $this->command?->warn('La base ya tiene la liga: no se vuelve a sembrar. Para hacerlo de todos modos, SEMBRAR_SOBRE_DATOS=1 (duplica a los traspasados desde la instantánea).');
+            $this->sembrarAdministrador();
 
             return;
         }

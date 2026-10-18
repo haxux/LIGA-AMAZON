@@ -18,30 +18,25 @@ return Application::configure(basePath: dirname(__DIR__))
         // hardening headers.
         $middleware->append(SecurityHeaders::class);
 
-        // Vercel terminates TLS and proxies every request, so untrusted the
-        // application sees the proxy instead of the visitor. That has two
-        // consequences, and the second is the dangerous one:
+        // Proxies: NONE trusted by default. In Hostinger, LiteSpeed receives
+        // the visitor directly, so an X-Forwarded-For header can only come from
+        // the visitor — and trusting it (the old `'*'`, inherited from Vercel,
+        // whose edge overwrote that header) let anyone pick their own IP: a
+        // fresh 60 req/min bucket per request, five fresh login attempts per
+        // request, and made-up addresses in the `login.failed` log lines.
         //
-        //   (a) URLs. X-Forwarded-Proto is ignored, Laravel generates http://
-        //       URLs and can enter a redirect loop. This is the other half of
-        //       APP_FORCE_HTTPS — applying one without the other is a half fix.
-        //
-        //   (b) Rate limiting. ThrottleRequests keys anonymous visitors on
-        //       $request->ip(). Untrusted, that returns the proxy's address for
-        //       everyone, so the 60 req/min of routes/web.php would stop being
-        //       per visitor and become one global cap for the whole site: 429
-        //       for everybody under modest traffic.
-        //
-        // '*' rather than an address list because Vercel publishes no stable
-        // proxy range. It is safe here only because the container is
-        // unreachable except through Vercel's edge, which overwrites
-        // X-Forwarded-For instead of passing a client-supplied one through. On
-        // a host without that guarantee, '*' would let anyone forge a fresh
-        // throttle bucket per request by varying the header.
-        $middleware->trustProxies(at: '*');
+        // If a CDN or proxy is ever put in front, list its ranges in
+        // TRUSTED_PROXIES (config/trustedproxy.php, which Laravel's
+        // TrustProxies middleware reads by itself). The two pieces still go
+        // together: without the proxy trusted, X-Forwarded-Proto is ignored
+        // too, and APP_FORCE_HTTPS is what keeps generated URLs on https.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // `expectsJson()` además de api/*: esto REEMPLAZA la regla de Laravel,
+        // no la amplía. Sólo con api/*, un error de validación de
+        // /push/subscribe —que `push.js` pide en JSON— volvía como una
+        // redirección a HTML, y el navegador se quedaba sin el mensaje.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
     })->create();

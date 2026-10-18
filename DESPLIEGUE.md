@@ -231,6 +231,12 @@ $P artisan db:seed --class=DatosBaseSeeder --force
 trae usuarios: el administrador se crea pasándole `SEED_ADMIN_EMAIL` y
 `SEED_ADMIN_PASSWORD`, y los técnicos se dan de alta en `/admin`.
 
+**Sólo para la carga inicial.** Sobre una base que ya tiene la liga, el seeder
+se niega a sembrar (sí crea el administrador si se le dan sus variables):
+busca a cada jugador por su club y su nombre, así que uno traspasado después
+de la instantánea acabaría con una segunda ficha en su club viejo. Forzarlo es
+`SEMBRAR_SOBRE_DATOS=1`, y casi nunca es lo que se quiere.
+
 ### Copias de seguridad
 
 **No hay copias automáticas todavía.** Es lo primero pendiente de §8. A mano:

@@ -72,8 +72,9 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::delete('/push/subscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
 });
 
-// GET y no POST: así lo invoca Vercel Cron, y así evita la verificación CSRF
-// del grupo 'web' —pensada para formularios de navegador, no para esto—, que
-// un POST sin cookie de sesión siempre fallaría. Se autentica con el secreto
-// compartido (ver CronController), no con una cookie.
+// GET y no POST: el trabajo cron de hPanel la pide con un `curl` sin cookie de
+// sesión (DESPLIEGUE.md §4), y un POST así siempre fallaría la verificación
+// CSRF del grupo 'web' —pensada para formularios de navegador, no para esto—.
+// Se autentica con el secreto compartido (ver CronController), no con una
+// cookie.
 Route::get('/cron/tick', [CronController::class, 'tick'])->name('cron.tick');

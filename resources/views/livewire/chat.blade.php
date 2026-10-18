@@ -27,8 +27,8 @@
     $input = 'w-full rounded-xl border border-white/10 bg-surface-alt px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/20';
 @endphp
 
-{{-- Sondeo, no websockets (design D11): este despliegue escala a cero y no
-     tiene un proceso permanente donde sostenerlos. `.visible`: con el chat
+{{-- Sondeo, no websockets (design D11): el alojamiento compartido no tiene un
+     proceso permanente donde sostenerlos. `.visible`: con el chat
      fuera de la pantalla no se pregunta nada. --}}
 <div class="overflow-hidden rounded-2xl bg-surface shadow-2xl ring-1 ring-white/[0.06] md:grid md:h-[40rem] md:grid-cols-[18rem_1fr] xl:grid-cols-[21rem_1fr]" wire:poll.5s.visible>
 
