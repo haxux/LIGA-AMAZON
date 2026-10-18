@@ -585,18 +585,24 @@ class Chat extends Component
     }
 
     /**
-     * La negociación viva con el presidente, que es la que lleva tensión: su
-     * oferta abierta. Sin ella no hay nada que medir.
+     * Lo que el presidente apunta de una negociación: con qué club la lleva y
+     * qué tensión tiene. Un solo botón para las dos cosas.
      */
-    public function liveNegotiation(): ?Offer
+    public function saveNegotiation(int $offerId, ?string $counterpart, int $tension): void
     {
-        $conversation = $this->conversation();
+        $this->answer($offerId, function (Offer $offer, User $user) use ($counterpart, $tension): void {
+            $service = app(OfferService::class);
+            $service->setCounterpart($offer, $user, $counterpart);
+            $service->setTension($offer, $user, max(1, min(100, $tension)));
+        });
+    }
 
-        if ($conversation === null || ! $this->toPresident()) {
-            return null;
-        }
-
-        return $conversation->offers()->where('status', Offer::STATUS_SENT)->latest('id')->first();
+    /**
+     * Deja la contraoferta a medias: vuelven los tres botones.
+     */
+    public function cancelCounter(): void
+    {
+        $this->reset(['counteringOfferId', 'counterAmount', 'counterTerm']);
     }
 
     public function maySetTension(Offer $offer): bool

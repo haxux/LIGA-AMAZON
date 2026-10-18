@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  */
 #[Fillable([
     'conversation_id', 'player_id', 'fc_id', 'external_player', 'kind', 'from_club_id', 'amount',
-    'loan_term', 'tension', 'status', 'moved_by', 'transfer_id',
+    'loan_term', 'tension', 'counterpart', 'status', 'moved_by', 'transfer_id',
 ])]
 class Offer extends Model
 {

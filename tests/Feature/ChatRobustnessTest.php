@@ -274,4 +274,59 @@ class ChatRobustnessTest extends TestCase
 
         $this->assertNull(Offer::find($oldOffer)->tension);
     }
+
+    // ── Botones de la negociación y Enter ─────────────────────────────────
+
+    private function rivalOffer(): Offer
+    {
+        return Offer::create([
+            'conversation_id' => $this->withRival->id, 'player_id' => $this->his->id, 'kind' => Offer::KIND_SELL,
+            'from_club_id' => $this->rival->club_id, 'amount' => 3_000, 'status' => Offer::STATUS_SENT, 'moved_by' => $this->rival->id,
+        ]);
+    }
+
+    public function test_countering_puts_away_the_three_buttons_and_cancel_brings_them_back(): void
+    {
+        $offer = $this->rivalOffer();
+
+        $chat = $this->chat($this->withRival)
+            ->assertSee('Contraofertar')
+            ->assertSee("acceptOffer({$offer->id})", false)
+            ->call('startCounter', $offer->id)
+            ->assertSee('Enviar contraoferta')
+            ->assertDontSee("acceptOffer({$offer->id})", false);
+
+        $chat->call('cancelCounter')
+            ->assertSet('counteringOfferId', null)
+            ->assertSee("acceptOffer({$offer->id})", false)
+            ->assertDontSee('Enviar contraoferta');
+    }
+
+    public function test_accepting_and_rejecting_ask_for_confirmation(): void
+    {
+        $this->rivalOffer();
+
+        $html = $this->chat($this->withRival)->html();
+
+        $this->assertStringContainsString('wire:confirm="¿Aceptar Su Delantero por 3.000?', $html);
+        $this->assertStringContainsString('wire:confirm="¿Rechazar esta oferta?', $html);
+    }
+
+    public function test_your_own_open_offer_says_it_is_waiting(): void
+    {
+        Offer::create([
+            'conversation_id' => $this->withRival->id, 'player_id' => $this->his->id, 'kind' => Offer::KIND_BUY,
+            'from_club_id' => $this->coach->club_id, 'amount' => 3_000, 'status' => Offer::STATUS_SENT, 'moved_by' => $this->coach->id,
+        ]);
+
+        $this->chat($this->withRival)->assertSee('ESPERANDO RESPUESTA');
+    }
+
+    public function test_enter_sends_and_shift_enter_does_not(): void
+    {
+        $html = $this->chat($this->withRival)->html();
+
+        $this->assertStringContainsString('x-on:keydown.enter="if (! $event.shiftKey', $html);
+        $this->assertStringContainsString('$el.form.requestSubmit()', $html);
+    }
 }

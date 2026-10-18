@@ -184,6 +184,8 @@ final class OfferService
             return Transfer::create($attributes + [
                 'player_id' => $offer->player_id,
                 'from_club_id' => $offer->from_club_id,
+                // A dónde va lo dice el presidente, si lo escribió.
+                'external_club' => $offer->counterpart,
             ]);
         }
 
@@ -201,7 +203,9 @@ final class OfferService
             'external_player' => $former === null ? $offer->external_player : null,
             'fc_id' => $offer->fc_id,
             'to_club_id' => $offer->from_club_id,
-            'external_club' => $catalogue?->club ?: 'Agente libre',
+            // El club que escribió el presidente manda sobre el del catálogo:
+            // es con quien se negoció de verdad.
+            'external_club' => $offer->counterpart ?: ($catalogue?->club ?: 'Agente libre'),
         ]);
     }
 
@@ -247,10 +251,34 @@ final class OfferService
                 'amount' => $offer->isFree() ? 0 : $amount,
                 'loan_term' => $offer->isFree() ? ($term ?? $offer->loan_term) : null,
                 'tension' => $offer->tension,
+                // El club con el que negocia el presidente sigue siendo el mismo
+                // en toda la negociación.
+                'counterpart' => $offer->counterpart,
                 'status' => Offer::STATUS_SENT,
                 'moved_by' => $user->getKey(),
             ]);
         });
+    }
+
+    /**
+     * El club con el que negocia el presidente, que él escribe a mano sobre la
+     * oferta viva. Vacío lo deja sin indicar.
+     */
+    public function setCounterpart(Offer $offer, User $user, ?string $club): Offer
+    {
+        if (! $user->isAdmin() || ! $offer->conversation->includes($user) || ! $offer->isOpen()) {
+            throw ValidationException::withMessages(['offer' => 'Sólo el presidente indica con qué club negocia, y sobre una negociación abierta.']);
+        }
+
+        $club = trim((string) $club);
+
+        if (mb_strlen($club) > 120) {
+            throw ValidationException::withMessages(['offer' => 'El nombre del club admite como mucho 120 caracteres.']);
+        }
+
+        $offer->update(['counterpart' => $club === '' ? null : $club]);
+
+        return $offer;
     }
 
     /**

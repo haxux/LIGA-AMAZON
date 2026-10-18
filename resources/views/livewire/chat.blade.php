@@ -157,21 +157,6 @@
                     </span>
                 </span>
 
-                {{-- La tensión de la negociación abierta, a la vista de los
-                     dos: la fija el presidente y la lee el técnico. --}}
-                @php($live = $this->liveNegotiation())
-                @if ($live && $live->tension !== null)
-                    @php($liveTone = $live->tension >= 70 ? 'bg-rose-500' : ($live->tension >= 40 ? 'bg-amber-400' : 'bg-emerald-500'))
-                    <div class="w-24 shrink-0 sm:w-32" title="Tensión de la negociación">
-                        <div class="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-white/50">
-                            <span>Tensión</span>
-                            <span class="text-white/80">{{ $live->tension }}%</span>
-                        </div>
-                        <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                            <div class="h-full rounded-full {{ $liveTone }}" style="width: {{ $live->tension }}%"></div>
-                        </div>
-                    </div>
-                @endif
             </header>
 
             {{-- Mensajes: el fondo lleva un resplandor suave y no una rejilla,
@@ -259,28 +244,46 @@
                                         ENVIADA POR {{ mb_strtoupper($entry->mover?->name ?? '') }} · {{ $entry->created_at?->format('H:i') }}
                                     </div>
 
-                                    {{-- La tensión que el presidente dice que lleva
-                                         la negociación. Sólo él la mueve. --}}
-                                    @if ($entry->withPresident() && ($entry->tension !== null || $entry->isOpen()))
+                                    {{-- Con el presidente: con qué club negocia (lo escribe
+                                         él) y la tensión que lleva. Los dos los ve el técnico;
+                                         sólo el presidente los toca. --}}
+                                    @if ($entry->withPresident() && ($entry->tension !== null || $entry->counterpart || $entry->isOpen()))
                                         @php($tension = $entry->tension)
                                         @php($tensionTone = $tension === null ? 'bg-white/20' : ($tension >= 70 ? 'bg-rose-500' : ($tension >= 40 ? 'bg-amber-400' : 'bg-emerald-500')))
 
-                                        <div class="mt-3 rounded-xl bg-black/20 px-3 py-2.5" x-data="{ value: {{ $tension ?? 50 }} }">
-                                            <div class="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
-                                                <span>Tensión de la negociación</span>
-                                                <span class="text-white/80">{{ $tension === null ? 'Sin valorar' : $tension.'%' }}</span>
+                                        <div class="mt-3 space-y-2.5 rounded-xl bg-black/20 px-3 py-3"
+                                             x-data="{ value: {{ $tension ?? 50 }}, club: @js($entry->counterpart ?? '') }">
+                                            <div class="flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
+                                                <span class="shrink-0">Negocia con</span>
+                                                <span class="truncate text-right {{ $entry->counterpart ? 'font-display text-sm font-semibold normal-case tracking-normal text-white' : 'text-white/35' }}">
+                                                    {{ $entry->counterpart ?? 'Club sin indicar' }}
+                                                </span>
                                             </div>
-                                            <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                                                <div class="h-full rounded-full {{ $tensionTone }}" style="width: {{ $tension ?? 0 }}%"></div>
+
+                                            <div>
+                                                <div class="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
+                                                    <span>Tensión de la negociación</span>
+                                                    <span class="text-white/80">{{ $tension === null ? 'Sin valorar' : $tension.'%' }}</span>
+                                                </div>
+                                                <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                                    <div class="h-full rounded-full {{ $tensionTone }}" style="width: {{ $tension ?? 0 }}%"></div>
+                                                </div>
                                             </div>
 
                                             @if ($this->maySetTension($entry))
-                                                <div class="mt-2.5 flex items-center gap-2">
-                                                    <input type="range" min="1" max="100" x-model="value" class="h-1 flex-1 accent-amber-400">
-                                                    <span class="w-9 text-right font-mono text-[11px] text-white/70" x-text="value + '%'"></span>
-                                                    <button type="button" x-on:click="$wire.setTension({{ $entry->id }}, parseInt(value))"
-                                                            class="rounded-lg border border-white/15 px-2.5 py-1 font-display text-[11px] font-bold uppercase tracking-[0.08em] text-white/80 transition hover:bg-white/[0.08]">
-                                                        Actualizar
+                                                <div class="space-y-2 border-t border-white/[0.06] pt-2.5">
+                                                    <label class="block">
+                                                        <span class="mb-1 block font-mono text-[9px] tracking-[0.14em] text-brand">CLUB CON EL QUE NEGOCIAS</span>
+                                                        <input type="text" x-model="club" maxlength="120" placeholder="Ej.: Paris Saint-Germain"
+                                                               class="w-full rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-brand/50 focus:outline-none">
+                                                    </label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="range" min="1" max="100" x-model="value" class="h-1 flex-1 accent-amber-400" aria-label="Tensión">
+                                                        <span class="w-9 text-right font-mono text-[11px] text-white/70" x-text="value + '%'"></span>
+                                                    </div>
+                                                    <button type="button" x-on:click="$wire.saveNegotiation({{ $entry->id }}, club, parseInt(value))"
+                                                            class="w-full rounded-lg border border-brand/40 bg-brand/10 px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] text-brand transition hover:bg-brand/20">
+                                                        Guardar
                                                     </button>
                                                 </div>
                                             @endif
@@ -289,40 +292,73 @@
                                 </div>
 
                                 @if ($this->mayAnswer($entry))
-                                    <div class="grid grid-cols-3 gap-2 border-t border-white/[0.06] bg-white/[0.02] p-3">
-                                        <button type="button" wire:click="acceptOffer({{ $entry->id }})"
-                                                class="rounded-lg bg-emerald-500 px-2 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] text-ink shadow shadow-emerald-500/20 transition hover:bg-emerald-400">
-                                            Aceptar
-                                        </button>
-                                        <button type="button" wire:click="startCounter({{ $entry->id }})"
-                                                class="rounded-lg border border-white/15 px-2 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] text-white/85 transition hover:bg-white/[0.08]">
-                                            Negociar
-                                        </button>
-                                        <button type="button" wire:click="rejectOffer({{ $entry->id }})"
-                                                class="rounded-lg border border-rose-400/30 px-2 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] text-rose-300 transition hover:bg-rose-500/15">
-                                            Rechazar
-                                        </button>
-                                    </div>
-
                                     @if ($counteringOfferId === $entry->id)
-                                        <div class="flex flex-wrap items-center gap-2 border-t border-white/[0.06] px-3 pb-3 pt-3">
-                                            @if ($entry->isFree())
-                                                <select wire:model="counterTerm" class="{{ $input }} !w-auto min-w-[8rem] flex-1">
-                                                    <option value="">Plazo…</option>
-                                                    @foreach ($this->loanTerms() as $value => $label)
-                                                        <option value="{{ $value }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            @else
-                                                <input type="number" min="1" wire:model="counterAmount" placeholder="Contraoferta"
-                                                       class="{{ $input }} !w-auto min-w-[8rem] flex-1">
-                                            @endif
-                                            <button type="button" wire:click="sendCounter"
-                                                    class="rounded-lg bg-brand px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.08em] text-ink transition hover:opacity-90">
-                                                Enviar
+                                        {{-- Contraofertando: los tres botones se apartan y queda
+                                             sólo lo que hace falta, para no pulsar «Aceptar»
+                                             creyendo que se manda la cifra nueva. --}}
+                                        <div class="border-t border-white/[0.06] bg-white/[0.02] p-3">
+                                            <p class="mb-2 font-mono text-[9px] tracking-[0.14em] text-brand">
+                                                {{ $entry->isFree() ? 'TU PLAZO' : 'TU CONTRAOFERTA' }}
+                                            </p>
+
+                                            <form wire:submit.prevent="sendCounter" class="space-y-2">
+                                                @if ($entry->isFree())
+                                                    <select wire:model="counterTerm" class="{{ $input }}">
+                                                        <option value="">Plazo…</option>
+                                                        @foreach ($this->loanTerms() as $value => $label)
+                                                            <option value="{{ $value }}">{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                @else
+                                                    <input type="number" min="1" wire:model="counterAmount" placeholder="Importe"
+                                                           class="{{ $input }} font-display text-lg font-bold">
+                                                @endif
+
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <button type="button" wire:click="cancelCounter"
+                                                            class="rounded-lg border border-white/15 px-3 py-2.5 font-display text-xs font-bold uppercase tracking-[0.08em] text-white/70 transition hover:bg-white/[0.08]">
+                                                        Cancelar
+                                                    </button>
+                                                    <button type="submit" wire:loading.attr="disabled" wire:target="sendCounter"
+                                                            class="rounded-lg bg-brand px-3 py-2.5 font-display text-xs font-bold uppercase tracking-[0.08em] text-ink shadow shadow-brand/20 transition hover:opacity-90 disabled:opacity-50">
+                                                        Enviar contraoferta
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    @else
+                                        @php($terms = $entry->isFree() ? (Transfer::LOAN_TERMS[$entry->loan_term] ?? 'sin plazo') : number_format($entry->amount, 0, ',', '.'))
+
+                                        {{-- Aceptar va solo y arriba: es la decisión que cierra
+                                             el trato, y se confirma antes. Debajo, las otras dos. --}}
+                                        <div class="space-y-2 border-t border-white/[0.06] bg-white/[0.02] p-3">
+                                            <button type="button" wire:click="acceptOffer({{ $entry->id }})"
+                                                    wire:confirm="¿Aceptar {{ $entry->playerName() }} por {{ $terms }}? Quedará acordado y pasará a Transferencias."
+                                                    wire:loading.attr="disabled" wire:target="acceptOffer({{ $entry->id }})"
+                                                    class="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3 py-2.5 font-display text-sm font-bold uppercase tracking-[0.08em] text-ink shadow shadow-emerald-500/20 transition hover:bg-emerald-400 disabled:opacity-50">
+                                                <span aria-hidden="true">✓</span> Aceptar
                                             </button>
+
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <button type="button" wire:click="startCounter({{ $entry->id }})"
+                                                        class="flex items-center justify-center gap-1.5 rounded-lg border border-brand/40 px-2 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] text-brand transition hover:bg-brand/10">
+                                                    <span aria-hidden="true">↺</span> Contraofertar
+                                                </button>
+                                                <button type="button" wire:click="rejectOffer({{ $entry->id }})"
+                                                        wire:confirm="¿Rechazar esta oferta? La negociación se cierra."
+                                                        wire:loading.attr="disabled" wire:target="rejectOffer({{ $entry->id }})"
+                                                        class="flex items-center justify-center gap-1.5 rounded-lg border border-rose-400/30 px-2 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] text-rose-300 transition hover:bg-rose-500/15 disabled:opacity-50">
+                                                    <span aria-hidden="true">✕</span> Rechazar
+                                                </button>
+                                            </div>
                                         </div>
                                     @endif
+                                @elseif ($entry->isOpen())
+                                    {{-- Quien la mandó no se contesta a sí mismo: que se
+                                         vea que está esperando al otro. --}}
+                                    <div class="border-t border-white/[0.06] px-4 py-2.5 font-mono text-[10px] tracking-[0.1em] text-white/40">
+                                        ESPERANDO RESPUESTA…
+                                    </div>
                                 @endif
                             </div>
                         </div>
@@ -478,7 +514,9 @@
                         </button>
                     @endif
 
+                    {{-- Enter envía; Mayúsculas+Enter hace un salto de línea. --}}
                     <textarea wire:model="body" rows="1" maxlength="{{ \App\Models\Message::MAX_LENGTH }}" placeholder="Escribe un mensaje"
+                              x-on:keydown.enter="if (! $event.shiftKey && ! $event.isComposing) { $event.preventDefault(); $el.form.requestSubmit(); }"
                               class="max-h-28 min-h-11 w-full resize-none rounded-3xl border border-white/10 bg-surface px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/15"></textarea>
 
                     <button type="submit" wire:loading.attr="disabled" wire:target="send"

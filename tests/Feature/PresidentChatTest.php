@@ -410,4 +410,113 @@ class PresidentChatTest extends TestCase
 
         $this->assertSame(1, Transfer::count());
     }
+
+    // ── El club con el que negocia el presidente ──────────────────────────
+
+    public function test_only_the_president_writes_the_club_he_negotiates_with(): void
+    {
+        $offer = $this->askForCatalogue();
+
+        try {
+            app(OfferService::class)->setCounterpart($offer, $this->coach, 'PSG');
+            $this->fail('El técnico no indica el club.');
+        } catch (ValidationException) {
+        }
+
+        app(OfferService::class)->setCounterpart($offer, $this->president, '  Paris Saint-Germain ');
+
+        $this->assertSame('Paris Saint-Germain', $offer->fresh()->counterpart);
+
+        app(OfferService::class)->setCounterpart($offer->fresh(), $this->president, '');
+        $this->assertNull($offer->fresh()->counterpart);
+    }
+
+    public function test_the_club_travels_with_every_counter_offer(): void
+    {
+        $offer = $this->askForCatalogue();
+        app(OfferService::class)->setCounterpart($offer, $this->president, 'Olympique de Lyon');
+
+        $counter = app(OfferService::class)->counter($offer->fresh(), $this->president, 500_000);
+
+        $this->assertSame('Olympique de Lyon', $counter->counterpart);
+    }
+
+    public function test_the_club_he_wrote_becomes_the_transfers_outside_club(): void
+    {
+        $this->ficha();
+        $offer = $this->askForCatalogue();
+        app(OfferService::class)->setCounterpart($offer, $this->president, 'Olympique de Lyon');
+
+        app(OfferService::class)->accept($offer->fresh(), $this->president);
+
+        $this->assertSame('Olympique de Lyon', Transfer::sole()->external_club, 'Manda sobre el club del catálogo (PSG).');
+    }
+
+    public function test_a_sale_goes_to_the_club_he_wrote(): void
+    {
+        $offer = Offer::create([
+            'conversation_id' => $this->conversation->id,
+            'player_id' => $this->ownPlayer()->id,
+            'kind' => Offer::KIND_SELL,
+            'from_club_id' => $this->club->id,
+            'amount' => 200_000,
+            'status' => Offer::STATUS_SENT,
+            'moved_by' => $this->coach->id,
+        ]);
+        app(OfferService::class)->setCounterpart($offer, $this->president, 'Ajax');
+
+        app(OfferService::class)->accept($offer->fresh(), $this->president);
+
+        $this->assertSame('Ajax', Transfer::sole()->external_club);
+    }
+
+    public function test_without_a_club_written_the_catalogue_club_is_kept(): void
+    {
+        $this->ficha();
+
+        app(OfferService::class)->accept($this->askForCatalogue(), $this->president);
+
+        $this->assertSame('PSG', Transfer::sole()->external_club);
+    }
+
+    public function test_the_president_saves_club_and_tension_from_the_chat(): void
+    {
+        $offer = $this->askForCatalogue();
+
+        Livewire::actingAs($this->president)
+            ->test(Chat::class)
+            ->call('open', $this->conversation->id)
+            ->assertSee('CLUB CON EL QUE NEGOCIAS')
+            ->call('saveNegotiation', $offer->id, 'Benfica', 45)
+            ->assertSee('Benfica')
+            ->assertSee('45%');
+
+        $this->assertSame('Benfica', $offer->fresh()->counterpart);
+        $this->assertSame(45, $offer->fresh()->tension);
+    }
+
+    public function test_the_coach_reads_the_club_but_cannot_edit_it(): void
+    {
+        $offer = $this->askForCatalogue();
+        app(OfferService::class)->setCounterpart($offer, $this->president, 'Benfica');
+
+        Livewire::actingAs($this->coach, 'club')
+            ->test(Chat::class)
+            ->call('open', $this->conversation->id)
+            ->assertSee('Benfica')
+            ->assertDontSee('CLUB CON EL QUE NEGOCIAS');
+    }
+
+    public function test_the_tension_is_no_longer_in_the_header_only_in_the_card(): void
+    {
+        $offer = $this->askForCatalogue();
+        app(OfferService::class)->setTension($offer, $this->president, 65);
+
+        $html = Livewire::actingAs($this->coach, 'club')->test(Chat::class)->call('open', $this->conversation->id)->html();
+
+        $header = substr($html, strpos($html, '<header'), strpos($html, '</header>') - strpos($html, '<header'));
+
+        $this->assertStringNotContainsString('Tensión', $header);
+        $this->assertStringContainsString('Tensión de la negociación', $html);
+    }
 }
