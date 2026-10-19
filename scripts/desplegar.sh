@@ -63,11 +63,14 @@ fi
 
 if [ "${1:-}" != "--sin-pruebas" ]; then
     paso "Suite completa"
-    docker compose exec -T app php artisan test
+    docker compose run --rm -T app php artisan test
 fi
 
 paso "Compilando assets en limpio"
-docker compose exec -T app php artisan view:clear
+# `run --rm` y no `exec`: `exec` exige que el contenedor ya este levantado y
+# fallo con «service "app" is not running». `--no-deps` porque vaciar el cache
+# de Blade no toca la base de datos.
+docker compose run --rm --no-deps -T app php artisan view:clear
 docker compose run --rm -T node npm run build
 
 paso "Subiendo assets"
