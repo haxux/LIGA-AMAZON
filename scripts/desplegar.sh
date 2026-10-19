@@ -36,6 +36,14 @@ for v in CLAVE PUERTO REMOTO RUTA PHP SITIO; do
     [ -n "${!v:-}" ] || { echo "Falta $v en $CONFIG" >&2; exit 1; }
 done
 
+# RUTA es del SERVIDOR. Sin comillas en el fichero, bash le expande la tilde al
+# asignarla y apunta al home de esta máquina: rsync falló con «mkdir
+# /home/jonathan/domains/... failed». Que se note aquí y no a mitad del
+# despliegue.
+case "$RUTA" in
+    "$HOME"/*) echo "RUTA apunta a tu home local ($RUTA). Ponla entre comillas en $CONFIG." >&2; exit 1 ;;
+esac
+
 paso() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 en_servidor() { ssh -i "$CLAVE" -p "$PUERTO" "$REMOTO" "cd $RUTA && $1"; }
 
