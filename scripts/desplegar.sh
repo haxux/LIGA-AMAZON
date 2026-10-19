@@ -16,12 +16,25 @@
 #
 set -euo pipefail
 
-CLAVE=~/.ssh/liga_hostinger
-PUERTO=65002
-REMOTO=u269987465@109.106.251.174
-RUTA=~/domains/lietoernooien.com/app
-PHP=/opt/alt/php84/usr/bin/php
-SITIO=https://lietoernooien.com
+# Las coordenadas del servidor NO viven aquí: este repositorio es público, y
+# aunque la clave privada nunca ha estado en él, publicar la máquina, el usuario
+# y el puerto es decirle a cualquiera exactamente dónde apuntar.
+#
+# Van en `scripts/produccion.env`, que está en .gitignore. Se crea copiando
+# `scripts/produccion.env.ejemplo` y rellenándolo una vez.
+CONFIG="$(dirname "$0")/produccion.env"
+
+if [ ! -f "$CONFIG" ]; then
+    echo "Falta $CONFIG. Cópialo de produccion.env.ejemplo y rellénalo." >&2
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+. "$CONFIG"
+
+for v in CLAVE PUERTO REMOTO RUTA PHP SITIO; do
+    [ -n "${!v:-}" ] || { echo "Falta $v en $CONFIG" >&2; exit 1; }
+done
 
 paso() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 en_servidor() { ssh -i "$CLAVE" -p "$PUERTO" "$REMOTO" "cd $RUTA && $1"; }

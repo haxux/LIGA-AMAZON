@@ -38,3 +38,4 @@ Thumbs.db
 # esto es público. Se carga en el servidor con `php artisan fc:importar-catalogo`.
 /storage/app/private/*.csv
 .claude/settings.local.json
+scripts/produccion.env

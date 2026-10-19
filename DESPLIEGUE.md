@@ -13,13 +13,23 @@ se imagina. Lo que no se ha probado se dice que no se ha probado.
 
 ---
 
+## 0. Las coordenadas no están aquí
+
+**Este repositorio es público.** La máquina, el usuario y el puerto viven en
+`scripts/produccion.env`, que está en `.gitignore`; se crea una vez copiando
+`scripts/produccion.env.ejemplo`. Los comandos de este documento los nombran
+como `$REMOTO`, `$CLAVE` y `$PUERTO`.
+
+La clave privada **nunca ha estado en git** y no debe estarlo: aquí y en el
+fichero de configuración va sólo su ruta.
+
 ## 1. La máquina
 
 | | |
 |---|---|
-| Host | `us-imm-web909.main-hosting.eu` — `109.106.251.174` |
-| Usuario | `u269987465` |
-| SSH | puerto **65002**, sólo por clave |
+| Host | en `scripts/produccion.env`, fuera de git |
+| Usuario | ídem |
+| SSH | puerto no estándar, **sólo por clave** (ED25519 dedicada al despliegue) |
 | PHP | **8.4** — se elige en hPanel → Avanzado → Configuración PHP |
 | Base de datos | **MariaDB 11.8**, en la misma máquina |
 | Composer | 2.9.8, en `/usr/local/bin/composer` |
@@ -80,8 +90,8 @@ que no viaja con el repositorio: hay que compilarlo en local y subirlo.
 npm ci
 php artisan view:clear      # IMPRESCINDIBLE, ver abajo
 npm run build
-rsync -az --delete -e "ssh -i ~/.ssh/liga_hostinger -p 65002" \
-  public/build/ u269987465@109.106.251.174:~/domains/lietoernooien.com/app/public/build/
+rsync -az --delete -e "ssh -i $CLAVE -p $PUERTO" \
+  public/build/ $REMOTO:~/domains/lietoernooien.com/app/public/build/
 ```
 
 ### Los estáticos de `public/` se cachean una semana
@@ -154,7 +164,7 @@ anula partidos vencidos y manda recordatorios. Se configura en hPanel →
 Avanzado → Trabajos cron, **una vez al día**:
 
 ```bash
-cd /home/u269987465/domains/lietoernooien.com/app && curl -s \
+cd $RUTA && curl -s \
   -H "Authorization: Bearer $(grep '^CRON_SECRET=' .env | cut -d= -f2)" \
   -H "Host: lietoernooien.com" http://127.0.0.1/cron/tick > /dev/null
 ```
@@ -178,7 +188,7 @@ una, y escritas a mano se olvidan: el `view:clear` antes de compilar, el
 A mano, si hace falta:
 
 ```bash
-ssh -i ~/.ssh/liga_hostinger -p 65002 u269987465@109.106.251.174
+ssh -i $CLAVE -p $PUERTO $REMOTO
 cd ~/domains/lietoernooien.com/app
 P=/opt/alt/php84/usr/bin/php
 
