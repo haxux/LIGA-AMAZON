@@ -308,6 +308,112 @@ final class TransferService
      * irse. Vale igual para los cuatro tipos: una venta fuera, un traspaso entre
      * clubes de la liga y las dos cesiones pasan por aquí.
      */
+    /**
+     * Deshace lo que un traspaso ejecutado movió en las plantillas: el espejo
+     * exacto de `moveSquad()`.
+     *
+     * Borrar un traspaso devolvía el dinero —los movimientos cuelgan de él y se
+     * van en cascada— pero dejaba al jugador a medio camino. Pasó con Lucas
+     * Chávez el 2026-10-17: su venta se aprobó, luego se borró el traspaso, y
+     * quedó siendo de La Fábrica pero marcado como ido al CD Tondela, sin
+     * plantilla y sin dorsal. Desde el chat ya no se le podía ni volver a
+     * ofrecer, porque allí sólo aparece quien está en una plantilla.
+     *
+     * Lo que NO se recupera es el dorsal: cerrar una pertenencia lo suelta para
+     * que otro pueda llevarlo, así que al volver se le da el primero libre. El
+     * suyo puede haberlo cogido alguien mientras tanto.
+     *
+     * Un fichaje de fuera de la liga creó la ficha del jugador; deshacerlo NO la
+     * borra —se llevaría sus eventos por delante (diseño D9)—, sólo lo saca de
+     * la plantilla.
+     */
+    public function undoSquad(Transfer $transfer): void
+    {
+        $player = $transfer->player;
+
+        if ($player === null) {
+            return;
+        }
+
+        DB::transaction(function () use ($transfer, $player): void {
+            // Sale de la plantilla que lo recibió. Se CIERRA y no se borra: si
+            // llegó a jugar algún partido allí, su paso tiene que seguir
+            // constando para poder anotarle esos eventos.
+            $received = $this->teamOf($transfer->toClub, $transfer);
+
+            if ($received !== null) {
+                SquadMembership::query()
+                    ->active()
+                    ->where('team_id', $received->getKey())
+                    ->where('player_id', $player->getKey())
+                    ->get()
+                    ->each(fn (SquadMembership $membership) => $membership->close());
+            }
+
+            $attributes = [];
+
+            // Una venta fuera de la liga le puso la marca de salida.
+            if (! $transfer->isIncoming() && ! $transfer->isLoan()) {
+                $attributes['left_at'] = null;
+                $attributes['left_to'] = null;
+            }
+
+            // Un fichaje cambió de dueño; una cesión no.
+            if ($transfer->type === Transfer::TYPE_SIGNING && $transfer->from_club_id !== null) {
+                $attributes['club_id'] = $transfer->from_club_id;
+            }
+
+            if ($attributes !== []) {
+                $player->forceFill($attributes)->save();
+            }
+
+            // Y vuelve a la plantilla de la que salió, reabriendo su fila de
+            // siempre en vez de crear otra.
+            $origin = $this->teamOf($transfer->fromClub, $transfer);
+
+            if ($origin === null) {
+                return; // venía de fuera de la liga: no hay plantilla a la que volver
+            }
+
+            $back = SquadMembership::firstOrNew([
+                'team_id' => $origin->getKey(),
+                'player_id' => $player->getKey(),
+            ]);
+
+            if ($back->exists && ! $back->hasLeft()) {
+                return; // ya estaba dentro
+            }
+
+            $back->fill([
+                'left_at' => null,
+                'shirt_number' => $this->firstFreeShirtNumber($origin),
+                'type' => $back->exists ? $back->type : SquadMembership::TYPE_OWNED,
+            ])->save();
+        });
+    }
+
+    /**
+     * Si este traspaso es el ÚLTIMO que se ejecutó sobre ese jugador.
+     *
+     * Deshacer uno anterior sería mentir: si se vendió de A a B y luego de B a
+     * C, deshacer el primero lo devolvería a A mientras el segundo sigue
+     * diciendo que está en C. Sólo el último se puede deshacer sin contradecir
+     * a los demás.
+     */
+    public function isLastExecutedFor(Transfer $transfer): bool
+    {
+        if ($transfer->player_id === null) {
+            return true;
+        }
+
+        return ! Transfer::query()
+            ->where('player_id', $transfer->player_id)
+            ->where('status', Transfer::STATUS_EXECUTED)
+            ->whereKeyNot($transfer->getKey())
+            ->where('id', '>', $transfer->getKey())
+            ->exists();
+    }
+
     private function leaveFormerSquad(Transfer $transfer): void
     {
         $team = $this->teamOf($transfer->fromClub, $transfer);

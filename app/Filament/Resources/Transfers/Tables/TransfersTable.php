@@ -98,7 +98,23 @@ class TransfersTable
                 // movería en absoluto. Corregir uno es borrarlo y registrarlo
                 // otra vez.
                 DeleteAction::make()
-                    ->modalDescription('Deleting it removes the two budget movements it created. It does NOT move the player back: that is done from the squad.'),
+                    ->modalDescription('Deshace la operación entera: devuelve el dinero y devuelve al jugador a la plantilla de la que salió. Vuelve con el primer dorsal libre, porque el suyo pudo cogerlo otro.')
+                    // Sólo el último del jugador. Deshacer uno anterior lo
+                    // devolvería a un club del que otro posterior ya lo sacó, y
+                    // las dos operaciones se contradirían sin que nada avisara.
+                    ->before(function (Transfer $record, DeleteAction $action): void {
+                        if ($record->isProposal() || app(TransferService::class)->isLastExecutedFor($record)) {
+                            return;
+                        }
+
+                        Notification::make()
+                            ->danger()
+                            ->title('Hay operaciones posteriores de ese jugador')
+                            ->body('Bórralas primero: deshacer ésta lo devolvería a un club del que ya salió.')
+                            ->send();
+
+                        $action->halt();
+                    }),
             ]);
     }
 }
