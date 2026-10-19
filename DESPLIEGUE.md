@@ -166,6 +166,17 @@ panel**. Sin la cabecera, la ruta responde 403 — comprobado.
 
 ## 5. Desplegar un cambio
 
+**Lo normal es `scripts/desplegar.sh`**, que hace todo lo de abajo en orden y
+comprueba el sitio al terminar. Se niega a arrancar si hay cambios sin commitear
+o si tu rama no coincide con `origin/main`, que son las dos formas de desplegar
+algo que no es lo que crees. Con `--sin-pruebas` se salta la suite.
+
+Existe porque la receta tiene tres trampas que ya costaron un despliegue cada
+una, y escritas a mano se olvidan: el `view:clear` antes de compilar, el
+`--no-scripts` de Composer, y no correr nunca el seeder.
+
+A mano, si hace falta:
+
 ```bash
 ssh -i ~/.ssh/liga_hostinger -p 65002 u269987465@109.106.251.174
 cd ~/domains/lietoernooien.com/app
