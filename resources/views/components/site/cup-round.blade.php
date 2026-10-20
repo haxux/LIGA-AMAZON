@@ -3,11 +3,11 @@
 {{-- Una ronda eliminatoria con sus cruces: la usan tanto las fases
      preliminares como el cuadro final. --}}
 <section class="mb-8">
-    <h3 class="font-display mb-3 rounded-[4px] bg-surface-alt px-4 py-2 text-lg uppercase tracking-wide text-brand">
-        {{ $entry['round']->name }}
-        <span class="font-mono text-[10px] tracking-[0.12em] text-white/40">
-            · {{ $entry['round']->isTwoLegged() ? 'IDA Y VUELTA' : 'PARTIDO ÚNICO' }}
+    <h3 class="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span class="inline-grid -skew-x-12 rounded-[3px] bg-black/85 px-2.5 py-1">
+            <span class="skew-x-12 font-display text-base font-bold uppercase italic tracking-wide text-brand">{{ $entry['round']->name }}</span>
         </span>
+        <span class="font-mono text-[9px] tracking-[0.12em] text-ink/60">{{ $entry['round']->isTwoLegged() ? 'IDA Y VUELTA' : 'PARTIDO ÚNICO' }}</span>
     </h3>
 
     @forelse ($entry['ties'] as $item)
@@ -23,7 +23,7 @@
 
         {{-- Los nombres en los extremos y el global en el centro, con la ida
              y la vuelta al lado. Quién pasó no se escribe: su nombre brilla. --}}
-        <div class="mb-3 rounded-[5px] bg-surface-alt px-4 py-4 sm:px-6 {{ $intl ? 'border-l-[3px] border-brand' : '' }}">
+        <div class="mb-3 rounded-md bg-surface px-4 py-4 sm:px-6 {{ $intl ? 'border border-brand/25' : '' }}">
             {{-- En el móvil, los dos nombres arriba y el marcador debajo, a lo
                  ancho: puestos en tres columnas, el centro (global, ida y vuelta)
                  se comía el sitio y los nombres no se veían. --}}
@@ -36,7 +36,7 @@
                         {{-- El centro: el global grande y, a su lado, cada partido. --}}
                         <div class="order-last col-span-2 flex flex-col items-center gap-2 sm:order-none sm:col-span-1 sm:flex-row sm:gap-5">
                             <div class="text-center">
-                                <div class="flex items-center gap-3 font-display text-4xl font-bold leading-none">
+                                <div class="flex -skew-x-8 items-center gap-3 font-display text-4xl font-extrabold leading-none tabular-nums">
                                     <span class="{{ $result->winner?->is($tie->homeTeam) && $result->isDecided() ? 'text-brand' : 'text-white' }}">{{ $result->played === 0 ? '–' : $result->homeGoals }}</span>
                                     <span class="text-xl text-white/30">:</span>
                                     <span class="{{ $result->winner?->is($tie->awayTeam) && $result->isDecided() ? 'text-brand' : 'text-white' }}">{{ $result->played === 0 ? '–' : $result->awayGoals }}</span>

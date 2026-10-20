@@ -1,4 +1,4 @@
-@props(['heading', 'rows', 'zones' => null, 'form' => null])
+@props(['heading', 'rows', 'zones' => null, 'form' => null, 'legend' => true, 'extra' => null, 'spaced' => true])
 
 {{-- La tabla de una división. El puesto va en una chapa inclinada del color de
      su zona (Champions, ascenso, descenso…), con la raya del borde de la fila
@@ -7,7 +7,13 @@
 
      En el móvil sólo caben puesto, equipo, PJ, DG y PTS: antes la tabla entera
      no cabía y se cortaba justo por DG y PTS. El resto aparece desde tableta, y
-     la racha (`form`, opcional: Historia no la pasa) desde escritorio. --}}
+     la racha (`form`, opcional: Historia no la pasa) desde escritorio.
+
+     También la usan los grupos de las copas: `legend` en falso cuando la
+     leyenda va una sola vez debajo de todos los grupos, y `extra` añade una
+     columna (['label' => 'GRUPO', 'values' => [...]], una por fila) para los
+     mejores terceros. Los negros son fijos (`black`) y no `ink`: dentro de una
+     copa internacional `ink` es un tono claro. --}}
 @php
     $zones = collect($zones);
     $form = collect($form);
@@ -15,10 +21,10 @@
     $names = ['V' => 'Victoria', 'E' => 'Empate', 'D' => 'Derrota'];
 @endphp
 
-<section class="mb-10 overflow-hidden rounded-md bg-surface">
+<section @class(['overflow-hidden rounded-md bg-surface', 'mb-10' => $spaced])>
     @if ($heading)
         <h2 class="flex items-center gap-3 bg-surface-alt px-4 py-2.5">
-            <span class="grid -skew-x-12 place-items-center rounded-[3px] bg-brand px-2.5 py-1 text-ink" aria-hidden="true">
+            <span class="grid -skew-x-12 place-items-center rounded-[3px] bg-brand px-2.5 py-1 text-black/85" aria-hidden="true">
                 <svg viewBox="0 0 24 24" class="size-5 skew-x-12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
                     <path d="M12 2.8l7 2.5V11c0 4.7-3 8.1-7 10-4-1.9-7-5.3-7-10V5.3z" />
                 </svg>
@@ -32,6 +38,9 @@
             <tr class="font-mono text-[10px] tracking-[0.1em] text-white/50">
                 <th class="w-12 py-2 pl-4 sm:w-14">#</th>
                 <th class="px-2 py-2">EQUIPO</th>
+                @if ($extra)
+                    <th class="w-12 px-1 py-2 text-center">{{ $extra['label'] }}</th>
+                @endif
                 <th class="w-10 px-1 py-2 text-center sm:w-12" title="Partidos jugados">PJ</th>
                 <th class="hidden w-10 px-1 py-2 text-center sm:table-cell" title="Ganados">G</th>
                 <th class="hidden w-10 px-1 py-2 text-center sm:table-cell" title="Empatados">E</th>
@@ -41,7 +50,7 @@
                 @if ($form->isNotEmpty())
                     <th class="hidden w-36 px-2 py-2 text-center lg:table-cell">RACHA</th>
                 @endif
-                <th class="w-16 bg-ink/60 px-2 py-2 text-center text-brand sm:w-20">PTS</th>
+                <th class="w-16 bg-black/40 px-2 py-2 text-center text-brand sm:w-20">PTS</th>
             </tr>
         </thead>
         <tbody>
@@ -56,7 +65,7 @@
                         @if ($zone) style="border-color: {{ $zone->hex() }}" @endif>
                         {{-- El color en línea sale de StandingZone::COLORS, una
                              paleta cerrada: ningún valor arbitrario llega a la página. --}}
-                        <span class="grid h-6 w-7 -skew-x-12 place-items-center rounded-[3px] font-display text-sm font-bold {{ $zone ? 'text-ink' : 'text-white/55' }}"
+                        <span class="grid h-6 w-7 -skew-x-12 place-items-center rounded-[3px] font-display text-sm font-bold {{ $zone ? 'text-black/85' : 'text-white/55' }}"
                               @if ($zone) style="background-color: {{ $zone->hex() }}" title="{{ $zone->label }}" @endif>
                             <span class="skew-x-12">{{ $position }}</span>
                         </span>
@@ -72,6 +81,9 @@
                             ])>{{ $row->team->name }}</span>
                         </a>
                     </td>
+                    @if ($extra)
+                        <td class="px-1 py-2.5 text-center font-mono text-[11px] tracking-[0.1em] text-white/55">{{ $extra['values'][$index] ?? '' }}</td>
+                    @endif
                     <td class="px-1 py-2.5 text-center tabular-nums text-white/75">{{ $row->played }}</td>
                     <td class="hidden px-1 py-2.5 text-center tabular-nums text-white/75 sm:table-cell">{{ $row->won }}</td>
                     <td class="hidden px-1 py-2.5 text-center tabular-nums text-white/75 sm:table-cell">{{ $row->drawn }}</td>
@@ -90,7 +102,7 @@
                             </span>
                         </td>
                     @endif
-                    <td class="bg-ink/60 px-2 py-2.5 text-center">
+                    <td class="bg-black/40 px-2 py-2.5 text-center">
                         <span class="inline-block -skew-x-8 font-display text-2xl font-extrabold leading-none tabular-nums text-brand">{{ $row->points }}</span>
                     </td>
                 </tr>
@@ -98,7 +110,7 @@
         </tbody>
     </table>
 
-    @if ($zones->isNotEmpty())
+    @if ($legend && $zones->isNotEmpty())
         <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/[0.055] px-4 py-3 font-mono text-[10px] tracking-[0.06em] text-white/55">
             @foreach ($zones as $zone)
                 <span class="flex items-center gap-1.5">

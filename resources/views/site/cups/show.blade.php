@@ -37,7 +37,7 @@
                         </div>
                     </div>
                     @if ($cup->season)
-                        <div class="font-mono text-[11px] tracking-[0.25em] text-ink/70">TEMPORADA {{ mb_strtoupper($cup->season->name) }}</div>
+                        <div class="font-mono text-[11px] tracking-[0.25em] text-ink/70">{{ mb_strtoupper($cup->season->name) }}</div>
                     @endif
                 </div>
             </header>
@@ -52,27 +52,49 @@
                 <div class="font-display text-sm font-semibold tracking-[0.35em] text-white/85">— {{ mb_strtoupper($design->label()) }} —</div>
                 <h1 class="font-display mt-1 text-4xl font-extrabold uppercase tracking-wide text-white drop-shadow-[0_4px_14px_rgba(0,0,0,.6)] sm:text-6xl">{{ $cup->name }}</h1>
                 @if ($cup->season)
-                    <div class="mt-3 font-mono text-[11px] tracking-[0.25em] text-brand">TEMPORADA {{ mb_strtoupper($cup->season->name) }}</div>
+                    <div class="mt-3 font-mono text-[11px] tracking-[0.25em] text-brand">{{ mb_strtoupper($cup->season->name) }}</div>
                 @endif
             </header>
         @endif
 
-        {{-- Las cifras de la copa, de un vistazo. --}}
-        <div class="mb-12 grid grid-cols-3 gap-3 text-center">
-            @foreach ([
-                ['value' => $cup->participants()->count(), 'label' => 'EQUIPOS'],
-                ['value' => $groups->count() ?: '—', 'label' => 'GRUPOS'],
-                ['value' => ($preliminaryRounds->count() + $rounds->count()) ?: '—', 'label' => 'RONDAS'],
-            ] as $stat)
-                <div class="rounded-md border border-brand/25 bg-surface px-3 py-4">
-                    <div class="font-display text-3xl font-bold text-brand sm:text-4xl">{{ $stat['value'] }}</div>
-                    <div class="mt-1 font-mono text-[9px] tracking-[0.2em] text-ink/60">{{ $stat['label'] }}</div>
-                </div>
-            @endforeach
-        </div>
     @else
-        <h1 class="font-display mb-6 text-3xl uppercase tracking-wide text-ink">{{ $cup->name }}</h1>
+        {{-- Una nacional, con una portada como la ficha de club: la placa de
+             trofeo, el nombre en grande y la temporada. --}}
+        <header class="mb-4 flex flex-wrap items-center gap-4 rounded-t-md bg-surface p-5 sm:gap-5 sm:p-6">
+            <span class="grid size-16 shrink-0 -skew-x-12 place-items-center rounded-[5px] bg-brand text-black/85 sm:size-20" aria-hidden="true">
+                <svg viewBox="0 0 120 80" class="h-9 skew-x-12 sm:h-11" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M42 8h36v18a18 18 0 0 1-36 0z" /><path d="M42 13H30v5a13 13 0 0 0 13 13M78 13h12v5a13 13 0 0 1-13 13" /><path d="M60 44v12M46 70h28M50 70l2-14h16l2 14" />
+                </svg>
+            </span>
+            <div class="min-w-0">
+                <h1 class="font-display -skew-x-6 text-3xl font-extrabold uppercase italic leading-none tracking-wide text-white sm:text-5xl">{{ $cup->name }}</h1>
+                <p class="mt-2 font-mono text-[10px] tracking-[0.12em] text-white/50">
+                    {{ $cup->has_group_stage ? 'FASE DE GRUPOS Y ELIMINATORIAS' : 'ELIMINATORIA DIRECTA' }}
+                    @if ($cup->season) · {{ mb_strtoupper($cup->season->name) }} @endif
+                </p>
+            </div>
+        </header>
     @endif
+
+    {{-- Las cifras de la copa, de un vistazo, como el marcador de la ficha de
+         club. En una nacional van pegadas a su portada. --}}
+    <dl @class([
+            'mb-12 grid grid-cols-3 divide-x divide-white/[0.06] overflow-hidden bg-surface-alt',
+            'rounded-b-md' => ! $intl,
+            'rounded-md border border-brand/25' => $intl,
+            '-mt-4' => ! $intl,
+        ])>
+        @foreach ([
+            ['value' => $cup->participants()->count(), 'label' => 'EQUIPOS'],
+            ['value' => $groups->count() ?: '—', 'label' => 'GRUPOS'],
+            ['value' => ($preliminaryRounds->count() + $rounds->count()) ?: '—', 'label' => 'RONDAS'],
+        ] as $stat)
+            <div class="px-4 py-3 sm:px-5">
+                <dt class="font-mono text-[9px] tracking-[0.12em] text-white/50 sm:text-[10px]">{{ $stat['label'] }}</dt>
+                <dd class="mt-0.5 -skew-x-8 font-display text-3xl font-extrabold leading-none tabular-nums text-brand sm:text-4xl">{{ $stat['value'] }}</dd>
+            </div>
+        @endforeach
+    </dl>
 
     {{-- Las fases preliminares (de clasificación): eliminatorias que se
          juegan antes de los grupos, para entrar en ellos. --}}
@@ -93,68 +115,16 @@
 
         <div class="mb-10 grid gap-4">
             @foreach ($groups as $entry)
-                <section class="overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25' : '' }}">
-                    <h3 class="font-display bg-surface-alt px-4 py-2 text-base uppercase tracking-wide text-brand">
-                        Grupo {{ $entry['group']->name }}
-                    </h3>
-
-                    <table class="w-full table-fixed text-left">
-                        {{-- Anchos fijos: sin ellos cada tabla reparte el espacio
-                             según sus nombres y las columnas de un grupo no
-                             caen bajo las del de al lado. --}}
-                        <colgroup>
-                            <col class="w-8 sm:w-12 lg:w-32">
-                            <col>
-                            {{-- Cinco de 80 px y PTS más ancha, como el diseño que se
-                                 pidió: la cifra de puntos queda más separada de la anterior. --}}
-                            @foreach (range(1, 6) as $n)
-                                <col class="w-7 sm:w-16 {{ $n === 6 ? 'lg:w-[8.3rem]' : 'lg:w-20' }}">
-                            @endforeach
-                        </colgroup>
-                        <thead>
-                            <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
-                                <th class="py-2 pl-3 pr-1 sm:pl-4">#</th>
-                                <th class="px-1 py-2 sm:px-2">EQUIPO</th>
-                                @foreach (['PJ', 'G', 'E', 'P', 'DG', 'PTS'] as $head)
-                                    <th class="px-0.5 py-2 text-center sm:px-2">{{ $head }}</th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-white/[0.055]">
-                            @foreach ($entry['table'] as $index => $row)
-                                @php($zone = $cup->standingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
-                                <tr class="font-display text-sm text-white">
-                                    <td class="relative py-2 pl-3 pr-1 text-white/40 tabular-nums sm:pl-4">
-                                        @if ($zone)
-                                            {{-- Color de StandingZone::COLORS, una paleta cerrada. --}}
-                                            <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
-                                        @endif
-                                        {{ $index + 1 }}
-                                    </td>
-                                    <td class="truncate px-1 py-2 sm:px-2">
-                                        <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id]) }}" class="hover:text-brand">
-                                            {{ $row->team->name }}
-                                        </a>
-                                    </td>
-                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->played }}</td>
-                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->won }}</td>
-                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->drawn }}</td>
-                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->lost }}</td>
-                                    <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->goal_difference }}</td>
-                                    <td class="px-0.5 py-2 text-center sm:px-2 font-bold text-brand tabular-nums">{{ $row->points }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </section>
+                <x-site.standings-table :heading="'Grupo '.$entry['group']->name" :rows="$entry['table']"
+                                        :zones="$cup->standingZones" :legend="false" :spaced="false" />
             @endforeach
         </div>
 
         @if ($cup->standingZones->isNotEmpty())
-            <div class="-mt-6 mb-10 flex flex-wrap items-center gap-4 px-1 font-mono text-[10px] tracking-[0.06em] text-white/40">
+            <div class="-mt-6 mb-10 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-surface px-4 py-3 font-mono text-[10px] tracking-[0.06em] text-white/55">
                 @foreach ($cup->standingZones as $zone)
                     <span class="flex items-center gap-1.5">
-                        <span class="size-2 rounded-sm" style="background-color: {{ $zone->hex() }}"></span>
+                        <span class="h-3 w-3.5 -skew-x-12 rounded-[2px]" style="background-color: {{ $zone->hex() }}"></span>
                         {{ mb_strtoupper($zone->label) }}
                     </span>
                 @endforeach
@@ -169,77 +139,18 @@
     @if ($bestThirds->isNotEmpty())
         <x-site.cup-heading :fancy="$intl">Mejores terceros</x-site.cup-heading>
 
-        <section class="mb-10 overflow-hidden rounded-md bg-surface {{ $intl ? 'border border-brand/25' : '' }}">
-            <table class="w-full table-fixed text-left">
-                <colgroup>
-                    <col class="w-8 sm:w-12 lg:w-32">
-                    <col>
-                    <col class="w-7 sm:w-16">
-                    @foreach (range(1, 6) as $n)
-                        <col class="w-7 sm:w-16 {{ $n === 6 ? 'lg:w-[8.3rem]' : 'lg:w-20' }}">
-                    @endforeach
-                </colgroup>
-                <thead>
-                    <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
-                        <th class="py-2 pl-3 pr-1 sm:pl-4">#</th>
-                        <th class="px-1 py-2 sm:px-2">EQUIPO</th>
-                        <th class="px-1 py-2 sm:px-2"><span class="sm:hidden">GR</span><span class="hidden sm:inline">GRUPO</span></th>
-                        @foreach (['PJ', 'G', 'E', 'P', 'DG', 'PTS'] as $head)
-                            <th class="px-0.5 py-2 text-center sm:px-2">{{ $head }}</th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/[0.055]">
-                    @foreach ($bestThirds as $index => $entry)
-                        @php($row = $entry['row'])
-                        @php($zone = $cup->thirdsStandingZones->first(fn ($candidate) => $candidate->covers($index + 1)))
-                        <tr class="font-display text-sm text-white">
-                            <td class="relative py-2 pl-3 pr-1 text-white/40 tabular-nums sm:pl-4">
-                                @if ($zone)
-                                    <span class="absolute inset-y-0 left-0 w-[3px]" style="background-color: {{ $zone->hex() }}"></span>
-                                @endif
-                                {{ $index + 1 }}
-                            </td>
-                            <td class="truncate px-1 py-2 sm:px-2">
-                                <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id]) }}" class="hover:text-brand">
-                                    {{ $row->team->name }}
-                                </a>
-                            </td>
-                            <td class="px-1 py-2 font-mono text-[10px] tracking-[0.1em] text-white/45 sm:px-2">
-                                {{ mb_strtoupper($entry['group']->name) }}
-                            </td>
-                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->played }}</td>
-                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->won }}</td>
-                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->drawn }}</td>
-                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->lost }}</td>
-                            <td class="px-0.5 py-2 text-center sm:px-2 tabular-nums">{{ $row->goal_difference }}</td>
-                            <td class="px-0.5 py-2 text-center sm:px-2 font-bold text-brand tabular-nums">{{ $row->points }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-
-            @if ($cup->thirdsStandingZones->isNotEmpty())
-                <div class="flex flex-wrap items-center gap-4 px-4 py-3 font-mono text-[10px] tracking-[0.06em] text-white/40">
-                    @foreach ($cup->thirdsStandingZones as $zone)
-                        <span class="flex items-center gap-1.5">
-                            <span class="size-2 rounded-sm" style="background-color: {{ $zone->hex() }}"></span>
-                            {{ mb_strtoupper($zone->label) }}
-                        </span>
-                    @endforeach
-                </div>
-            @endif
-        </section>
+        <x-site.standings-table :heading="null" :rows="$bestThirds->pluck('row')" :zones="$cup->thirdsStandingZones"
+                                :extra="['label' => 'GRUPO', 'values' => $bestThirds->map(fn ($entry) => mb_strtoupper($entry['group']->name))->all()]" />
     @endif
 
     {{-- El cuadro: las rondas después de los grupos. --}}
     <x-site.cup-heading :fancy="$intl">{{ $intl ? 'Fase final' : 'Cuadro' }}</x-site.cup-heading>
 
-    @forelse ($rounds as $entry)
-        <x-site.cup-round :entry="$entry" :intl="$intl" />
-    @empty
+    @if ($rounds->isNotEmpty())
+        <x-site.cup-bracket :rounds="$rounds" :intl="$intl" />
+    @else
         <p class="rounded-md bg-surface px-4 py-6 text-center font-display text-lg uppercase tracking-wide text-white/60">
             Esta copa todavía no tiene rondas.
         </p>
-    @endforelse
+    @endif
 </x-layouts.site>
