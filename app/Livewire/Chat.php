@@ -324,11 +324,45 @@ class Chat extends Component
 
         $season = app(SeasonResolver::class)->active();
 
+        return array_map(fn (array $player) => $player['name'], $this->offerablePlayers($club, $season));
+    }
+
+    /**
+     * El valor de mercado de cada jugador ofertable, por id. Va con el
+     * formulario para que el importe se rellene en el navegador al elegir
+     * jugador, sin ir al servidor: el desplegable no viaja hasta la siguiente
+     * petición, y con eso el valor tardaba hasta el siguiente sondeo (5 s) en
+     * aparecer.
+     *
+     * @return array<int, int|null>
+     */
+    public function offerableValues(): array
+    {
+        $user = $this->user();
+        $other = $this->conversation()?->other($user);
+
+        if (! $this->mayOffer() || $other === null || ($this->toPresident() && $this->asking())) {
+            return [];
+        }
+
+        $club = $this->asking() ? $other->club_id : $user->club_id;
+
+        return array_map(
+            fn (array $player) => $player['value'],
+            $this->offerablePlayers($club, app(SeasonResolver::class)->active()),
+        );
+    }
+
+    /**
+     * @return array<int, array{name: string, value: int|null}>
+     */
+    private function offerablePlayers(?int $club, mixed $season): array
+    {
         return $this->once('options:'.$club, fn () => $this->playersOf($club, $season));
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int, array{name: string, value: int|null}>
      */
     private function playersOf(?int $club, mixed $season): array
     {
@@ -351,7 +385,10 @@ class Chat extends Component
 
         return $players
             ->reject(fn (Player $player) => in_array($player->getKey(), $loaned, true))
-            ->pluck('name', 'id')
+            ->mapWithKeys(fn (Player $player) => [$player->getKey() => [
+                'name' => $player->name,
+                'value' => $player->market_value === null ? null : (int) $player->market_value,
+            ]])
             ->all();
     }
 
@@ -442,10 +479,15 @@ class Chat extends Component
      * Al elegir jugador, el importe arranca en su valor de mercado. Es el punto
      * de partida —el técnico lo cambia—, no un precio fijo. Una cesión no
      * lleva importe.
+     *
+     * Lo normal es que ya lo haya puesto el navegador (ver `offerableValues()`);
+     * esto es el respaldo, y sólo rellena un importe vacío: el desplegable
+     * viaja junto con el importe al enviar, y aquí se pisaba la cifra que el
+     * técnico acababa de escribir.
      */
     public function updatedOfferPlayerId(): void
     {
-        if ($this->free() || blank($this->offerPlayerId)) {
+        if ($this->free() || blank($this->offerPlayerId) || filled($this->offerAmount)) {
             return;
         }
 

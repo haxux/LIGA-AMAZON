@@ -137,6 +137,30 @@ class ChatRobustnessTest extends TestCase
             ->assertSet('error', 'Elige al jugador de la lista del catálogo: escribir su nombre no basta.');
     }
 
+    /**
+     * El valor de mercado viaja con el formulario para que el navegador ponga
+     * el importe al elegir jugador, sin esperar al siguiente sondeo.
+     */
+    public function test_the_form_carries_the_market_value_of_each_player(): void
+    {
+        $this->chat($this->withRival)
+            ->set('offerKind', Offer::KIND_BUY)
+            ->assertSee('2000000');
+    }
+
+    /**
+     * Jugador e importe viajan juntos al enviar: el respaldo del servidor no
+     * puede pisar la cifra que el técnico acaba de escribir.
+     */
+    public function test_a_typed_amount_survives_picking_the_player(): void
+    {
+        $this->chat($this->withRival)
+            ->set('offerKind', Offer::KIND_BUY)
+            ->set('offerAmount', '1500000')
+            ->set('offerPlayerId', (string) $this->his->id)
+            ->assertSet('offerAmount', '1500000');
+    }
+
     public function test_an_offer_without_an_amount_says_so(): void
     {
         $this->chat($this->withRival)

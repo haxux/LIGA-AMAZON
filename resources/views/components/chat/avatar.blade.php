@@ -16,17 +16,18 @@
 
     // Color estable por nombre: el mismo interlocutor sale siempre igual, y dos
     // distintos rara vez coinciden.
+    // Tonos sólidos, sin degradado, como el resto del sitio.
     $tones = [
-        'bg-gradient-to-br from-amber-400 to-amber-600',
-        'bg-gradient-to-br from-emerald-500 to-emerald-700',
-        'bg-gradient-to-br from-sky-500 to-sky-700',
-        'bg-gradient-to-br from-violet-500 to-violet-700',
-        'bg-gradient-to-br from-rose-500 to-rose-700',
-        'bg-gradient-to-br from-teal-500 to-teal-700',
+        'bg-amber-600',
+        'bg-emerald-700',
+        'bg-sky-700',
+        'bg-violet-700',
+        'bg-rose-700',
+        'bg-teal-700',
     ];
     // El presidente, en el acento de la casa: se distingue de un vistazo.
     $tone = $user?->isAdmin()
-        ? 'bg-gradient-to-br from-slate-500 to-slate-700 ring-2 ring-brand/70'
+        ? 'bg-slate-600 ring-2 ring-brand/70'
         : $tones[crc32((string) $user?->name) % count($tones)];
 @endphp
 
