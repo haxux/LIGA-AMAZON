@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CupScope;
 use App\Models\Cup;
 use App\Models\Game;
 use App\Models\Season;
@@ -66,11 +67,15 @@ final class Competition
      *
      * @return Collection<int, self>
      */
-    public static function forSeason(?Season $season): Collection
+    public static function forSeason(?Season $season, bool $international = true): Collection
     {
         $cups = $season === null
             ? collect()
-            : Cup::query()->where('season_id', $season->getKey())->orderBy('name')->get();
+            : Cup::query()
+                ->where('season_id', $season->getKey())
+                ->when(! $international, fn ($query) => $query->where('scope', '!=', CupScope::International))
+                ->orderBy('name')
+                ->get();
 
         return collect([self::all(), self::league()])
             ->concat($cups->map(fn (Cup $cup) => self::cup($cup)))

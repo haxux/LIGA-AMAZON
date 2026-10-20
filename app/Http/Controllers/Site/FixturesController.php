@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Site;
 
+use App\Enums\CupScope;
 use App\Models\Cup;
 use App\Models\Division;
 use App\Models\Game;
@@ -28,7 +29,11 @@ class FixturesController extends SiteController
 
         // Por omisión la liga, que es lo que esta pantalla siempre enseñó: «Todo»
         // suma las copas debajo, y una copa concreta enseña sólo la suya.
-        $competitions = Competition::forSeason($season);
+        // Sin las copas internacionales (decisión del propietario, 2026-10-20):
+        // sus partidos se ven sólo en la página de cada copa, con su escenario.
+        // Una `?competicion=copa:N` de una internacional cae en la liga, como
+        // cualquier otra que no esté en la lista.
+        $competitions = Competition::forSeason($season, international: false);
         $competition = Competition::resolve($competitions, $request->string('competicion')->toString(), Competition::league());
         $showLeague = $competition->isAll() || $competition->isLeague();
 
@@ -90,6 +95,7 @@ class FixturesController extends SiteController
 
         return Cup::query()
             ->where('season_id', $season->getKey())
+            ->where('scope', '!=', CupScope::International)
             ->when($competition->cupId, fn ($query, int $cupId) => $query->whereKey($cupId))
             ->orderBy('name')
             ->get()

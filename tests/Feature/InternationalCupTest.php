@@ -86,12 +86,17 @@ class InternationalCupTest extends TestCase
         $this->get(route('site.cups.index'))->assertOk()->assertSee($color, false)->assertSee('COPA SUDAMERICANA');
         $this->get(route('site.games.show', $game))->assertOk()->assertSee('cup-stage-sudamericana', false);
 
-        // Con `?competicion=todo`, que es la vista donde las copas salen debajo
-        // de la liga: Partidos enseña SÓLO la liga por omisión, que es lo que
-        // esa pantalla siempre enseñó (ver FixturesController).
+        // Partidos no enseña las internacionales, ni con `?competicion=todo` ni
+        // pidiéndola por su clave (decisión del propietario, 2026-10-20): se
+        // ven sólo en la página de la copa.
         $this->get(route('site.fixtures', ['competicion' => Competition::ALL]))
             ->assertOk()
-            ->assertSee($color, false);
+            ->assertDontSee($color, false)
+            ->assertDontSee('Sudamericana');
+
+        $this->get(route('site.fixtures', ['competicion' => 'copa:'.$cup->id]))
+            ->assertOk()
+            ->assertDontSee('Sudamericana');
     }
 
     public function test_the_admin_creates_an_international_cup_with_a_design(): void
