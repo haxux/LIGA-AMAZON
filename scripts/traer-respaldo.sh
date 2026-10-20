@@ -35,7 +35,9 @@ echo "Última copia en el servidor: $(basename "$ultimo")"
 
 for pieza in "$ultimo" "$pareja"; do
     if remoto "cd $RUTA/../../.. && test -f '$pieza'"; then
-        scp -q -i "$CLAVE" -P "$PUERTO" "$REMOTO:\$HOME/$pieza" "$DESTINO/"
+        # Ruta relativa, sin `$HOME`: el scp moderno habla SFTP y no expande
+        # variables del shell remoto, pero arranca ya en el home.
+        scp -q -i "$CLAVE" -P "$PUERTO" "$REMOTO:$pieza" "$DESTINO/"
         echo "  bajado  $(basename "$pieza")  $(du -h "$DESTINO/$(basename "$pieza")" | cut -f1)"
     else
         echo "  falta   $(basename "$pieza")  (la copia está incompleta)" >&2

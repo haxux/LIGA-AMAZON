@@ -260,18 +260,70 @@ de la instantánea acabaría con una segunda ficha en su club viejo. Forzarlo es
 
 ### Copias de seguridad
 
-**No hay copias automáticas todavía.** Es lo primero pendiente de §8. A mano:
+`scripts/respaldar.sh` corre **en el servidor** y guarda en `~/respaldos/` las
+dos piezas que juntas son un momento entero de la liga: la base comprimida y un
+paquete con las subidas (escudos, fotos de jugadores, imágenes de noticias).
+Conserva las ocho últimas semanales y rota el resto.
 
-```bash
-cd ~/domains/lietoernooien.com/app
-MYSQL_PWD=$(grep '^DB_PASSWORD=' .env | cut -d= -f2- | tr -d "'") \
-mysqldump -h localhost -u "$(grep '^DB_USERNAME=' .env | cut -d= -f2)" \
-  --single-transaction --default-character-set=utf8mb4 --complete-insert --hex-blob \
-  "$(grep '^DB_DATABASE=' .env | cut -d= -f2)" | gzip -9 > ~/respaldo-$(date +%Y%m%d).sql.gz
+**Este hosting no trae el binario `crontab`**, así que la programación semanal se
+añade una vez a mano: hPanel → *Avanzado* → *Cron Jobs*, cada domingo a las 4:00
+(`0 4 * * 0`), con esta orden:
+
+```
+/bin/bash $HOME/domains/<tu-dominio>/app/scripts/respaldar.sh
 ```
 
-Bájalo de la máquina: una copia que vive en el mismo disco que el original no es
-una copia.
+El script llega al servidor con el propio despliegue, porque vive en el
+repositorio. A mano, y con etiqueta para distinguirla de las semanales:
+
+```bash
+bash ~/domains/<tu-dominio>/app/scripts/respaldar.sh antes-de-cesiones
+```
+
+Tres cosas que el script hace y conviene no perder si alguien lo reescribe:
+
+- **Comprueba la firma `Dump completed`** sobre el fichero ya escrito. Un volcado
+  truncado se comprime igual de bien y pesa lo suyo, así que a simple vista
+  parece correcto; ya salió una copia de 20 bytes que nadie habría notado.
+- **Quita del `.env` las comillas simples y las dobles.** Esa copia de 20 bytes
+  salió justo de ahí: el `sed` de turno quitaba sólo las dobles, y ese día la
+  contraseña venía entre simples.
+- **La rotación borra sólo lo que generó el script con su etiqueta.** Las copias
+  hechas a mano antes de una faena delicada llevan otro nombre y no se tocan: una
+  tarea automática no puede barrer la red de seguridad de nadie.
+
+El `.env` se queda fuera del paquete a propósito —lleva las claves en claro, y
+una copia que se baja a un portátil no es sitio para ellas—. Para restaurar se
+rehace desde `.env.production.example` (§2).
+
+#### Sacarlas de la máquina
+
+Una copia en el mismo disco que el original cubre el susto normal: un borrado,
+un despliegue que sale mal. **No cubre el gordo**: si se pierde la cuenta, se
+pierden el original y las copias a la vez. Para eso, desde la máquina de
+trabajo:
+
+```bash
+scripts/traer-respaldo.sh            # a ~/respaldos-liga
+```
+
+Baja la última semanal con su paquete de subidas y vuelve a verificar la firma
+aquí, porque un fichero truncado se ve igual de sano desde fuera.
+
+#### Restaurar
+
+```bash
+cd ~/domains/<tu-dominio>/app
+gunzip -c ~/respaldos/semanal-AAAAMMDD-HHMM.sql.gz | \
+MYSQL_PWD=$(grep '^DB_PASSWORD=' .env | cut -d= -f2- | tr -d "\"'") \
+mysql -h localhost -u "$(grep '^DB_USERNAME=' .env | cut -d= -f2- | tr -d "\"'")" \
+  "$(grep '^DB_DATABASE=' .env | cut -d= -f2- | tr -d "\"'")"
+tar -xzf ~/respaldos/semanal-AAAAMMDD-HHMM-archivos.tar.gz -C .
+```
+
+El volcado trae `DROP TABLE IF EXISTS` en cada tabla, así que restaura encima de
+la base actual sin vaciarla antes. Eso también significa que **se lleva por
+delante todo lo posterior a la copia**.
 
 ---
 
@@ -300,8 +352,10 @@ coste 12, Eloquent parametrizado, Blade escapado, `#[Fillable]` en los modelos.
 
 ## 8. Pendiente
 
-1. **Copias de seguridad automáticas** y fuera de la máquina. Hoy no hay
-   ninguna.
+1. **Que las copias salgan solas de la máquina.** Las semanales ya se hacen en
+   el servidor (§6), pero bajarlas sigue siendo manual, y una copia en el mismo
+   disco que el original no protege de perder la cuenta. Falta un sitio de
+   destino que no dependa de que el portátil esté encendido.
 2. **HTTPS**: hPanel emite certificado gratis en cuanto el dominio resuelva.
    Mientras tanto `APP_FORCE_HTTPS=true` genera URLs `https://` que todavía no
    sirven.
