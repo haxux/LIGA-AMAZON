@@ -17,18 +17,21 @@
          @if ($ruler) data-stat-ruler @endif>
         @foreach ($options as $value => $text)
             @php($active = (string) $value === (string) $selected)
+            {{-- En la regla sólo los números van en corto; «Todas» (venga como
+                 '' o como 'todas') va con su nombre entero. --}}
+            @php($short = $ruler && is_numeric($value))
             <a href="{{ $url($value) }}"
                @if ($active) aria-current="true" @endif
                @class([
                    'shrink-0 -skew-x-12 rounded-[3px] font-display font-bold uppercase italic transition-colors',
                    'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand',
-                   'px-3 py-1.5 text-sm tracking-[0.06em]' => ! $ruler || $value === '',
-                   'grid min-w-9 place-items-center py-1.5 text-base tabular-nums' => $ruler && $value !== '',
+                   'px-3 py-1.5 text-sm tracking-[0.06em]' => ! $short,
+                   'grid min-w-9 place-items-center py-1.5 text-base tabular-nums' => $short,
                    'bg-brand text-ink' => $active,
                    'text-white/60 hover:bg-white/[0.06] hover:text-white' => ! $active,
                ])>
                 {{-- En la regla basta el número: «Jornada» ya lo dice la etiqueta. --}}
-                <span class="inline-block skew-x-12">{{ $ruler && $value !== '' ? $value : $text }}</span>
+                <span class="inline-block skew-x-12">{{ $short ? $value : $text }}</span>
             </a>
         @endforeach
     </div>

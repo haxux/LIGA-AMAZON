@@ -74,7 +74,11 @@ class FixturesPageTest extends TestCase
             ->assertSeeInOrder(['Jornada 1', 'Jornada 2']);
     }
 
-    public function test_the_filter_bar_renders_its_three_selects(): void
+    /**
+     * La temporada sigue en desplegable; la jornada, desde el 2026-10-20, es
+     * una regla de enlaces como la de Estadísticas, con «todas» al principio.
+     */
+    public function test_the_filters_render_the_season_select_and_the_matchday_ruler(): void
     {
         $season = Season::factory()->create(['is_current' => true]);
         $this->gameIn(Matchday::factory()->for($season)->create(['number' => 1]), 'Manaos FC', 'Tapajós SC');
@@ -82,9 +86,9 @@ class FixturesPageTest extends TestCase
         $this->get(route('site.fixtures'))
             ->assertOk()
             ->assertSee('name="temporada"', false)
-            ->assertSee('name="division"', false)
-            ->assertSee('name="jornada"', false)
-            ->assertSee('<option value="todas"', false);
+            ->assertSee('data-stat-ruler', false)
+            ->assertSee('jornada=todas', false)
+            ->assertSee('jornada=1', false);
     }
 
     public function test_defaults_to_the_current_season(): void
