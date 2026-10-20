@@ -62,6 +62,11 @@
                 ? App\Models\Division::query()->where('season_id', $coachSeason->getKey())->has('teams')->orderBy('id')->get()
                 : collect();
 
+            // Historia sólo se enlaza en el pie si hay algo detrás, igual que
+            // el botón de Clasificación: con el archivo vacío sería una puerta
+            // a una habitación vacía.
+            $hasHistory = app(App\Services\SeasonResolver::class)->archived()->isNotEmpty();
+
             $nav = [
                 // Historia cuelga de Clasificación, así que resalta con ella:
                 // quien está mirando una tabla de 2025 sigue estando en la
@@ -129,9 +134,8 @@
             <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 px-6 py-3 lg:flex-nowrap lg:gap-x-6">
                 {{-- A la portada, que es la convención de cualquier sitio y lo
                      que el propietario pidió: la marca da la bienvenida. --}}
-                <a href="{{ route('site.home') }}" class="order-1 mr-auto flex shrink-0 items-baseline gap-2 font-display text-[22px] leading-none lg:mr-0 lg:text-[26px]">
-                    <span class="font-extrabold text-brand">AMAZON</span>
-                    <span class="font-semibold tracking-[0.14em] text-white">TOERNOOIEN</span>
+                <a href="{{ route('site.home') }}" class="order-1 mr-auto shrink-0 lg:mr-0" aria-label="Amazon Toernooien, inicio">
+                    <x-site.wordmark size="text-[22px] lg:text-[22px] xl:text-[26px]" />
                 </a>
 
                 {{-- El botón del menú, sólo en el móvil. Lleva el aviso de no
@@ -144,7 +148,7 @@
                     @endif
                 </button>
 
-                <nav id="site-nav" class="order-4 mt-3 hidden w-full flex-col gap-y-0.5 border-t border-white/10 pt-2 font-display text-base font-semibold uppercase tracking-[0.08em] data-open:flex lg:order-2 lg:mt-0 lg:flex lg:w-auto lg:min-w-0 lg:flex-1 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-5 lg:gap-y-1 lg:border-0 lg:pt-0 lg:text-[15px]">
+                <nav id="site-nav" class="order-4 mt-3 hidden w-full flex-col gap-y-0.5 border-t border-white/10 pt-2 font-display text-base font-semibold uppercase tracking-[0.08em] data-open:flex lg:tracking-[0.03em] xl:tracking-[0.05em] lg:order-2 lg:mt-0 lg:flex lg:w-auto lg:min-w-0 lg:flex-1 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-0.5 lg:gap-y-1 lg:border-0 lg:pt-0 lg:text-[15px] xl:gap-x-1">
                     @foreach ($nav as $item)
                         @if (! empty($item['coach']) && ($nav[$loop->index - 1]['coach'] ?? false) === false)
                             {{-- Lo del técnico, separado de lo que ve todo el
@@ -156,15 +160,19 @@
                             {{-- Un <details> y no un menú por hover: se abre con
                                  un toque en el móvil y funciona sin JavaScript. --}}
                             <details class="site-nav-menu group lg:relative">
-                                <summary class="flex cursor-pointer list-none items-center gap-1 whitespace-nowrap border-l-[3px] py-2.5 pl-3 lg:border-l-0 lg:border-b-[3px] lg:py-1.5 lg:pl-0 [&::-webkit-details-marker]:hidden {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
-                                    {{ $item['label'] }}
-                                    <svg class="size-3 transition-transform group-open:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+                                <summary class="flex cursor-pointer list-none whitespace-nowrap rounded-[3px] px-3 py-2.5 italic -skew-x-12 transition-colors lg:px-2 lg:py-1.5 xl:px-3 [&::-webkit-details-marker]:hidden {{ $item['active'] ? 'bg-brand text-ink' : 'text-white/72 hover:bg-white/[0.06] hover:text-white' }}">
+                                    <span class="flex skew-x-12 items-center gap-1">
+                                        {{ $item['label'] }}
+                                        <svg class="size-3 transition-transform group-open:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+                                    </span>
                                 </summary>
 
                                 <div class="ml-3 border-l border-white/10 lg:absolute lg:left-0 lg:top-full lg:z-50 lg:ml-0 lg:mt-2 lg:min-w-[14rem] lg:overflow-hidden lg:rounded-[5px] lg:border lg:bg-ink lg:shadow-xl">
                                     @foreach ($item['children'] as $child)
                                         <a href="{{ $child['url'] }}"
-                                           class="block border-l-[3px] px-4 py-2.5 text-sm {{ $child['active'] ? 'border-brand bg-white/[0.06] text-white' : 'border-transparent text-white/72 hover:bg-white/[0.06] hover:text-white' }}">
+                                           @if ($child['active']) aria-current="page" @endif
+                                           class="flex items-center gap-2.5 px-4 py-2.5 text-sm {{ $child['active'] ? 'bg-white/[0.06] text-white' : 'text-white/72 hover:bg-white/[0.06] hover:text-white' }}">
+                                            <span class="h-3 w-1.5 shrink-0 -skew-x-12 rounded-[1px] {{ $child['active'] ? 'bg-brand' : 'bg-white/15' }}" aria-hidden="true"></span>
                                             {{ $child['label'] }}
                                         </a>
                                     @endforeach
@@ -173,18 +181,23 @@
                             @continue
                         @endif
 
+                        {{-- La página activa, con la placa amarilla inclinada de
+                             las pestañas y los filtros del resto del sitio. --}}
                         <a href="{{ $item['url'] }}"
-                           class="flex items-center gap-1.5 whitespace-nowrap border-l-[3px] py-2.5 pl-3 lg:border-l-0 lg:border-b-[3px] lg:py-1.5 lg:pl-0 {{ $item['active'] ? 'border-brand text-white' : 'border-transparent text-white/72 hover:text-white' }}">
+                           @if ($item['active']) aria-current="page" @endif
+                           class="flex -skew-x-12 items-center whitespace-nowrap rounded-[3px] px-3 py-2.5 italic transition-colors lg:px-2 lg:py-1.5 xl:px-3 {{ $item['active'] ? 'bg-brand text-ink' : 'text-white/72 hover:bg-white/[0.06] hover:text-white' }}">
+                            <span class="flex skew-x-12 items-center gap-1.5">
                             {{ $item['label'] }}
 
                             @if (($item['badge'] ?? 0) > 0)
                                 {{-- Los no leídos, visibles desde cualquier
                                      página: es el aviso que el chat tiene, ya
                                      que no hay correos ni websockets. --}}
-                                <span class="flex min-w-[1.15rem] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold leading-[1.15rem] text-ink">
+                                <span class="flex min-w-[1.15rem] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-bold not-italic leading-[1.15rem] text-ink">
                                     {{ $item['badge'] > 9 ? '9+' : $item['badge'] }}
                                 </span>
                             @endif
+                            </span>
                         </a>
                     @endforeach
                 </nav>
@@ -244,42 +257,53 @@
             </main>
         @endif
 
-        <footer class="{{ $theme ? '' : 'mt-10' }} bg-ink py-8 text-white/60">
-            <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-8 px-6">
+        <footer class="{{ $theme ? '' : 'mt-10' }} bg-ink text-white/60">
+            <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-8 px-6 py-8">
                 <div class="max-w-xs">
-                    <div class="flex items-baseline gap-2 font-display text-xl">
-                        <span class="font-extrabold text-brand">AMAZON</span>
-                        <span class="font-semibold tracking-[0.14em] text-white">TOERNOOIEN</span>
-                    </div>
-                    <p class="mt-3 text-sm leading-relaxed">Clasificación, partidos y goleadores de la liga.</p>
+                    <x-site.wordmark size="text-xl" />
+                    <p class="mt-3 text-sm leading-relaxed">La liga de un vistazo: clasificación, partidos, equipos y noticias.</p>
                 </div>
 
                 {{-- En el móvil, en rejilla de dos columnas: en fila envolvían sueltas
                      y el pie quedaba descuadrado. --}}
-                <div class="grid w-full grid-cols-2 gap-x-8 gap-y-6 sm:flex sm:w-auto sm:flex-wrap sm:gap-10">
-                    <div class="flex flex-col gap-2">
-                        <span class="font-mono text-[9px] tracking-[0.14em] text-brand">COMPETICIÓN</span>
-                        <a href="{{ route('site.home') }}" class="text-sm text-white/60 hover:text-brand">Inicio</a>
-                        <a href="{{ route('site.standings') }}" class="text-sm text-white/60 hover:text-brand">Clasificación</a>
-                        <a href="{{ route('site.fixtures') }}" class="text-sm text-white/60 hover:text-brand">Partidos</a>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <span class="font-mono text-[9px] tracking-[0.14em] text-brand">CLUBES</span>
-                        <a href="{{ route('site.clubs.index') }}" class="text-sm text-white/60 hover:text-brand">Equipos</a>
-                        <a href="{{ route('site.scorers') }}" class="text-sm text-white/60 hover:text-brand">Estadísticas</a>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <span class="font-mono text-[9px] tracking-[0.14em] text-brand">SITIO</span>
-                        <a href="{{ route('site.news.index') }}" class="text-sm text-white/60 hover:text-brand">Noticias</a>
-                        {{-- La puerta de entrada del técnico. Discreta a propósito:
-                             el visitante no tiene nada que hacer aquí. --}}
-                        <a href="{{ route('filament.club.auth.login') }}" class="text-sm text-white/60 hover:text-brand">Acceso técnicos</a>
-                    </div>
+                <div class="grid w-full grid-cols-2 gap-x-8 gap-y-6 sm:flex sm:w-auto sm:flex-wrap sm:gap-12">
+                    @foreach ([
+                        'Competición' => [
+                            ['Inicio', route('site.home')],
+                            ['Clasificación', route('site.standings')],
+                            ['Partidos', route('site.fixtures')],
+                            ['Copas', route('site.cups.index')],
+                            ...($hasHistory ? [['Historia', route('site.history')]] : []),
+                        ],
+                        'Clubes' => [
+                            ['Equipos', route('site.clubs.index')],
+                            ['Estadísticas', route('site.scorers')],
+                        ],
+                        // La puerta de entrada del técnico. Discreta a propósito:
+                        // el visitante no tiene nada que hacer aquí.
+                        'Sitio' => [
+                            ['Noticias', route('site.news.index')],
+                            ['Acceso técnicos', route('filament.club.auth.login')],
+                        ],
+                    ] as $column => $links)
+                        <div class="flex flex-col gap-2">
+                            <span class="mb-1 flex items-center gap-2 font-display text-base font-bold uppercase italic tracking-wide text-white">
+                                <span class="h-3.5 w-1.5 shrink-0 -skew-x-12 rounded-[1px] bg-brand" aria-hidden="true"></span>
+                                {{ $column }}
+                            </span>
+                            @foreach ($links as [$text, $href])
+                                <a href="{{ $href }}" class="text-sm text-white/60 hover:text-brand">{{ $text }}</a>
+                            @endforeach
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
-            <div class="mx-auto mt-6 max-w-6xl border-t border-white/10 px-6 pt-4 font-mono text-[10px] tracking-[0.08em] text-white/40">
-                &copy; {{ now()->year }} AMAZON TOERNOOIEN
+            <div class="border-t border-white/10">
+                <div class="mx-auto max-w-6xl px-6 py-4 font-mono text-[10px] tracking-[0.08em] text-white/40">
+                    &copy; {{ now()->year }} AMAZON TOERNOOIEN
+                    @if ($coachSeason) · {{ mb_strtoupper($coachSeason->name) }} @endif
+                </div>
             </div>
         </footer>
 
