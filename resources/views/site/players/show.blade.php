@@ -58,12 +58,14 @@
         <div class="flex flex-wrap items-center gap-4 p-5 sm:gap-5 sm:p-6">
             @if ($player->photo_path)
                 {{-- La foto la sube el administrador a mano: ninguna fuente de
-                     datos libre las trae. Sin foto se cae al dorsal de siempre. --}}
+                     datos libre las trae. Sin foto se cae al dorsal de siempre.
+                     A 64 px como mucho: las fotos que suben son pequeñas y a
+                     96 se veían borrosas. --}}
                 <img src="{{ Storage::disk(config('filesystems.uploads'))->url($player->photo_path) }}"
-                     alt="" class="size-16 shrink-0 rounded-full object-cover ring-2 ring-brand sm:size-24">
+                     alt="" class="size-14 shrink-0 rounded-full object-cover ring-2 ring-brand sm:size-16">
             @else
-                <span class="grid size-16 shrink-0 place-items-center rounded-full bg-surface-muted ring-2 ring-brand sm:size-24">
-                    <span class="-skew-x-8 font-display text-3xl font-extrabold text-brand sm:text-4xl">{{ $shirtNumber ?? '—' }}</span>
+                <span class="grid size-14 shrink-0 place-items-center rounded-full bg-surface-muted ring-2 ring-brand sm:size-16">
+                    <span class="-skew-x-8 font-display text-2xl font-extrabold text-brand sm:text-3xl">{{ $shirtNumber ?? '—' }}</span>
                 </span>
             @endif
 

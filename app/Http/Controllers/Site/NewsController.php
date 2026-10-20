@@ -42,6 +42,7 @@ class NewsController extends Controller
         $items = $base
             ->when($season, fn ($query) => $query->whereHas('team', fn ($team) => $team->where('season_id', $season->getKey())))
             ->when($club, fn ($query) => $query->whereHas('team', fn ($team) => $team->where('club_id', $club->getKey())))
+            ->with('team.club')
             ->latest('published_at')
             ->get();
 
@@ -61,8 +62,28 @@ class NewsController extends Controller
      */
     public function show(string $slug): View
     {
-        $item = News::published()->where('slug', $slug)->firstOrFail();
+        $item = News::published()->where('slug', $slug)->with('team.club')->firstOrFail();
+        $club = $item->team?->club;
 
-        return view('site.news.show', ['item' => $item]);
+        // Para seguir leyendo al terminar: lo último del mismo club, a través
+        // de las temporadas. Si el club no tiene tres, o la noticia no es de
+        // ningún club, se completa con lo último de la liga.
+        $others = News::published()->whereKeyNot($item->getKey())->with('team.club')->latest('published_at');
+
+        $sameClub = $club
+            ? (clone $others)->whereHas('team', fn ($team) => $team->where('club_id', $club->getKey()))->take(3)->get()
+            : collect();
+
+        $more = $sameClub->concat(
+            (clone $others)->whereKeyNot($sameClub->pluck('id')->all())->take(3 - $sameClub->count())->get()
+        );
+
+        return view('site.news.show', [
+            'item' => $item,
+            'club' => $club,
+            'more' => $more,
+            // El rótulo dice «Más de» sólo si de verdad son todas del club.
+            'moreFromClub' => $club !== null && $sameClub->count() === $more->count(),
+        ]);
     }
 }

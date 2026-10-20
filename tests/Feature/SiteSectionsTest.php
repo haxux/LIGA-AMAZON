@@ -246,13 +246,21 @@ class SiteSectionsTest extends TestCase
             ->assertSee('Noticia de Beta');
     }
 
-    public function test_the_filter_is_folded_away_until_used(): void
+    /**
+     * El filtro va a la vista desde el 2026-10-20 (decisión del propietario;
+     * antes iba plegado): un escudo por club que tiene noticias, y sin nada
+     * elegido no hay nada que quitar.
+     */
+    public function test_the_club_filter_is_in_view_and_only_offers_clubs_with_news(): void
     {
-        $this->news();
+        [, , $clubA, $clubB] = $this->news();
+        Club::factory()->create(['name' => 'Club Sin Noticias']);
 
-        $html = $this->get(route('site.news.index'))->getContent();
-
-        $this->assertMatchesRegularExpression('/<details class="group relative shrink-0" >/', $html);
-        $this->assertStringNotContainsString('QUITAR FILTRO', $html);
+        $this->get(route('site.news.index'))
+            ->assertOk()
+            ->assertSee('aria-label="Club Alfa"', false)
+            ->assertSee(route('site.news.index', ['equipo' => $clubB->id]), false)
+            ->assertDontSee('Club Sin Noticias')
+            ->assertDontSee('QUITAR FILTRO');
     }
 }

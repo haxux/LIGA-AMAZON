@@ -98,7 +98,7 @@ class HomeController extends SiteController
                 ->orderBy('name')
                 ->get(),
 
-            'news' => News::published()->latest('published_at')->take(3)->get(),
+            'news' => News::published()->with('team.club')->latest('published_at')->take(3)->get(),
         ]);
     }
 
