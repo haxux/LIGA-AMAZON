@@ -165,8 +165,9 @@ class ClubProfilePageTest extends TestCase
             ->assertOk()
             ->assertSee('Tapajós SC')
             ->assertSee('3–0')
-            // Único equipo con partidos ganados de su división: primero.
-            ->assertSee('EN LA TABLA');
+            // Único equipo con partidos ganados de su división: primero. El
+            // puesto va en el marcador de la cabecera.
+            ->assertSeeInOrder(['PUESTO', '1º']);
     }
 
     public function test_general_names_the_clubs_top_scorer_and_assister(): void

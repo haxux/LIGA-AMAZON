@@ -66,6 +66,8 @@ class ClubProfileController extends SiteController
             'team' => $team,
             'tab' => $tab,
             'tabs' => self::TABS,
+            // El marcador de la cabecera, que se ve en todas las pestañas.
+            'standing' => $team === null ? null : $clubSeason->standing($team),
         ] + $this->dataFor($tab, $club, $team, $clubSeason, $request));
     }
 
@@ -112,7 +114,6 @@ class ClubProfileController extends SiteController
             'general' => [
                 'nextGame' => $clubSeason->nextGame($team),
                 'recentResults' => $clubSeason->recentResults($team),
-                'position' => $clubSeason->position($team),
                 'topScorer' => $clubSeason->topScorer($team),
                 'topAssister' => $clubSeason->topAssister($team),
                 'lineup' => $team->lineup,

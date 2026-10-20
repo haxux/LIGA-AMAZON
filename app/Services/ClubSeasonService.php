@@ -100,13 +100,24 @@ final class ClubSeasonService
      */
     public function position(Team $team): ?int
     {
+        return $this->standing($team)['position'] ?? null;
+    }
+
+    /**
+     * El puesto y la fila entera de la tabla —puntos, partidos, diferencia—,
+     * que es lo que lleva la cabecera de la ficha en todas sus pestañas.
+     *
+     * @return array{position: int, row: StandingRow}|null
+     */
+    public function standing(Team $team): ?array
+    {
         $table = $team->division_id === null || $team->division === null
             ? $this->standings->forSeason($team->season)
             : $this->standings->forDivision($team->division);
 
         $index = $table->search(fn (StandingRow $row) => (int) $row->team->getKey() === (int) $team->getKey());
 
-        return $index === false ? null : $index + 1;
+        return $index === false ? null : ['position' => $index + 1, 'row' => $table[$index]];
     }
 
     /**
