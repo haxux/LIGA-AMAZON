@@ -156,3 +156,11 @@
         0 0 2px color-mix(in oklab, var(--color-brand) 90%, transparent),
         0 0 5px color-mix(in oklab, var(--color-brand) 35%, transparent);
 }
+
+/* Estadísticas en el móvil: con las pestañas montadas (las monta el script de
+   la página), sólo se ve la tabla elegida. Sin script se ven todas. */
+@media (width < 48rem) {
+    [data-stat-tabs].is-tabbed [data-stat-panel]:not(.is-active) {
+        display: none;
+    }
+}
