@@ -160,14 +160,20 @@ responde 200 y parece que funciona.
 ## 4. Lo que corre solo
 
 No hay worker ni scheduler en proceso. Lo único programado es `/cron/tick`, que
-anula partidos vencidos y manda recordatorios. Se configura en hPanel →
-Avanzado → Trabajos cron, **una vez al día**:
+anula partidos vencidos, manda recordatorios y anuncia las noticias
+programadas. Se configura en hPanel → Avanzado → Trabajos cron, **cada 12
+horas** (`0 */12 * * *`):
 
 ```bash
 cd $RUTA && curl -s \
   -H "Authorization: Bearer $(grep '^CRON_SECRET=' .env | cut -d= -f2)" \
   -H "Host: lietoernooien.com" http://127.0.0.1/cron/tick > /dev/null
 ```
+
+El servidor está en **UTC**, así que corre a las 12:00 UTC (7:00 a. m. en
+Bogotá, la pasada que manda los recordatorios del día) y a las 00:00 UTC (7:00
+p. m., la que recoge noticias programadas y partidos nuevos). Es seguro
+repetirlo: recordatorios y noticias llevan su propia marca de «ya enviado».
 
 El secreto se lee del `.env` al ejecutarse, así que **no queda escrito en el
 panel**. Sin la cabecera, la ruta responde 403 — comprobado.
