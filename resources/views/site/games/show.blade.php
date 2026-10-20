@@ -53,7 +53,10 @@
         ];
     @endphp
 
-    {{-- El marcador, que es lo que se viene a ver: los escudos grandes, el
+    {{-- (El negro de los bloques es fijo, `bg-black/60`, y no `bg-ink`: las
+         copas internacionales redefinen `ink` con un tono claro.)
+
+         El marcador, que es lo que se viene a ver: los escudos grandes, el
          resultado enorme en un bloque oscuro inclinado y, debajo, en qué
          estado está y cuándo y dónde se juega. El ganador va en blanco pleno;
          el perdedor, apagado; un lado perjudicado por una anulación, en rojo. --}}
@@ -61,7 +64,7 @@
         <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 py-6 sm:gap-6 sm:px-8 sm:py-8">
             @foreach ($sides as $index => $side)
                 @if ($index === 1)
-                    <div class="grid -skew-x-8 place-items-center rounded-[5px] bg-ink px-4 py-3 sm:px-6">
+                    <div class="grid -skew-x-8 place-items-center rounded-[5px] bg-black/60 px-4 py-3 sm:px-6">
                         @if ($isPlayed)
                             <span class="font-display text-5xl font-extrabold leading-none tabular-nums text-brand [text-shadow:3px_3px_0_rgb(0_0_0/0.35)] sm:text-7xl">{{ $game->home_score }}<span class="px-1.5 text-white/25 sm:px-3">–</span>{{ $game->away_score }}</span>
                         @else
@@ -161,7 +164,7 @@
 
                         {{-- El icono en lugar del minuto: el minuto ya no se
                              registra, y un balón o una tarjeta se leen de un vistazo. --}}
-                        <span class="col-start-2 row-start-1 grid size-10 place-items-center rounded-full bg-ink text-white ring-2 ring-surface">
+                        <span class="col-start-2 row-start-1 grid size-10 place-items-center rounded-full bg-black/60 text-white ring-2 ring-surface">
                             <x-event-icon :type="$event->type" :second-yellow="$event->isSecondYellow()" size="size-6" />
                         </span>
                     </li>

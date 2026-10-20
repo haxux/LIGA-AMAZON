@@ -33,7 +33,9 @@
         <x-site.team-crest :team="$game->homeTeam" size="size-7" />
     </span>
 
-    <span class="grid min-w-[84px] -skew-x-8 place-items-center rounded-[4px] bg-ink px-3 py-1.5">
+    {{-- Negro fijo y no `bg-ink`: las copas internacionales redefinen `ink`
+         con un tono claro para su escenario, y el marcador quedaba ilegible. --}}
+    <span class="grid min-w-[84px] -skew-x-8 place-items-center rounded-[4px] bg-black/60 px-3 py-1.5">
         @if ($played)
             <span class="font-display text-2xl font-extrabold leading-none tabular-nums text-brand">{{ $game->home_score }}<span class="px-1 text-white/30">–</span>{{ $game->away_score }}</span>
         @else
