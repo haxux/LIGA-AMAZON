@@ -22,7 +22,10 @@
 
 @if ($tiles !== [])
     <section class="overflow-hidden rounded-md bg-surface">
-        <h3 class="font-display bg-surface-alt px-4 py-3 text-lg uppercase tracking-wide text-brand">La temporada en cifras</h3>
+        <h3 class="flex items-center gap-2.5 bg-surface-alt px-4 py-3 font-display text-lg font-bold uppercase italic tracking-wide text-white">
+            <span class="h-4 w-1.5 shrink-0 -skew-x-12 rounded-[1px] bg-brand" aria-hidden="true"></span>
+            La temporada en cifras
+        </h3>
 
         <div class="grid grid-cols-2 gap-px bg-white/[0.055]">
             @foreach ($tiles as $tile)
@@ -30,7 +33,7 @@
                     <div class="mb-1 font-mono text-[10px] tracking-[0.12em] text-white/45">
                         {{ mb_strtoupper($tile['label']) }}
                     </div>
-                    <div class="font-display text-[32px] leading-none font-bold text-white">{{ $tile['value'] }}</div>
+                    <div class="-skew-x-8 font-display text-4xl leading-none font-extrabold tabular-nums {{ $loop->first ? 'text-brand' : 'text-white' }}">{{ $tile['value'] }}</div>
                     @if ($tile['foot'])
                         <div class="mt-1 truncate font-mono text-[10px] text-white/40" title="{{ $tile['foot'] }}">{{ $tile['foot'] }}</div>
                     @endif

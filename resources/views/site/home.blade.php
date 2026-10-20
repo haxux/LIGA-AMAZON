@@ -1,15 +1,5 @@
 <x-layouts.site :title="'Amazon Toernooien — La liga de un vistazo'">
     @php
-        // Con una sola noticia publicada, una rejilla de tres columnas la deja
-        // encogida en un tercio y parece que falta algo. Las clases van
-        // literales porque Tailwind lee el fichero, no lo ejecuta: una cadena
-        // compuesta no generaría nada.
-        $newsGrid = match ($news->count()) {
-            0, 1 => '',
-            2 => 'sm:grid-cols-2',
-            default => 'sm:grid-cols-2 lg:grid-cols-3',
-        };
-
         $percent = $progress['games'] > 0 ? round($progress['played'] / $progress['games'] * 100) : 0;
 
         // Los dos rótulos se arman aquí y no con un `@if` pegado al texto:
@@ -24,73 +14,78 @@
         $proxima = $matchday
             ? 'PRÓXIMA JORNADA'.($matchday->date ? ' · '.$matchday->date->format('d/m/Y') : '')
             : 'PRÓXIMOS PARTIDOS';
+
+        // La última noticia va arriba en grande; las demás, al final.
+        $lead = $news->first();
+        $moreNews = $news->slice(1);
+
+        // Cada cabecera con la ilustración y la tabla de su tema.
+        $leaderKinds = ['goles', 'asistencias', 'porterias'];
     @endphp
 
-    {{-- La bienvenida: el nombre de la liga en grande y dónde estamos. El botón
-         de la cabecera trae aquí, así que esto es lo primero que ve quien
-         llega. --}}
-    <header class="mb-8">
-        <h1 class="font-display text-4xl leading-none uppercase tracking-wide text-ink sm:text-5xl">
-            Amazon <span class="font-semibold tracking-[0.1em]">Toernooien</span>
-        </h1>
-
-        <div class="mt-2 font-mono text-[11px] tracking-[0.14em] text-ink/60">
-            {{ $cabecera }}
+    {{-- Dónde va la temporada: la jornada en grande y el avance de la liga en
+         el medidor de bloques de todo el sitio (veinte, uno por cada 5 %). --}}
+    <header class="mb-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+        <div>
+            <div class="font-mono text-[11px] tracking-[0.14em] text-ink/60">{{ $cabecera }}</div>
+            <h1 class="mt-1 -skew-x-6 font-display text-5xl font-extrabold uppercase italic leading-none tracking-wide text-ink sm:text-6xl">
+                {{ $jornada ? 'Jornada '.$jornada : 'Amazon Toernooien' }}
+            </h1>
         </div>
 
         @if ($progress['games'] > 0)
-            {{-- La magnitud se mide UNA vez, con el largo de la barra; el número
-                 va al lado en tinta normal. La pista es el mismo tono más
-                 claro, no un gris ajeno, para que el estado se lea de punta a
-                 punta. --}}
-            <div class="mt-5 max-w-md">
+            @php($filled = (int) round($percent / 5))
+            <div class="w-full max-w-sm">
                 <div class="mb-1.5 flex items-baseline justify-between gap-3">
-                    <span class="font-mono text-[10px] tracking-[0.12em] text-ink/55">LIGA DISPUTADA</span>
-                    <span class="font-display text-sm font-bold text-ink">
-                        {{ $progress['played'] }} de {{ $progress['games'] }} partidos
-                    </span>
+                    <span class="font-mono text-[10px] tracking-[0.12em] text-ink/60">LIGA DISPUTADA</span>
+                    <span class="font-display text-sm font-bold text-ink">{{ $progress['played'] }} de {{ $progress['games'] }} partidos</span>
                 </div>
-                <div class="h-[6px] overflow-hidden rounded-full bg-ink/15">
-                    <div class="h-full rounded-full bg-ink" style="width: {{ $percent }}%"></div>
+                <div class="flex gap-1" aria-hidden="true">
+                    @for ($i = 1; $i <= 20; $i++)
+                        <span @class(['h-3 flex-1 -skew-x-12 rounded-[1px]', $i <= $filled ? 'bg-ink' : 'bg-ink/15'])></span>
+                    @endfor
                 </div>
             </div>
         @endif
     </header>
 
-    {{-- Lo que pasa ahora mismo: qué se juega y qué acaba de pasar, uno al lado
-         del otro. --}}
-    @if ($upcoming->isNotEmpty() || $results->isNotEmpty())
-        <x-site.section-title title="Se juega ahora" kicker="El calendario" :href="route('site.fixtures')" cta="Todos los partidos" />
-
-        <div class="grid items-start gap-6 lg:grid-cols-2">
-            @if ($upcoming->isNotEmpty())
-                <div>
-                    <h3 class="mb-3 font-mono text-[10px] tracking-[0.12em] text-ink/55">
-                        {{ $proxima }}
-                    </h3>
-                    <div class="flex flex-col gap-3">
-                        @foreach ($upcoming as $game)
-                            {{-- La etiqueta la pone la portada porque la
-                                 tarjeta, por sí sola, diría «Jornada 11» sin
-                                 decir de qué división. --}}
-                            <x-site.game-card
-                                :game="$game"
-                                :label="'Jornada '.$game->matchday->number.($game->matchday->division ? ' · '.$game->matchday->division->name : '')" />
-                        @endforeach
-                    </div>
-                </div>
+    {{-- Lo primero: la última noticia en grande y, al lado, la jornada —lo que
+         se juega y lo que acaba de pasar— en filas de marcador. --}}
+    @if ($lead || $upcoming->isNotEmpty() || $results->isNotEmpty())
+        <div @class(['grid items-start gap-6', 'lg:grid-cols-2' => $lead !== null])>
+            @if ($lead)
+                <x-site.news-feature :item="$lead" large class="aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[480px]" />
             @endif
 
-            @if ($results->isNotEmpty())
-                <div>
-                    <h3 class="mb-3 font-mono text-[10px] tracking-[0.12em] text-ink/55">ÚLTIMOS RESULTADOS</h3>
-                    <div class="flex flex-col gap-3">
-                        @foreach ($results as $game)
-                            <x-site.game-card :game="$game" />
-                        @endforeach
+            <div @class(['grid gap-6', 'lg:grid-cols-2' => $lead === null])>
+                @if ($upcoming->isNotEmpty())
+                    <div>
+                        <h2 class="mb-2 font-mono text-[10px] tracking-[0.12em] text-ink/60">{{ $proxima }}</h2>
+                        <div class="grid gap-2">
+                            @foreach ($upcoming as $game)
+                                {{-- La etiqueta la pone la portada porque la fila,
+                                     por sí sola, no dice de qué división es. --}}
+                                <x-site.match-row :game="$game"
+                                    :label="mb_strtoupper('Jornada '.$game->matchday->number.($game->matchday->division ? ' · '.$game->matchday->division->name : ''))" />
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            @endif
+                @endif
+
+                @if ($results->isNotEmpty())
+                    <div>
+                        <h2 class="mb-2 font-mono text-[10px] tracking-[0.12em] text-ink/60">ÚLTIMOS RESULTADOS</h2>
+                        <div class="grid gap-2">
+                            @foreach ($results as $game)
+                                <x-site.match-row :game="$game" :label="mb_strtoupper($game->competitionLabel())" />
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <a href="{{ route('site.fixtures') }}"
+                   class="justify-self-start font-display text-sm font-bold uppercase tracking-[0.08em] text-ink/70 hover:text-ink">Todos los partidos</a>
+            </div>
         </div>
     @endif
 
@@ -108,13 +103,15 @@
     @endif
 
     {{-- Quién destaca: con cara, que es lo que hace que esto no parezca una
-         hoja de cálculo. --}}
+         hoja de cálculo, y la ilustración de cada tema detrás. --}}
     <x-site.section-title title="Quién destaca" kicker="Las cabeceras de la liga"
                           :href="route('site.scorers')" cta="Todas las estadísticas" />
 
     <div class="grid items-stretch gap-6 md:grid-cols-3">
         @foreach ($leaders as $leader)
-            <x-site.home-leader :label="$leader['label']" :rows="$leader['rows']" />
+            @php($kind = $leaderKinds[$loop->index] ?? 'goles')
+            <x-site.home-leader :label="$leader['label']" :rows="$leader['rows']" :kind="$kind"
+                                :href="route('site.scorers').'#'.$kind" />
         @endforeach
     </div>
 
@@ -129,19 +126,24 @@
     @endif
 
     {{-- Las copas, que son la otra competición de la temporada y no caben en
-         ninguna tabla. --}}
+         ninguna tabla. Cada una con su placa de trofeo y, las internacionales,
+         con sus colores. --}}
     @if ($cups->isNotEmpty())
         <x-site.section-title title="Copas" kicker="La otra competición" :href="route('site.cups.index')" />
 
-        <div class="grid gap-3 lg:grid-cols-2">
+        <div class="grid gap-3 sm:grid-cols-2">
             @foreach ($cups as $cup)
-                <a href="{{ route('site.cups.show', $cup) }}"
-                   class="flex items-center gap-4 rounded-[5px] border-l-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
-                    <span class="font-display text-2xl text-brand" aria-hidden="true">&#9819;</span>
+                <a href="{{ route('site.cups.show', $cup) }}" style="{{ $cup->themeStyle() }}"
+                   class="flex items-center gap-4 rounded-md bg-surface p-4 transition-colors hover:bg-surface-alt">
+                    <span class="grid size-12 shrink-0 -skew-x-12 place-items-center rounded-[4px] bg-brand text-ink" aria-hidden="true">
+                        <svg viewBox="0 0 120 80" class="h-7 skew-x-12" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M42 8h36v18a18 18 0 0 1-36 0z" /><path d="M42 13H30v5a13 13 0 0 0 13 13M78 13h12v5a13 13 0 0 1-13 13" /><path d="M60 44v12M46 70h28M50 70l2-14h16l2 14" />
+                        </svg>
+                    </span>
 
                     <span class="min-w-0">
-                        <span class="block truncate font-display text-lg font-semibold text-white">{{ $cup->name }}</span>
-                        <span class="block font-mono text-[10px] tracking-[0.12em] text-white/45">
+                        <span class="block truncate font-display text-xl font-extrabold uppercase italic text-white">{{ $cup->name }}</span>
+                        <span class="block font-mono text-[10px] tracking-[0.12em] text-white/50">
                             {{ $cup->participants_count }} EQUIPOS
                         </span>
                     </span>
@@ -150,11 +152,11 @@
         </div>
     @endif
 
-    @if ($news->isNotEmpty())
-        <x-site.section-title title="Noticias" kicker="Lo último" :href="route('site.news.index')" />
+    @if ($moreNews->isNotEmpty())
+        <x-site.section-title title="Más noticias" kicker="Lo último" :href="route('site.news.index')" />
 
-        <div class="grid gap-6 {{ $newsGrid }}">
-            @foreach ($news as $item)
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($moreNews as $item)
                 <x-site.news-card :item="$item" />
             @endforeach
         </div>

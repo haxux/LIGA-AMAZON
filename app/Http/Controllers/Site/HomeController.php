@@ -51,7 +51,10 @@ class HomeController extends SiteController
         // Los siguientes por jugar, no «la jornada de ahora»: una jornada se
         // juega a trozos y así salían ahí partidos con su resultado puesto,
         // repetidos en el bloque de al lado.
-        $upcoming = $overview->upcomingGames($season);
+        // Cuatro (decisión del propietario, 2026-10-20), como los resultados:
+        // las filas de marcador de al lado de la noticia, y el resto en
+        // Partidos.
+        $upcoming = $overview->upcomingGames($season, 4);
 
         // Dos preguntas distintas, las dos respondidas por los mismos partidos
         // para que no puedan contradecirse:
@@ -98,7 +101,8 @@ class HomeController extends SiteController
                 ->orderBy('name')
                 ->get(),
 
-            'news' => News::published()->with('team.club')->latest('published_at')->take(3)->get(),
+            // La primera va en grande arriba; las otras tres, al final.
+            'news' => News::published()->with('team.club')->latest('published_at')->take(4)->get(),
         ]);
     }
 

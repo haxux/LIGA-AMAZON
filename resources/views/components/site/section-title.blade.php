@@ -4,9 +4,9 @@
      está lo mismo completo. --}}
 @props(['title', 'kicker' => null, 'href' => null, 'cta' => 'Ver todo'])
 
-<div class="mt-10 mb-4 flex flex-wrap items-end justify-between gap-3">
+<div class="mt-12 mb-4 flex flex-wrap items-end justify-between gap-3">
     <div>
-        <h2 class="font-display text-2xl uppercase tracking-wide text-ink">{{ $title }}</h2>
+        <h2 class="-skew-x-6 font-display text-3xl font-extrabold uppercase italic tracking-wide text-ink">{{ $title }}</h2>
         @if ($kicker)
             <div class="font-mono text-[10px] tracking-[0.14em] text-ink/50">{{ mb_strtoupper($kicker) }}</div>
         @endif
