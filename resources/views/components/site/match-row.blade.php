@@ -24,7 +24,7 @@
 <a href="{{ route('site.games.show', $game) }}" style="{{ $themeStyle }}"
    class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 rounded-md bg-surface px-3 py-3 transition-colors hover:bg-surface-alt focus-visible:outline-2 focus-visible:outline-brand sm:px-4">
     @if ($label)
-        <span class="col-span-3 truncate text-center font-mono text-[9px] uppercase tracking-[0.1em] text-white/45">{{ $label }}</span>
+        <span class="col-span-3 truncate text-center font-mono text-[9px] uppercase tracking-[0.1em] text-white/60">{{ $label }}</span>
     @endif
 
     <span class="flex min-w-0 items-center justify-end gap-2.5 text-right">
@@ -37,7 +37,7 @@
          con un tono claro para su escenario, y el marcador quedaba ilegible. --}}
     <span class="grid min-w-[84px] -skew-x-8 place-items-center rounded-[4px] bg-black/60 px-3 py-1.5">
         @if ($played)
-            <span class="font-display text-2xl font-extrabold leading-none tabular-nums text-brand">{{ $game->home_score }}<span class="px-1 text-white/30">–</span>{{ $game->away_score }}</span>
+            <span class="font-display text-2xl font-extrabold leading-none tabular-nums text-brand">{{ $game->home_score }}<span class="px-1 text-white/60">–</span>{{ $game->away_score }}</span>
         @else
             <span class="font-display text-base font-bold leading-none tabular-nums text-white/60">{{ $game->kickoff_at ? $game->kickoff_at->format('H:i') : 'VS' }}</span>
         @endif

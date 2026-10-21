@@ -30,7 +30,7 @@
             ['EDAD MEDIA', $ages->isNotEmpty() ? number_format($ages->avg(), 1, ',', '') : '—', false],
         ] as [$label, $value, $lead])
             <div class="px-4 py-3 sm:px-5">
-                <dt class="font-mono text-[9px] tracking-[0.12em] text-white/45 sm:text-[10px]">{{ $label }}</dt>
+                <dt class="font-mono text-[9px] tracking-[0.12em] text-white/60 sm:text-[10px]">{{ $label }}</dt>
                 <dd class="mt-0.5 -skew-x-8 truncate font-display text-xl font-extrabold leading-none tabular-nums sm:text-3xl {{ $lead ? 'text-brand' : 'text-white' }}">{{ $value }}</dd>
             </div>
         @endforeach
@@ -59,7 +59,7 @@
                                 <span class="grid size-[18px] shrink-0 -skew-x-12 place-items-center rounded-[2px] bg-brand font-display text-[11px] font-bold text-ink" title="Capitán"><span class="skew-x-12">C</span></span>
                             @endif
                         </span>
-                        <span class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10px] tracking-[0.08em] text-white/45">
+                        <span class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10px] tracking-[0.08em] text-white/60">
                             <span class="-skew-x-12 rounded-[2px] bg-white/10 px-1.5 py-px font-bold text-white/80"><span class="inline-block skew-x-12">{{ $player?->specific_position ?? '—' }}</span></span>
                             @if ($player?->birth_date) <span>{{ $player->birth_date->age }} AÑOS</span> @endif
                             @if ($membership->type === \App\Models\SquadMembership::TYPE_LOAN) <span class="text-brand">CEDIDO</span> @endif

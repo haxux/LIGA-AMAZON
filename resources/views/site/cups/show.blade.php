@@ -7,7 +7,7 @@
      contenido en su escenario (ver App\Enums\CupDesign). Una nacional se ve
      como siempre. --}}
 <x-layouts.site :title="$cup->name.' — Liga Amazon'" :theme="$design">
-    <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/50">
+    <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/70">
         <a href="{{ route('site.cups.index', ['tipo' => $intl ? 'internacionales' : 'nacionales']) }}" class="hover:text-ink">
             {{ $intl ? 'COPAS INTERNACIONALES' : 'COPAS NACIONALES' }}
         </a>
@@ -68,7 +68,7 @@
             </span>
             <div class="min-w-0">
                 <h1 class="font-display -skew-x-6 text-3xl font-extrabold uppercase italic leading-none tracking-wide text-white sm:text-5xl">{{ $cup->name }}</h1>
-                <p class="mt-2 font-mono text-[10px] tracking-[0.12em] text-white/50">
+                <p class="mt-2 font-mono text-[10px] tracking-[0.12em] text-white/60">
                     {{ $cup->has_group_stage ? 'FASE DE GRUPOS Y ELIMINATORIAS' : 'ELIMINATORIA DIRECTA' }}
                     @if ($cup->season) · {{ mb_strtoupper($cup->season->name) }} @endif
                 </p>
@@ -90,7 +90,7 @@
             ['value' => ($preliminaryRounds->count() + $rounds->count()) ?: '—', 'label' => 'RONDAS'],
         ] as $stat)
             <div class="px-4 py-3 sm:px-5">
-                <dt class="font-mono text-[9px] tracking-[0.12em] text-white/50 sm:text-[10px]">{{ $stat['label'] }}</dt>
+                <dt class="font-mono text-[9px] tracking-[0.12em] text-white/60 sm:text-[10px]">{{ $stat['label'] }}</dt>
                 <dd class="mt-0.5 -skew-x-8 font-display text-3xl font-extrabold leading-none tabular-nums text-brand sm:text-4xl">{{ $stat['value'] }}</dd>
             </div>
         @endforeach

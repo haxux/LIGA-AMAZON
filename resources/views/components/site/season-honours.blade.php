@@ -11,7 +11,7 @@
         <div class="grid gap-px bg-white/[0.055] sm:grid-cols-2">
             @if (count($champions) > 0)
                 <div class="bg-surface p-4">
-                    <div class="mb-3 font-mono text-[10px] tracking-[0.12em] text-white/45">
+                    <div class="mb-3 font-mono text-[10px] tracking-[0.12em] text-white/60">
                         {{ count($champions) > 1 ? 'CAMPEONES' : 'CAMPEÓN' }}
                     </div>
 
@@ -24,7 +24,7 @@
                                         {{ $champion['row']->team->name }}
                                     </span>
                                     @if ($champion['division'])
-                                        <span class="block font-mono text-[10px] tracking-[0.06em] text-white/40">
+                                        <span class="block font-mono text-[10px] tracking-[0.06em] text-white/60">
                                             {{ mb_strtoupper($champion['division']) }}
                                         </span>
                                     @endif
@@ -40,7 +40,7 @@
                 <div class="bg-surface p-4">
                     {{-- Plural cuando empatan: elegir a uno de dos que marcaron
                          los mismos goles sería inventar un desempate. --}}
-                    <div class="mb-3 font-mono text-[10px] tracking-[0.12em] text-white/45">
+                    <div class="mb-3 font-mono text-[10px] tracking-[0.12em] text-white/60">
                         {{ $scorers->count() > 1 ? 'MÁXIMOS GOLEADORES' : 'MÁXIMO GOLEADOR' }} · LIGA
                     </div>
 
@@ -52,7 +52,7 @@
                                     <x-site.player-avatar :player="$scorer->player" />
                                     <span class="min-w-0 flex-1">
                                         <span class="block truncate font-display text-base font-semibold text-white">{{ $scorer->player->name }}</span>
-                                        <span class="block font-mono text-[10px] tracking-[0.06em] text-white/40">{{ $scorer->clubShortName }}</span>
+                                        <span class="block font-mono text-[10px] tracking-[0.06em] text-white/60">{{ $scorer->clubShortName }}</span>
                                     </span>
                                     <span class="font-display text-[22px] font-bold text-brand">{{ $scorer->count }}</span>
                                 </a>

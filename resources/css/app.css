@@ -164,3 +164,11 @@
         display: none;
     }
 }
+
+/* Un texto en cursiva que además se recorta (`truncate`, `line-clamp-*`): la
+   cursiva inclina la última letra hacia fuera de la caja, y el recorte se la
+   comía —«CR FLAMENG», con la O partida—. Un pelo de aire a la derecha, en
+   todas partes a la vez. */
+.italic:is(.truncate, .line-clamp-1, .line-clamp-2, .line-clamp-3) {
+    padding-inline-end: 0.18em;
+}

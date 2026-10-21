@@ -31,7 +31,7 @@
 
                         <span class="relative min-w-0 flex-1">
                             <span class="block truncate font-display text-lg font-extrabold uppercase italic leading-tight text-white">{{ $row->player->name }}</span>
-                            <span class="block font-mono text-[10px] tracking-[0.06em] text-white/45">{{ $row->clubShortName }}</span>
+                            <span class="block font-mono text-[10px] tracking-[0.06em] text-white/60">{{ $row->clubShortName }}</span>
                         </span>
 
                         <span class="relative -skew-x-8 font-display text-5xl leading-none font-extrabold tabular-nums text-brand [text-shadow:3px_3px_0_rgb(0_0_0/0.35)]">{{ $row->count }}</span>

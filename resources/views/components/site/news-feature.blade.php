@@ -27,7 +27,7 @@
             @else
                 LIGA
             @endif
-            <span class="text-white/40">· {{ $item->published_at?->format('d/m/Y') }}</span>
+            <span class="text-white/60">· {{ $item->published_at?->format('d/m/Y') }}</span>
         </span>
         <span @class([
             'block font-display font-extrabold uppercase italic leading-[1.05] text-white',

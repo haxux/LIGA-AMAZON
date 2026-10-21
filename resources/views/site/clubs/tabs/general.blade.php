@@ -16,7 +16,7 @@
         @if ($nextGame)
             <x-site.game-card :game="$nextGame" :matchday-number="$nextGame->matchday?->number" />
             @if ($nextGame->kickoff_at)
-                <p class="mt-2 font-mono text-[10px] tracking-[0.1em] text-white/45">
+                <p class="mt-2 font-mono text-[10px] tracking-[0.1em] text-white/60">
                     {{ $nextGame->kickoff_at->format('d/m/Y H:i') }}
                 </p>
             @endif
@@ -51,7 +51,7 @@
         <div class="grid gap-2">
             @foreach ([['MÁXIMO GOLEADOR', $topScorer], ['MÁXIMO ASISTENTE', $topAssister]] as [$label, $leader])
                 <div class="rounded-[5px] bg-surface-alt px-3 py-3">
-                    <div class="mb-2 font-mono text-[9px] tracking-[0.12em] text-white/45">{{ $label }}</div>
+                    <div class="mb-2 font-mono text-[9px] tracking-[0.12em] text-white/60">{{ $label }}</div>
 
                     @if ($leader)
                         <a href="{{ route('site.players.show', array_filter(['player' => $leader->player, 'temporada' => $selectedSeason?->id])) }}"

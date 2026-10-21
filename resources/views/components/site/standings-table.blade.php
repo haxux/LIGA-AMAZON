@@ -35,7 +35,7 @@
 
     <table class="w-full table-fixed text-left">
         <thead>
-            <tr class="font-mono text-[10px] tracking-[0.1em] text-white/50">
+            <tr class="font-mono text-[10px] tracking-[0.1em] text-white/60">
                 <th class="w-12 py-2 pl-4 sm:w-14">#</th>
                 <th class="px-2 py-2">EQUIPO</th>
                 @if ($extra)

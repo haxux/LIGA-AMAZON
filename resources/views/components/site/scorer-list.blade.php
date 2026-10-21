@@ -88,7 +88,7 @@
                         <x-site.player-avatar :player="$row->player" size="size-7" initials class="text-[11px]" />
                         <span class="min-w-0 flex-1">
                             <span class="block truncate font-display text-base font-semibold leading-tight text-white">{{ $row->player->name }}</span>
-                            <span class="block truncate font-mono text-[10px] tracking-[0.06em] text-white/40">{{ $row->clubShortName }}</span>
+                            <span class="block truncate font-mono text-[10px] tracking-[0.06em] text-white/60">{{ $row->clubShortName }}</span>
                         </span>
                         {{-- El medidor: bloques llenos = la cifra sobre la del líder. --}}
                         <span class="flex shrink-0 gap-0.5" aria-hidden="true">

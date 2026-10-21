@@ -51,11 +51,11 @@
                  porque sumaría partidos que no dan puntos. --}}
             <dl class="grid grid-cols-3 gap-2">
                 <div class="rounded-[5px] bg-surface-alt px-3 py-2.5">
-                    <dt class="font-mono text-[9px] tracking-[0.12em] text-white/45" title="Partidos jugados">PJ</dt>
+                    <dt class="font-mono text-[9px] tracking-[0.12em] text-white/60" title="Partidos jugados">PJ</dt>
                     <dd class="-skew-x-8 font-display text-3xl font-extrabold leading-none tabular-nums text-white">{{ $stats->played }}</dd>
                 </div>
                 <div class="rounded-[5px] bg-surface-alt px-3 py-2.5">
-                    <dt class="font-mono text-[9px] tracking-[0.12em] text-white/45" title="Diferencia de goles">DG</dt>
+                    <dt class="font-mono text-[9px] tracking-[0.12em] text-white/60" title="Diferencia de goles">DG</dt>
                     <dd class="-skew-x-8 font-display text-3xl font-extrabold leading-none tabular-nums text-white">{{ ($stats->goal_difference > 0 ? '+' : '').$stats->goal_difference }}</dd>
                 </div>
                 @if ($block['competition']->isLeague())
@@ -89,12 +89,12 @@
             {{-- Goles a favor contra goles en contra, enfrentados. --}}
             <div class="mt-4 flex items-end justify-between rounded-[5px] bg-surface-alt px-4 py-3">
                 <div>
-                    <div class="font-mono text-[9px] tracking-[0.12em] text-white/45">GOLES A FAVOR</div>
+                    <div class="font-mono text-[9px] tracking-[0.12em] text-white/60">GOLES A FAVOR</div>
                     <div class="-skew-x-8 font-display text-4xl font-extrabold leading-none tabular-nums text-white">{{ $stats->goals_for }}</div>
                 </div>
                 <span class="pb-1 font-display text-2xl font-bold text-white/25" aria-hidden="true">:</span>
                 <div class="text-right">
-                    <div class="font-mono text-[9px] tracking-[0.12em] text-white/45">GOLES EN CONTRA</div>
+                    <div class="font-mono text-[9px] tracking-[0.12em] text-white/60">GOLES EN CONTRA</div>
                     <div class="-skew-x-8 font-display text-4xl font-extrabold leading-none tabular-nums text-white/70">{{ $stats->goals_against }}</div>
                 </div>
             </div>
@@ -104,7 +104,7 @@
             <dl class="mt-4 grid grid-cols-2 gap-2">
                 @foreach ($discipline as $label => [$value, $card])
                     <div class="rounded-[5px] bg-surface-alt px-3 py-2">
-                        <dt class="flex items-center gap-1.5 truncate font-mono text-[9px] tracking-[0.1em] text-white/45">
+                        <dt class="flex items-center gap-1.5 truncate font-mono text-[9px] tracking-[0.1em] text-white/60">
                             @if ($card) <span class="h-3 w-2 shrink-0 rounded-[1px] {{ $card }}" aria-hidden="true"></span> @endif
                             {{ $label }}
                         </dt>

@@ -2,7 +2,7 @@
     <h1 class="font-display mb-1 -skew-x-6 text-4xl font-extrabold uppercase italic tracking-wide text-ink sm:text-5xl">Estadísticas</h1>
     {{-- La temporada va delante: es el marco de todo lo demás, y sin ella en el
          subtítulo una cifra de un año cerrado se confunde con la de ahora. --}}
-    <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/50">
+    <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/70">
         {{ mb_strtoupper($selectedSeason->name) }}
         ·
         {{ mb_strtoupper($competition->isAll() ? 'Todas las competiciones' : $competition->label) }}
@@ -36,7 +36,7 @@
     <div class="mb-8 grid gap-3 rounded-md border-t-4 border-brand bg-surface p-4">
         <form method="GET" action="{{ route('site.scorers') }}"
               class="grid gap-1.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center sm:gap-4">
-            <label for="filtro-temporada" class="font-mono text-[10px] tracking-[0.12em] text-white/50">TEMPORADA</label>
+            <label for="filtro-temporada" class="font-mono text-[10px] tracking-[0.12em] text-white/60">TEMPORADA</label>
             <div class="flex gap-2">
                 <select id="filtro-temporada" name="temporada" onchange="this.form.submit()"
                         class="w-full rounded-[6px] border border-white/10 bg-surface-alt px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white focus-visible:outline-2 focus-visible:outline-brand sm:max-w-[260px]">

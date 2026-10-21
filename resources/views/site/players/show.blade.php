@@ -101,7 +101,7 @@
             @if ($seasons->isNotEmpty())
                 <form method="GET" action="{{ route('site.players.show', $player) }}" class="w-full sm:w-auto">
                     <label>
-                        <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/50">TEMPORADA</span>
+                        <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/60">TEMPORADA</span>
                         <select name="temporada" onchange="this.form.submit()"
                                 class="w-full rounded-[6px] border border-white/10 bg-surface-alt px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white focus-visible:outline-2 focus-visible:outline-brand sm:w-auto">
                             @foreach ($seasons as $row)
@@ -125,10 +125,10 @@
                 ['VALOR', $player->market_value ? number_format($player->market_value, 0, ',', '.') : '—', null, true],
             ] as [$label, $value, $note, $lead])
                 <div class="px-4 py-3 sm:px-5">
-                    <dt class="font-mono text-[9px] tracking-[0.12em] text-white/45 sm:text-[10px]">{{ $label }}</dt>
+                    <dt class="font-mono text-[9px] tracking-[0.12em] text-white/60 sm:text-[10px]">{{ $label }}</dt>
                     <dd class="mt-0.5 -skew-x-8 truncate font-display text-2xl font-extrabold leading-none tabular-nums sm:text-3xl {{ $lead ? 'text-brand' : 'text-white' }}">{{ $value }}</dd>
                     @if ($note)
-                        <dd class="mt-1 font-mono text-[9px] tracking-[0.1em] text-white/45">{{ $note }}</dd>
+                        <dd class="mt-1 font-mono text-[9px] tracking-[0.1em] text-white/60">{{ $note }}</dd>
                     @endif
                 </div>
             @endforeach
@@ -161,7 +161,7 @@
                 <dl class="grid grid-cols-2 gap-2">
                     @foreach ($headline as $type)
                         <div class="rounded-[5px] bg-surface-alt px-4 py-3">
-                            <dt class="font-mono text-[9px] tracking-[0.12em] text-white/45">{{ mb_strtoupper($labels[$type]) }}</dt>
+                            <dt class="font-mono text-[9px] tracking-[0.12em] text-white/60">{{ mb_strtoupper($labels[$type]) }}</dt>
                             <dd class="-skew-x-8 font-display text-5xl font-extrabold leading-none tabular-nums {{ $loop->first ? 'text-brand' : 'text-white' }}">{{ $block['totals'][$type] ?? 0 }}</dd>
                         </div>
                     @endforeach
@@ -171,7 +171,7 @@
                     @foreach ($labels as $type => $label)
                         @continue(in_array($type, $headline, true))
                         <div class="rounded-[5px] bg-surface-alt px-3 py-2">
-                            <dt class="flex items-center gap-1.5 truncate font-mono text-[9px] tracking-[0.1em] text-white/45">
+                            <dt class="flex items-center gap-1.5 truncate font-mono text-[9px] tracking-[0.1em] text-white/60">
                                 @if ($type === GameEvent::TYPE_YELLOW_CARD) <span class="h-3 w-2 shrink-0 rounded-[1px] bg-[#F5C518]" aria-hidden="true"></span> @endif
                                 @if ($type === GameEvent::TYPE_RED_CARD) <span class="h-3 w-2 shrink-0 rounded-[1px] bg-[#D6343F]" aria-hidden="true"></span> @endif
                                 {{ mb_strtoupper($label) }}
@@ -193,7 +193,7 @@
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[640px] text-left">
                     <thead>
-                        <tr class="font-mono text-[9px] tracking-[0.12em] text-white/40">
+                        <tr class="font-mono text-[9px] tracking-[0.12em] text-white/60">
                             <th class="px-3 py-2">TEMPORADA</th>
                             <th class="px-3 py-2">CLUB</th>
                             @foreach ($short as $type => $label)
@@ -253,7 +253,7 @@
                             <span class="block truncate font-display text-base font-semibold text-white">
                                 {{ $event->game?->homeTeam?->name }} – {{ $event->game?->awayTeam?->name }}
                             </span>
-                            <span class="block truncate font-mono text-[10px] tracking-[0.1em] text-white/45">
+                            <span class="block truncate font-mono text-[10px] tracking-[0.1em] text-white/60">
                                 {{ $event->isSecondYellow() ? 'Doble amarilla · expulsado' : ($eventLabels[$event->type] ?? $event->type) }}
                                 @if ($event->game) · {{ mb_strtoupper($event->game->competitionLabel()) }} @endif
                             </span>

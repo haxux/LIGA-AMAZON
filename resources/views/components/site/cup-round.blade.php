@@ -7,7 +7,7 @@
         <span class="inline-grid -skew-x-12 rounded-[3px] bg-black/85 px-2.5 py-1">
             <span class="skew-x-12 font-display text-base font-bold uppercase italic tracking-wide text-brand">{{ $entry['round']->name }}</span>
         </span>
-        <span class="font-mono text-[9px] tracking-[0.12em] text-ink/60">{{ $entry['round']->isTwoLegged() ? 'IDA Y VUELTA' : 'PARTIDO ÚNICO' }}</span>
+        <span class="font-mono text-[9px] tracking-[0.12em] text-ink/70">{{ $entry['round']->isTwoLegged() ? 'IDA Y VUELTA' : 'PARTIDO ÚNICO' }}</span>
     </h3>
 
     @forelse ($entry['ties'] as $item)
@@ -38,17 +38,17 @@
                             <div class="text-center">
                                 <div class="flex -skew-x-8 items-center gap-3 font-display text-4xl font-extrabold leading-none tabular-nums">
                                     <span class="{{ $result->winner?->is($tie->homeTeam) && $result->isDecided() ? 'text-brand' : 'text-white' }}">{{ $result->played === 0 ? '–' : $result->homeGoals }}</span>
-                                    <span class="text-xl text-white/30">:</span>
+                                    <span class="text-xl text-white/60">:</span>
                                     <span class="{{ $result->winner?->is($tie->awayTeam) && $result->isDecided() ? 'text-brand' : 'text-white' }}">{{ $result->played === 0 ? '–' : $result->awayGoals }}</span>
                                 </div>
-                                <div class="mt-1 font-mono text-[9px] tracking-[0.2em] text-white/40">{{ $legs->count() > 1 ? 'GLOBAL' : 'RESULTADO' }}</div>
+                                <div class="mt-1 font-mono text-[9px] tracking-[0.2em] text-white/60">{{ $legs->count() > 1 ? 'GLOBAL' : 'RESULTADO' }}</div>
                             </div>
 
                             @if ($legs->count() > 1)
                                 <div class="flex gap-4 border-white/15 font-mono text-[10px] tracking-[0.08em] sm:flex-col sm:gap-1 sm:border-l sm:pl-5">
                                     @foreach ($legs as $leg)
                                         <a href="{{ route('site.games.show', $leg['game']) }}" class="flex items-center gap-2 text-white/55 hover:text-brand">
-                                            <span class="w-12 text-white/35">{{ mb_strtoupper($leg['label']) }}</span>
+                                            <span class="w-12 text-white/60">{{ mb_strtoupper($leg['label']) }}</span>
                                             <span class="font-display text-sm font-semibold text-white/85">{{ $leg['home'] ?? '–' }} – {{ $leg['away'] ?? '–' }}</span>
                                         </a>
                                     @endforeach
@@ -62,7 +62,7 @@
                         @if ($side['team'])
                             <x-site.team-crest :team="$side['team']" size="size-[26px]" />
                         @endif
-                        <span class="truncate font-display text-lg sm:text-xl {{ $won ? 'tie-winner' : ($lost ? 'text-white/45' : 'text-white') }}">
+                        <span class="truncate font-display text-lg sm:text-xl {{ $won ? 'tie-winner' : ($lost ? 'text-white/60' : 'text-white') }}">
                             {{ $side['team']?->name }}
                         </span>
                     </a>
@@ -72,12 +72,12 @@
             {{-- Por qué pasó, si pasó por una decisión (penaltis, sorteo…): es
                  lo que nadie recuerda después. --}}
             @if ($result->isDecided() && $result->note)
-                <div class="mt-2 text-center font-mono text-[10px] tracking-[0.1em] text-white/50">{{ $result->note }}</div>
+                <div class="mt-2 text-center font-mono text-[10px] tracking-[0.1em] text-white/60">{{ $result->note }}</div>
             @elseif ($result->needsDecision())
                 <div class="mt-2 text-center font-mono text-[10px] tracking-[0.1em] text-amber-400">EMPATE — PENDIENTE DE RESOLVER</div>
             @endif
         </div>
     @empty
-        <p class="font-mono text-[11px] tracking-[0.08em] text-ink/50">Todavía sin emparejamientos.</p>
+        <p class="font-mono text-[11px] tracking-[0.08em] text-ink/70">Todavía sin emparejamientos.</p>
     @endforelse
 </section>

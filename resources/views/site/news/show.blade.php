@@ -36,7 +36,7 @@
             <h1 class="font-display -skew-x-6 text-3xl font-extrabold uppercase italic leading-[1.05] tracking-wide text-white sm:text-5xl">{{ $item->title }}</h1>
 
             @if ($date)
-                <p class="mt-3 font-mono text-[11px] tracking-[0.1em] text-white/50">
+                <p class="mt-3 font-mono text-[11px] tracking-[0.1em] text-white/60">
                     {{ mb_strtoupper($date->day.' de '.$months[$date->month - 1].' de '.$date->year) }}
                 </p>
             @endif

@@ -2,7 +2,7 @@
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <h1 class="font-display mb-1 text-3xl uppercase tracking-wide text-ink">Historia</h1>
-            <div class="font-mono text-[10px] tracking-[0.14em] text-ink/50">
+            <div class="font-mono text-[10px] tracking-[0.14em] text-ink/70">
                 {{ $selectedSeason ? mb_strtoupper($selectedSeason->name) : 'TEMPORADAS CERRADAS' }}
             </div>
         </div>

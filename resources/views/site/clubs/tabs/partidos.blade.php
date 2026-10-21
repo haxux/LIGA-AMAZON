@@ -45,7 +45,7 @@
                        class="flex items-center gap-3 py-2.5 transition-colors hover:bg-surface-alt focus-visible:outline-2 focus-visible:outline-brand">
                         {{-- La jornada en corto; la etiqueta entera, que en copa
                              dice la ronda, va debajo del rival. --}}
-                        <span class="w-9 shrink-0 -skew-x-8 text-center font-display text-xl font-extrabold tabular-nums text-white/35">
+                        <span class="w-9 shrink-0 -skew-x-8 text-center font-display text-xl font-extrabold tabular-nums text-white/60">
                             {{ $game->matchday?->number ?? '·' }}
                         </span>
 
@@ -53,7 +53,7 @@
 
                         <span class="min-w-0 flex-1">
                             <span class="block truncate font-display text-base font-bold text-white">{{ $rival?->name }}</span>
-                            <span class="block truncate font-mono text-[10px] tracking-[0.08em] text-white/45">
+                            <span class="block truncate font-mono text-[10px] tracking-[0.08em] text-white/60">
                                 {{ $home ? 'LOCAL' : 'VISITANTE' }} · {{ $label }}
                             </span>
                         </span>
@@ -64,7 +64,7 @@
                                 <span class="w-12 -skew-x-8 text-right font-display text-xl font-extrabold tabular-nums text-white">{{ $own }}–{{ $other }}</span>
                             </span>
                         @else
-                            <span class="shrink-0 text-right font-mono text-[10px] tracking-[0.08em] text-white/50">
+                            <span class="shrink-0 text-right font-mono text-[10px] tracking-[0.08em] text-white/60">
                                 {{ $when ? $when->format($game->kickoff_at ? 'd/m H:i' : 'd/m') : 'POR JUGAR' }}
                             </span>
                         @endif

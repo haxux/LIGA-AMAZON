@@ -32,7 +32,7 @@
 {{-- Un partido de copa internacional se ve dentro del escenario de su copa. --}}
 <x-layouts.site :title="$game->homeTeam?->name.' – '.$game->awayTeam?->name.' — Liga Amazon'" :theme="$cup?->theme()">
 
-    <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/50">
+    <div class="mb-4 font-mono text-[10px] tracking-[0.14em] text-ink/70">
         @if ($cup)
             <a href="{{ route('site.cups.show', $cup) }}" class="hover:text-ink">{{ mb_strtoupper($cup->name) }}</a>
             · {{ mb_strtoupper($game->competitionLabel()) }}
@@ -68,7 +68,7 @@
                         @if ($isPlayed)
                             <span class="font-display text-5xl font-extrabold leading-none tabular-nums text-brand [text-shadow:3px_3px_0_rgb(0_0_0/0.35)] sm:text-7xl">{{ $game->home_score }}<span class="px-1.5 text-white/25 sm:px-3">–</span>{{ $game->away_score }}</span>
                         @else
-                            <span class="font-display text-3xl font-extrabold leading-none text-white/50 sm:text-5xl">{{ $game->kickoff_at ? $game->kickoff_at->format('H:i') : 'VS' }}</span>
+                            <span class="font-display text-3xl font-extrabold leading-none text-white/60 sm:text-5xl">{{ $game->kickoff_at ? $game->kickoff_at->format('H:i') : 'VS' }}</span>
                         @endif
                     </div>
                 @endif
@@ -88,7 +88,7 @@
             @endforeach
         </div>
 
-        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t border-white/[0.06] bg-surface-alt px-4 py-3 font-mono text-[10px] tracking-[0.12em] text-white/50">
+        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t border-white/[0.06] bg-surface-alt px-4 py-3 font-mono text-[10px] tracking-[0.12em] text-white/60">
             @if ($game->isVoided())
                 <span class="inline-grid -skew-x-12 rounded-[3px] bg-loss px-2.5 py-1"><span class="skew-x-12 font-bold text-white">ANULADO POR INCOMPARECENCIA ·
                     @if ($game->voided_against === 'home') EN CONTRA DE {{ mb_strtoupper($game->homeTeam?->name) }}
@@ -132,11 +132,11 @@
                  derecha, como en el marcador, con el icono en el eje del medio.
                  Una fila por evento, en el orden en que se registraron. --}}
             <div class="mb-2 grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)] items-center gap-3 border-b border-white/[0.06] pb-2">
-                <span class="flex items-center justify-end gap-2 truncate font-mono text-[10px] tracking-[0.1em] text-white/45">
+                <span class="flex items-center justify-end gap-2 truncate font-mono text-[10px] tracking-[0.1em] text-white/60">
                     {{ mb_strtoupper($game->homeTeam?->name) }} <x-site.team-crest :team="$game->homeTeam" size="size-4" />
                 </span>
                 <span></span>
-                <span class="flex items-center gap-2 truncate font-mono text-[10px] tracking-[0.1em] text-white/45">
+                <span class="flex items-center gap-2 truncate font-mono text-[10px] tracking-[0.1em] text-white/60">
                     <x-site.team-crest :team="$game->awayTeam" size="size-4" /> {{ mb_strtoupper($game->awayTeam?->name) }}
                 </span>
             </div>
@@ -156,7 +156,7 @@
                                 {{ $event->isSecondYellow() ? 'Doble amarilla · expulsado' : ($labels[$event->type] ?? $event->type) }}
                             </span>
                             @if ($event->type === \App\Models\GameEvent::TYPE_GOAL && $event->assist)
-                                <span class="block truncate font-mono text-[10px] tracking-[0.1em] text-white/45">
+                                <span class="block truncate font-mono text-[10px] tracking-[0.1em] text-white/60">
                                     Asistencia: {{ $event->assist->player?->name ?? 'Jugador retirado' }}
                                 </span>
                             @endif
@@ -196,7 +196,7 @@
                 @enderror
 
                 <div class="mt-2 flex items-center justify-between gap-3">
-                    <span class="font-mono text-[10px] tracking-[0.1em] text-white/40">
+                    <span class="font-mono text-[10px] tracking-[0.1em] text-white/60">
                         COMO {{ mb_strtoupper($coachUser->name) }}@if ($coachUser->club) · {{ mb_strtoupper($coachUser->club->short_name ?: $coachUser->club->name) }}@endif
                     </span>
                     <button type="submit"
@@ -206,7 +206,7 @@
                 </div>
             </form>
         @else
-            <p class="mb-4 font-mono text-[11px] tracking-[0.08em] text-ink/60">
+            <p class="mb-4 font-mono text-[11px] tracking-[0.08em] text-ink/70">
                 Sólo los técnicos pueden comentar.
                 <a href="{{ route('filament.club.auth.login') }}" class="underline hover:text-ink">Acceso técnicos</a>
             </p>
@@ -223,7 +223,7 @@
                             @if ($comment->user?->club)
                                 <span class="font-mono text-[10px] tracking-[0.1em] text-brand">{{ mb_strtoupper($comment->user->club->short_name ?: $comment->user->club->name) }}</span>
                             @endif
-                            <span class="font-mono text-[10px] tracking-[0.08em] text-white/35">{{ $comment->created_at?->diffForHumans() }}</span>
+                            <span class="font-mono text-[10px] tracking-[0.08em] text-white/60">{{ $comment->created_at?->diffForHumans() }}</span>
                         </div>
 
                         <p class="mt-1 whitespace-pre-line break-words text-sm leading-snug text-white/85">{{ $comment->body }}</p>
@@ -233,12 +233,12 @@
                         <form method="POST" action="{{ route('site.comments.destroy', $comment) }}" onsubmit="return confirm('¿Borrar este comentario?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="font-mono text-[10px] tracking-[0.1em] text-white/35 hover:text-rose-400" title="Borrar comentario">BORRAR</button>
+                            <button type="submit" class="font-mono text-[10px] tracking-[0.1em] text-white/60 hover:text-rose-400" title="Borrar comentario">BORRAR</button>
                         </form>
                     @endif
                 </article>
             @empty
-                <p class="rounded-md bg-surface px-4 py-5 text-center font-display text-base uppercase tracking-wide text-white/50">
+                <p class="rounded-md bg-surface px-4 py-5 text-center font-display text-base uppercase tracking-wide text-white/60">
                     Todavía no hay comentarios.
                 </p>
             @endforelse

@@ -21,7 +21,7 @@
 
 <x-layouts.site :title="'Noticias — Liga Amazon'">
     <h1 class="font-display mb-1 -skew-x-6 text-4xl font-extrabold uppercase italic tracking-wide text-ink sm:text-5xl">Noticias</h1>
-    <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/50">
+    <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/70">
         {{ $selectedClub ? mb_strtoupper($selectedClub->name) : 'TODA LA LIGA' }}
         @if ($selectedSeason) · {{ mb_strtoupper($selectedSeason->name) }} @endif
     </div>
@@ -34,7 +34,7 @@
             @if ($seasons->isNotEmpty())
                 <form method="GET" action="{{ route('site.news.index') }}"
                       class="grid gap-1.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center sm:gap-4">
-                    <label for="filtro-temporada" class="font-mono text-[10px] tracking-[0.12em] text-white/50">TEMPORADA</label>
+                    <label for="filtro-temporada" class="font-mono text-[10px] tracking-[0.12em] text-white/60">TEMPORADA</label>
                     <div class="flex gap-2">
                         <select id="filtro-temporada" name="temporada" onchange="this.form.submit()"
                                 class="w-full rounded-[6px] border border-white/10 bg-surface-alt px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white focus-visible:outline-2 focus-visible:outline-brand sm:max-w-[260px]">
@@ -55,7 +55,7 @@
 
             @if ($clubs->isNotEmpty())
                 <div class="grid gap-1.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center sm:gap-4">
-                    <span class="font-mono text-[10px] tracking-[0.12em] text-white/50">CLUB</span>
+                    <span class="font-mono text-[10px] tracking-[0.12em] text-white/60">CLUB</span>
                     <nav class="flex flex-wrap gap-1.5" aria-label="Filtrar por club">
                         <a href="{{ $url(['equipo' => null]) }}"
                            @if (! $selectedClub) aria-current="true" @endif
@@ -81,7 +81,7 @@
             @endif
 
             @if ($filtering)
-                <a href="{{ route('site.news.index') }}" class="justify-self-start font-mono text-[10px] tracking-[0.12em] text-white/50 hover:text-white">QUITAR FILTRO</a>
+                <a href="{{ route('site.news.index') }}" class="justify-self-start font-mono text-[10px] tracking-[0.12em] text-white/60 hover:text-white">QUITAR FILTRO</a>
             @endif
         </div>
     @endif

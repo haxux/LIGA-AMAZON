@@ -4,7 +4,7 @@
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <h1 class="font-display mb-1 -skew-x-6 text-4xl font-extrabold uppercase italic tracking-wide text-ink sm:text-5xl">Clasificación</h1>
-            <div class="font-mono text-[10px] tracking-[0.14em] text-ink/50">{{ mb_strtoupper($season->name) }}</div>
+            <div class="font-mono text-[10px] tracking-[0.14em] text-ink/70">{{ mb_strtoupper($season->name) }}</div>
         </div>
 
         @if ($hasHistory)

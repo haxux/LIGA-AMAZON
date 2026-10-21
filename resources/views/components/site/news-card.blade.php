@@ -31,6 +31,6 @@
 
         <h3 class="font-display text-xl font-bold uppercase italic leading-tight text-white">{{ $item->title }}</h3>
 
-        <p class="mt-auto pt-3 font-mono text-[10px] tracking-[0.08em] text-white/45">{{ $item->published_at?->format('d/m/Y') }}</p>
+        <p class="mt-auto pt-3 font-mono text-[10px] tracking-[0.08em] text-white/60">{{ $item->published_at?->format('d/m/Y') }}</p>
     </div>
 </a>

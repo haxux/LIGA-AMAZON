@@ -310,7 +310,7 @@
             </div>
 
             <div class="border-t border-white/10">
-                <div class="mx-auto max-w-6xl px-6 py-4 font-mono text-[10px] tracking-[0.08em] text-white/40">
+                <div class="mx-auto max-w-6xl px-6 py-4 font-mono text-[10px] tracking-[0.08em] text-white/60">
                     &copy; {{ now()->year }} AMAZON TOERNOOIEN
                     @if ($coachSeason) · {{ mb_strtoupper($coachSeason->name) }} @endif
                 </div>

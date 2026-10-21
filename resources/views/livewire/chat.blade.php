@@ -47,7 +47,7 @@
                     <span class="h-5 w-1.5 shrink-0 -skew-x-12 rounded-[1px] bg-brand" aria-hidden="true"></span>
                     Chats
                 </h2>
-                <p class="mt-1 font-mono text-[10px] tracking-[0.14em] text-white/35">
+                <p class="mt-1 font-mono text-[10px] tracking-[0.14em] text-white/60">
                     {{ $this->conversations()->count() }} {{ $this->conversations()->count() === 1 ? 'CONVERSACIÓN' : 'CONVERSACIONES' }}
                 </p>
             </div>
@@ -62,7 +62,7 @@
         {{-- El buscador filtra la lista en el navegador: son pocos hilos. --}}
         <div class="px-4 pb-3">
             <label class="flex items-center gap-2 rounded-[6px] bg-surface px-3.5 py-2 ring-1 ring-white/[0.06] focus-within:ring-brand/40">
-                <svg class="size-4 shrink-0 text-white/35" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.5-3.5"/></svg>
+                <svg class="size-4 shrink-0 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.5-3.5"/></svg>
                 <input type="search" x-model="q" placeholder="Buscar"
                        class="w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none">
             </label>
@@ -103,12 +103,12 @@
                         <span class="flex items-baseline justify-between gap-2">
                             <span class="truncate font-display text-[17px] font-bold italic leading-tight {{ $unread > 0 ? 'text-white' : 'text-white/90' }}">{{ $with?->name }}</span>
                             @if ($last)
-                                <span class="shrink-0 font-mono text-[10px] {{ $unread > 0 ? 'text-emerald-400' : 'text-white/35' }}">{{ $last->created_at?->format('H:i') }}</span>
+                                <span class="shrink-0 font-mono text-[10px] {{ $unread > 0 ? 'text-emerald-400' : 'text-white/60' }}">{{ $last->created_at?->format('H:i') }}</span>
                             @endif
                         </span>
 
                         <span class="mt-0.5 flex items-center justify-between gap-2">
-                            <span class="truncate text-[13px] {{ $unread > 0 ? 'font-medium text-white/75' : 'text-white/45' }}">
+                            <span class="truncate text-[13px] {{ $unread > 0 ? 'font-medium text-white/75' : 'text-white/60' }}">
                                 {{ $last ? Str::limit($last->body, 34) : $this->subtitleFor($with) }}
                             </span>
 
@@ -124,7 +124,7 @@
                 <div class="px-5 py-12 text-center">
                     <svg viewBox="0 0 24 24" class="mx-auto mb-3 size-10 text-white/20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">{!! $bubbleIcon !!}</svg>
                     <p class="text-sm text-white/55">Todavía no has hablado con nadie.</p>
-                    <p class="mt-1 text-sm text-white/35">Pulsa <span class="font-display text-brand">+</span> para empezar.</p>
+                    <p class="mt-1 text-sm text-white/60">Pulsa <span class="font-display text-brand">+</span> para empezar.</p>
                 </div>
             @endforelse
         </div>
@@ -142,7 +142,7 @@
                 <svg viewBox="0 0 24 24" class="size-16 text-white/15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">{!! $bubbleIcon !!}</svg>
                 <div>
                     <p class="font-display -skew-x-6 text-2xl font-extrabold uppercase italic tracking-wide text-white/80">Elige una conversación</p>
-                    <p class="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-white/40">Aquí se lee el hilo, y desde aquí se negocian jugadores con otro técnico o con el presidente.</p>
+                    <p class="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-white/60">Aquí se lee el hilo, y desde aquí se negocian jugadores con otro técnico o con el presidente.</p>
                 </div>
             </div>
         @else
@@ -204,7 +204,7 @@
                         @php($prev = null)
                         <div class="my-4 flex items-center gap-3">
                             <span class="h-px flex-1 bg-white/[0.07]"></span>
-                            <span class="rounded-[3px] bg-white/[0.06] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">
+                            <span class="rounded-[3px] bg-white/[0.06] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-white/60">
                                 {{ $entry->created_at?->isToday() ? 'Hoy' : ($entry->created_at?->isYesterday() ? 'Ayer' : $day) }}
                             </span>
                             <span class="h-px flex-1 bg-white/[0.07]"></span>
@@ -239,17 +239,17 @@
 
                                     @if ($entry->isFree())
                                         <div class="mt-1 flex items-baseline gap-2">
-                                            <span class="text-[13px] text-white/45">en cesión,</span>
+                                            <span class="text-[13px] text-white/60">en cesión,</span>
                                             <span class="-skew-x-8 font-display text-2xl font-extrabold text-brand">{{ Transfer::LOAN_TERMS[$entry->loan_term] ?? 'sin plazo' }}</span>
                                         </div>
                                     @else
                                         <div class="mt-1 flex items-baseline gap-2">
-                                            <span class="text-[13px] text-white/45">por</span>
+                                            <span class="text-[13px] text-white/60">por</span>
                                             <span class="-skew-x-8 font-display text-4xl font-extrabold leading-none tabular-nums text-brand">{{ number_format($entry->amount, 0, ',', '.') }}</span>
                                         </div>
                                     @endif
 
-                                    <div class="mt-2 font-mono text-[10px] tracking-[0.08em] text-white/35">
+                                    <div class="mt-2 font-mono text-[10px] tracking-[0.08em] text-white/60">
                                         ENVIADA POR {{ mb_strtoupper($entry->mover?->name ?? '') }} · {{ $entry->created_at?->format('H:i') }}
                                     </div>
 
@@ -263,15 +263,15 @@
 
                                         <div class="mt-3 space-y-2.5 rounded-[5px] bg-black/20 px-3 py-3"
                                              x-data="{ value: {{ $tension ?? 50 }}, club: @js($entry->counterpart ?? '') }">
-                                            <div class="flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
+                                            <div class="flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/60">
                                                 <span class="shrink-0">Negocia con</span>
-                                                <span class="truncate text-right {{ $entry->counterpart ? 'font-display text-sm font-semibold normal-case tracking-normal text-white' : 'text-white/35' }}">
+                                                <span class="truncate text-right {{ $entry->counterpart ? 'font-display text-sm font-semibold normal-case tracking-normal text-white' : 'text-white/60' }}">
                                                     {{ $entry->counterpart ?? 'Club sin indicar' }}
                                                 </span>
                                             </div>
 
                                             <div>
-                                                <div class="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
+                                                <div class="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.14em] text-white/60">
                                                     <span>Tensión de la negociación</span>
                                                     <span class="text-white/80">{{ $tension === null ? 'Sin valorar' : $tension.'%' }}</span>
                                                 </div>
@@ -370,7 +370,7 @@
                                 @elseif ($entry->isOpen())
                                     {{-- Quien la mandó no se contesta a sí mismo: que se
                                          vea que está esperando al otro. --}}
-                                    <div class="border-t border-white/[0.06] px-4 py-2.5 font-mono text-[10px] tracking-[0.1em] text-white/40">
+                                    <div class="border-t border-white/[0.06] px-4 py-2.5 font-mono text-[10px] tracking-[0.1em] text-white/60">
                                         ESPERANDO RESPUESTA…
                                     </div>
                                 @endif
@@ -398,7 +398,7 @@
                                         {{ $mine ? 'bg-brand text-black/85' : 'bg-surface-muted text-white' }}
                                         {{ $mine ? ($endsGroup ? 'rounded-lg rounded-br-[2px]' : 'rounded-lg') : ($endsGroup ? 'rounded-lg rounded-bl-[2px]' : 'rounded-lg') }}">
                                 <div class="whitespace-pre-line break-words text-[14.5px] leading-snug">{{ $entry->body }}</div>
-                                <div class="mt-0.5 flex items-center justify-end gap-1 font-mono text-[9px] {{ $mine ? 'text-black/55' : 'text-white/35' }}">
+                                <div class="mt-0.5 flex items-center justify-end gap-1 font-mono text-[9px] {{ $mine ? 'text-black/55' : 'text-white/60' }}">
                                     <span>{{ $entry->created_at?->format('H:i') }}</span>
                                     @if ($mine)
                                         @if ($this->messageSeen($entry))
@@ -426,7 +426,7 @@
                     <div x-show="offering" x-cloak x-transition.opacity class="mb-3 max-h-[50vh] overflow-y-auto rounded-md border-t-4 border-brand bg-surface p-4">
                         <div class="mb-3 flex items-center justify-between">
                             <span class="font-display text-base font-extrabold uppercase italic tracking-wide text-white">Proponer una operación</span>
-                            <button type="button" x-on:click="offering = false" class="text-white/35 hover:text-white" aria-label="Cerrar">✕</button>
+                            <button type="button" x-on:click="offering = false" class="text-white/60 hover:text-white" aria-label="Cerrar">✕</button>
                         </div>
 
                         <div class="grid gap-2.5 sm:grid-cols-2">
@@ -434,7 +434,7 @@
                                  elige jugador y si lo que se pacta es dinero o
                                  plazo. --}}
                             <label class="block sm:col-span-2">
-                                <span class="mb-1 block font-mono text-[9px] tracking-[0.14em] text-white/40">OPERACIÓN</span>
+                                <span class="mb-1 block font-mono text-[9px] tracking-[0.14em] text-white/60">OPERACIÓN</span>
                                 <select wire:model.live="offerKind" class="{{ $input }}">
                                     @foreach ($this->offerKinds() as $value => $label)
                                         <option value="{{ $value }}">{{ $label }}</option>
@@ -443,7 +443,7 @@
                             </label>
 
                             <div class="sm:col-span-2">
-                                <span class="mb-1 block font-mono text-[9px] tracking-[0.14em] text-white/40">JUGADOR</span>
+                                <span class="mb-1 block font-mono text-[9px] tracking-[0.14em] text-white/60">JUGADOR</span>
 
                                 @if ($this->toPresident() && $this->asking())
                                     {{-- Al presidente se le pide del catálogo de EA
@@ -452,7 +452,7 @@
                                         @if ($offerFcId)
                                             <div class="flex items-center justify-between gap-2 rounded-[6px] border border-brand/40 bg-brand/10 px-3.5 py-2.5 text-sm text-white">
                                                 <span class="truncate font-medium">{{ $offerFcName }}</span>
-                                                <button type="button" wire:click="$set('offerFcId', null)" class="text-white/50 hover:text-white" title="Quitar">✕</button>
+                                                <button type="button" wire:click="$set('offerFcId', null)" class="text-white/60 hover:text-white" title="Quitar">✕</button>
                                             </div>
                                         @else
                                             <input type="text" wire:model.live.debounce.300ms="catalogSearch" placeholder="Escribe un nombre: Mbappe, Ekitike…"
@@ -464,7 +464,7 @@
                                                         <button type="button" wire:click="selectCatalog({{ $ficha->fc_id }})" wire:key="fc-{{ $ficha->fc_id }}"
                                                                 class="flex w-full items-center justify-between gap-3 rounded-[4px] px-3 py-2 text-left text-sm text-white transition hover:bg-white/[0.07]">
                                                             <span class="truncate">{{ $ficha->nombre() }}</span>
-                                                            <span class="shrink-0 font-mono text-[10px] text-white/45">
+                                                            <span class="shrink-0 font-mono text-[10px] text-white/60">
                                                                 <span class="font-bold text-brand">{{ $ficha->overall_rating }}</span> {{ $ficha->position }} · {{ $ficha->club ?? 'sin club' }}
                                                             </span>
                                                         </button>
@@ -489,7 +489,7 @@
                             </div>
 
                             <label class="block">
-                                <span class="mb-1 block font-mono text-[9px] tracking-[0.14em] text-white/40">{{ $this->free() ? 'PLAZO' : 'IMPORTE' }}</span>
+                                <span class="mb-1 block font-mono text-[9px] tracking-[0.14em] text-white/60">{{ $this->free() ? 'PLAZO' : 'IMPORTE' }}</span>
                                 @if ($this->free())
                                     <select wire:model="offerTerm" class="{{ $input }}">
                                         <option value="">Plazo…</option>
@@ -510,7 +510,7 @@
                             </div>
                         </div>
 
-                        <p class="mt-3 text-[11px] leading-relaxed text-white/40">
+                        <p class="mt-3 text-[11px] leading-relaxed text-white/60">
                             {{ $this->free()
                                 ? 'Una cesión no tiene coste: lo que se pacta es el plazo.'
                                 : 'Aceptarla no mueve nada por sí sola: queda acordada y el administrador la cierra.' }}

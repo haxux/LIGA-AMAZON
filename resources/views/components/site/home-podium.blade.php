@@ -32,11 +32,11 @@
             </span>
             <span class="min-w-0 flex-1">
                 <span class="block truncate font-display text-2xl font-extrabold uppercase italic leading-tight text-white">{{ $leader->team->name }}</span>
-                <span class="block font-mono text-[10px] tracking-[0.06em] text-white/50">{{ $line($leader) }}</span>
+                <span class="block font-mono text-[10px] tracking-[0.06em] text-white/60">{{ $line($leader) }}</span>
             </span>
             <span class="text-right">
                 <span class="block -skew-x-8 font-display text-5xl font-extrabold leading-none tabular-nums text-brand [text-shadow:3px_3px_0_rgb(0_0_0/0.35)]">{{ $leader->points }}</span>
-                <span class="font-mono text-[9px] tracking-[0.12em] text-white/45">PTS</span>
+                <span class="font-mono text-[9px] tracking-[0.12em] text-white/60">PTS</span>
             </span>
         </a>
 
@@ -51,7 +51,7 @@
                         <x-site.team-crest :team="$row->team" size="size-6" />
                         <span class="min-w-0 flex-1">
                             <span class="block truncate font-display text-base font-bold text-white">{{ $row->team->name }}</span>
-                            <span class="block font-mono text-[10px] tracking-[0.06em] text-white/40">{{ $line($row) }}</span>
+                            <span class="block font-mono text-[10px] tracking-[0.06em] text-white/60">{{ $line($row) }}</span>
                         </span>
                         <span class="-skew-x-8 font-display text-2xl font-extrabold tabular-nums text-white">{{ $row->points }}</span>
                     </a>

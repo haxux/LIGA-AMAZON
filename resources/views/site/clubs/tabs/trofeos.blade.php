@@ -22,7 +22,7 @@
     @endphp
 
     <div class="mb-4 flex items-baseline gap-3 rounded-md bg-surface px-5 py-3">
-        <span class="font-mono text-[10px] tracking-[0.12em] text-white/45">TÍTULOS</span>
+        <span class="font-mono text-[10px] tracking-[0.12em] text-white/60">TÍTULOS</span>
         <span class="-skew-x-8 font-display text-3xl font-extrabold tabular-nums text-brand">{{ $trophies->count() }}</span>
     </div>
 

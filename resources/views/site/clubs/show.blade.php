@@ -12,7 +12,7 @@
 
             <div class="min-w-0 flex-1">
                 <h1 class="font-display -skew-x-6 text-3xl font-extrabold uppercase italic leading-none tracking-wide text-white sm:text-5xl">{{ $club->name }}</h1>
-                <p class="mt-2 font-mono text-[10px] tracking-[0.12em] text-white/50">
+                <p class="mt-2 font-mono text-[10px] tracking-[0.12em] text-white/60">
                     {{ mb_strtoupper($club->short_name) }}
                     @if ($club->founded_year) · FUNDADO EN {{ $club->founded_year }} @endif
                     @if ($club->stadium) · {{ mb_strtoupper($club->stadium->name) }} @endif
@@ -23,7 +23,7 @@
             @if ($seasons->isNotEmpty())
                 <form method="GET" action="{{ route('site.clubs.show', ['club' => $club->id, 'tab' => $tab]) }}" class="w-full sm:w-auto">
                     <label>
-                        <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/50">TEMPORADA</span>
+                        <span class="mb-1 block font-mono text-[10px] tracking-[0.12em] text-white/60">TEMPORADA</span>
                         <select name="temporada" onchange="this.form.submit()"
                                 class="w-full rounded-[6px] border border-white/10 bg-surface-alt px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white focus-visible:outline-2 focus-visible:outline-brand sm:w-auto">
                             @foreach ($seasons as $season)
@@ -49,7 +49,7 @@
                     ['DIF. GOLES', ($row->goal_difference > 0 ? '+' : '').$row->goal_difference, false],
                 ] as [$label, $value, $lead])
                     <div class="px-3 py-3 sm:px-5">
-                        <dt class="font-mono text-[9px] tracking-[0.12em] text-white/45 sm:text-[10px]">{{ $label }}</dt>
+                        <dt class="font-mono text-[9px] tracking-[0.12em] text-white/60 sm:text-[10px]">{{ $label }}</dt>
                         <dd class="mt-0.5 -skew-x-8 font-display text-2xl font-extrabold leading-none tabular-nums sm:text-4xl {{ $lead ? 'text-brand' : 'text-white' }}">{{ $value }}</dd>
                     </div>
                 @endforeach

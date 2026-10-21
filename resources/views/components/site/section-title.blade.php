@@ -8,7 +8,7 @@
     <div>
         <h2 class="-skew-x-6 font-display text-3xl font-extrabold uppercase italic tracking-wide text-ink">{{ $title }}</h2>
         @if ($kicker)
-            <div class="font-mono text-[10px] tracking-[0.14em] text-ink/50">{{ mb_strtoupper($kicker) }}</div>
+            <div class="font-mono text-[10px] tracking-[0.14em] text-ink/70">{{ mb_strtoupper($kicker) }}</div>
         @endif
     </div>
 

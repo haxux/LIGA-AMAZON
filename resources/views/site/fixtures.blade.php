@@ -17,7 +17,7 @@
 
 <x-layouts.site :title="'Partidos — Liga Amazon'">
     <h1 class="font-display mb-1 -skew-x-6 text-4xl font-extrabold uppercase italic tracking-wide text-ink sm:text-5xl">Partidos</h1>
-    <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/50">
+    <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/70">
         {{ mb_strtoupper($selectedSeason->name) }} · {{ mb_strtoupper($competition->isAll() ? 'Todas las competiciones' : $competition->label) }}
     </div>
 
@@ -27,7 +27,7 @@
     <div class="mb-8 grid gap-3 rounded-md border-t-4 border-brand bg-surface p-4">
         <form method="GET" action="{{ route('site.fixtures') }}"
               class="grid gap-1.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center sm:gap-4">
-            <label for="filtro-temporada" class="font-mono text-[10px] tracking-[0.12em] text-white/50">TEMPORADA</label>
+            <label for="filtro-temporada" class="font-mono text-[10px] tracking-[0.12em] text-white/60">TEMPORADA</label>
             <div class="flex gap-2">
                 <select id="filtro-temporada" name="temporada" onchange="this.form.submit()"
                         class="w-full rounded-[6px] border border-white/10 bg-surface-alt px-3 py-2 font-display text-base font-semibold uppercase tracking-[0.06em] text-white focus-visible:outline-2 focus-visible:outline-brand sm:max-w-[260px]">
@@ -89,7 +89,7 @@
                     <h3 class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                         <span class="-skew-x-6 font-display text-xl font-extrabold uppercase italic tracking-wide text-ink">Jornada {{ $matchday->number }}</span>
                         @if ($matchday->date)
-                            <span class="font-mono text-[10px] tracking-[0.1em] text-ink/55">{{ $matchday->date->format('d/m/Y') }}</span>
+                            <span class="font-mono text-[10px] tracking-[0.1em] text-ink/70">{{ $matchday->date->format('d/m/Y') }}</span>
                         @endif
                         {{-- El jugador de la jornada, si lo hay, en su placa. --}}
                         @if ($matchday->weekMvp)
@@ -102,7 +102,7 @@
                     </h3>
 
                     @if ($matchday->games->isEmpty())
-                        <p class="font-mono text-[11px] tracking-[0.08em] text-ink/50">Sin partidos programados.</p>
+                        <p class="font-mono text-[11px] tracking-[0.08em] text-ink/70">Sin partidos programados.</p>
                     @else
                         <div class="grid gap-2 lg:grid-cols-2">
                             @foreach ($matchday->games as $game)

@@ -7,7 +7,7 @@
 @props(['label', 'options', 'selected' => null, 'url', 'ruler' => false])
 
 <div class="grid gap-1.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center sm:gap-4">
-    <span class="font-mono text-[10px] tracking-[0.12em] text-white/50">{{ $label }}</span>
+    <span class="font-mono text-[10px] tracking-[0.12em] text-white/60">{{ $label }}</span>
 
     <div @class([
             'flex gap-1 rounded-[6px] bg-surface-alt px-2 py-1',

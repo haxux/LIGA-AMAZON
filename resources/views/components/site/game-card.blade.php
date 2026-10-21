@@ -13,14 +13,14 @@
 
 <a href="{{ route('site.games.show', $game) }}" style="{{ $themeStyle }}"
    class="block rounded-[5px] border-t-[3px] border-brand bg-surface-alt p-4 hover:bg-surface-muted">
-    <div class="mb-3 truncate font-mono text-[9px] tracking-[0.1em] text-white/40">{{ mb_strtoupper($caption) }}</div>
+    <div class="mb-3 truncate font-mono text-[9px] tracking-[0.1em] text-white/60">{{ mb_strtoupper($caption) }}</div>
 
     <div class="flex items-center justify-between gap-2">
         <span class="flex min-w-0 items-center gap-2">
             <x-site.team-crest :team="$game->homeTeam" size="size-[18px]" />
             <span class="truncate font-display text-lg font-semibold {{ in_array('home', $penalized) ? 'text-rose-500' : 'text-white' }}" @if (in_array('home', $penalized)) title="Partido anulado en su contra" @endif>{{ $game->homeTeam->name }}</span>
         </span>
-        <span class="font-display text-lg font-bold {{ $isPlayed ? 'text-brand' : 'text-white/40' }}">
+        <span class="font-display text-lg font-bold {{ $isPlayed ? 'text-brand' : 'text-white/60' }}">
             {{ $isPlayed ? $game->home_score : '–' }}
         </span>
     </div>
@@ -30,7 +30,7 @@
             <x-site.team-crest :team="$game->awayTeam" size="size-[18px]" />
             <span class="truncate font-display text-lg font-semibold {{ in_array('away', $penalized) ? 'text-rose-500' : 'text-white' }}" @if (in_array('away', $penalized)) title="Partido anulado en su contra" @endif>{{ $game->awayTeam->name }}</span>
         </span>
-        <span class="font-display text-lg font-bold {{ $isPlayed ? 'text-brand' : 'text-white/40' }}">
+        <span class="font-display text-lg font-bold {{ $isPlayed ? 'text-brand' : 'text-white/60' }}">
             {{ $isPlayed ? $game->away_score : '–' }}
         </span>
     </div>

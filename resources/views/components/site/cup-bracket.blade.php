@@ -33,7 +33,7 @@
                     <span class="inline-grid -skew-x-12 rounded-[3px] bg-black/85 px-2.5 py-1">
                         <span class="skew-x-12 font-display text-base font-bold uppercase italic tracking-wide text-brand">{{ $entry['round']->name }}</span>
                     </span>
-                    <span class="font-mono text-[9px] tracking-[0.12em] text-ink/60">{{ $entry['round']->isTwoLegged() ? 'IDA Y VUELTA' : 'PARTIDO ÚNICO' }}</span>
+                    <span class="font-mono text-[9px] tracking-[0.12em] text-ink/70">{{ $entry['round']->isTwoLegged() ? 'IDA Y VUELTA' : 'PARTIDO ÚNICO' }}</span>
                 </h3>
 
                 {{-- Los cruces repartidos a lo alto de la columna, como en un
@@ -59,13 +59,13 @@
                                     @if ($side['team'])
                                         <x-site.team-crest :team="$side['team']" size="size-6" />
                                     @endif
-                                    <span class="min-w-0 flex-1 truncate font-display text-base {{ $won ? 'tie-winner' : ($lost ? 'text-white/45' : 'text-white') }}">{{ $side['team']?->name }}</span>
-                                    <span class="w-7 -skew-x-8 text-right font-display text-xl font-extrabold tabular-nums {{ $won ? 'text-brand' : ($lost ? 'text-white/45' : 'text-white') }}">{{ $result->played === 0 ? '–' : $side['goals'] }}</span>
+                                    <span class="min-w-0 flex-1 truncate font-display text-base {{ $won ? 'tie-winner' : ($lost ? 'text-white/60' : 'text-white') }}">{{ $side['team']?->name }}</span>
+                                    <span class="w-7 -skew-x-8 text-right font-display text-xl font-extrabold tabular-nums {{ $won ? 'text-brand' : ($lost ? 'text-white/60' : 'text-white') }}">{{ $result->played === 0 ? '–' : $side['goals'] }}</span>
                                 </a>
                             @endforeach
 
-                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 bg-black/30 px-3 py-1.5 font-mono text-[9px] tracking-[0.12em] text-white/50">
-                                <span class="text-white/40">{{ $legs->count() > 1 ? 'GLOBAL' : 'RESULTADO' }}</span>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 bg-black/30 px-3 py-1.5 font-mono text-[9px] tracking-[0.12em] text-white/60">
+                                <span class="text-white/60">{{ $legs->count() > 1 ? 'GLOBAL' : 'RESULTADO' }}</span>
                                 @if ($legs->count() > 1)
                                     @foreach ($legs as $leg)
                                         <a href="{{ route('site.games.show', $leg['game']) }}" class="hover:text-brand">
@@ -92,7 +92,7 @@
                             @foreach ([1, 2] as $n)
                                 <div class="flex items-center gap-2.5 px-3 py-2 {{ $n === 1 ? 'border-b border-white/[0.06]' : '' }}">
                                     <span class="size-6 shrink-0 rounded-[3px] bg-white/[0.06]" aria-hidden="true"></span>
-                                    <span class="font-display text-base text-white/35">Por definir</span>
+                                    <span class="font-display text-base text-white/60">Por definir</span>
                                 </div>
                             @endforeach
                         </div>

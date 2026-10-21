@@ -10,7 +10,7 @@
      El botón además es un gesto del usuario, que es la forma más fiable de que
      el navegador enseñe su diálogo de permiso: algunos lo ignoran cuando se
      pide al cargar la página. --}}
-<div data-push-toggle class="hidden items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-ink/60">
+<div data-push-toggle class="hidden items-center gap-2 font-mono text-[10px] tracking-[0.1em] text-ink/70">
     <span data-push-state></span>
     <button type="button" data-push-enable
             class="hidden rounded-[4px] bg-ink px-3 py-1.5 font-display text-xs font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-surface">

@@ -27,7 +27,7 @@
          el medidor de bloques de todo el sitio (veinte, uno por cada 5 %). --}}
     <header class="mb-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
         <div>
-            <div class="font-mono text-[11px] tracking-[0.14em] text-ink/60">{{ $cabecera }}</div>
+            <div class="font-mono text-[11px] tracking-[0.14em] text-ink/70">{{ $cabecera }}</div>
             <h1 class="mt-1 -skew-x-6 font-display text-5xl font-extrabold uppercase italic leading-none tracking-wide text-ink sm:text-6xl">
                 {{ $jornada ? 'Jornada '.$jornada : 'Amazon Toernooien' }}
             </h1>
@@ -37,7 +37,7 @@
             @php($filled = (int) round($percent / 5))
             <div class="w-full max-w-sm">
                 <div class="mb-1.5 flex items-baseline justify-between gap-3">
-                    <span class="font-mono text-[10px] tracking-[0.12em] text-ink/60">LIGA DISPUTADA</span>
+                    <span class="font-mono text-[10px] tracking-[0.12em] text-ink/70">LIGA DISPUTADA</span>
                     <span class="font-display text-sm font-bold text-ink">{{ $progress['played'] }} de {{ $progress['games'] }} partidos</span>
                 </div>
                 <div class="flex gap-1" aria-hidden="true">
@@ -60,7 +60,7 @@
             <div @class(['grid gap-6', 'lg:grid-cols-2' => $lead === null])>
                 @if ($upcoming->isNotEmpty())
                     <div>
-                        <h2 class="mb-2 font-mono text-[10px] tracking-[0.12em] text-ink/60">{{ $proxima }}</h2>
+                        <h2 class="mb-2 font-mono text-[10px] tracking-[0.12em] text-ink/70">{{ $proxima }}</h2>
                         <div class="grid gap-2">
                             @foreach ($upcoming as $game)
                                 {{-- La etiqueta la pone la portada porque la fila,
@@ -74,7 +74,7 @@
 
                 @if ($results->isNotEmpty())
                     <div>
-                        <h2 class="mb-2 font-mono text-[10px] tracking-[0.12em] text-ink/60">ÚLTIMOS RESULTADOS</h2>
+                        <h2 class="mb-2 font-mono text-[10px] tracking-[0.12em] text-ink/70">ÚLTIMOS RESULTADOS</h2>
                         <div class="grid gap-2">
                             @foreach ($results as $game)
                                 <x-site.match-row :game="$game" :label="mb_strtoupper($game->competitionLabel())" />
@@ -143,7 +143,7 @@
 
                     <span class="min-w-0">
                         <span class="block truncate font-display text-xl font-extrabold uppercase italic text-white">{{ $cup->name }}</span>
-                        <span class="block font-mono text-[10px] tracking-[0.12em] text-white/50">
+                        <span class="block font-mono text-[10px] tracking-[0.12em] text-white/60">
                             {{ $cup->participants_count }} EQUIPOS
                         </span>
                     </span>

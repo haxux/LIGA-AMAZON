@@ -30,12 +30,12 @@
         <div class="grid grid-cols-2 gap-px bg-white/[0.055]">
             @foreach ($tiles as $tile)
                 <div class="bg-surface p-4">
-                    <div class="mb-1 font-mono text-[10px] tracking-[0.12em] text-white/45">
+                    <div class="mb-1 font-mono text-[10px] tracking-[0.12em] text-white/60">
                         {{ mb_strtoupper($tile['label']) }}
                     </div>
                     <div class="-skew-x-8 font-display text-4xl leading-none font-extrabold tabular-nums {{ $loop->first ? 'text-brand' : 'text-white' }}">{{ $tile['value'] }}</div>
                     @if ($tile['foot'])
-                        <div class="mt-1 truncate font-mono text-[10px] text-white/40" title="{{ $tile['foot'] }}">{{ $tile['foot'] }}</div>
+                        <div class="mt-1 truncate font-mono text-[10px] text-white/60" title="{{ $tile['foot'] }}">{{ $tile['foot'] }}</div>
                     @endif
                 </div>
             @endforeach
