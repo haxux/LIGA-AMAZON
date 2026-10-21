@@ -75,16 +75,50 @@
         }).then(function (subscription) {
             var json = subscription.toJSON();
 
-            return postSubscription('POST', { endpoint: json.endpoint, keys: json.keys, topic: topic }, csrfToken);
-        }).then(function () {
-            window.localStorage.setItem('liga-push-' + topic, '1');
+            return postSubscription('POST', { endpoint: json.endpoint, keys: json.keys, topic: topic }, csrfToken).then(function () {
+                remember(topic, json.endpoint);
 
-            return true;
+                return true;
+            });
         });
     }
 
     function supported() {
         return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    }
+
+    // Cada cuánto se vuelve a avisar al servidor de una suscripción que ya
+    // tiene. El alta es idempotente, y así una que el servidor borró por
+    // caducada (ver PushNotificationService::deliver), o una que el navegador
+    // renovó por su cuenta, vuelve sola en la siguiente visita en vez de
+    // quedarse muda para siempre.
+    var RESYNC_MS = 12 * 60 * 60 * 1000;
+
+    function remember(topic, endpoint) {
+        window.localStorage.setItem('liga-push-' + topic, JSON.stringify({ endpoint: endpoint, at: Date.now() }));
+    }
+
+    function remembered(topic) {
+        try {
+            return JSON.parse(window.localStorage.getItem('liga-push-' + topic) || 'null');
+        } catch (error) {
+            // La marca vieja era un '1' suelto: se trata como «sin marca».
+            return null;
+        }
+    }
+
+    /**
+     * La suscripción del navegador, la de verdad, o null. Es la que manda: la
+     * marca de `localStorage` sólo dice qué se mandó al servidor y cuándo.
+     */
+    function current() {
+        if (!supported()) {
+            return Promise.resolve(null);
+        }
+
+        return navigator.serviceWorker.getRegistration('/').then(function (registration) {
+            return registration ? registration.pushManager.getSubscription() : null;
+        });
     }
 
     /**
@@ -107,17 +141,28 @@
      *   denegado   → nada; preguntar otra vez no está en nuestra mano.
      *   sin decidir→ se pregunta UNA vez, como antes.
      *
-     * La marca de éxito evita repetir el alta en cada página. La de «ya se
-     * preguntó» sigue existiendo, pero sólo gobierna la pregunta, nunca el
-     * alta.
+     * Con permiso concedido, además, ya no basta la marca de éxito: se mira la
+     * suscripción real del navegador y se vuelve a dar de alta si cambió, si
+     * no hay, o si hace más de RESYNC_MS que no se le dice al servidor. Hasta
+     * el 2026-10-21 la marca cortaba aquí para siempre, y una suscripción que
+     * el servidor había borrado nunca volvía: los avisos dejaban de llegar sin
+     * ningún error. La marca de «ya se preguntó» sigue existiendo, pero sólo
+     * gobierna la pregunta, nunca el alta.
      */
     function ensure(topic, vapidPublicKey, csrfToken) {
         if (!supported()) {
             return Promise.resolve(false);
         }
 
-        if (window.localStorage.getItem('liga-push-' + topic) === '1') {
-            return Promise.resolve(true);
+        if (Notification.permission === 'granted') {
+            return current().then(function (subscription) {
+                var mark = remembered(topic);
+                var fresh = subscription && mark && mark.endpoint === subscription.endpoint && Date.now() - mark.at < RESYNC_MS;
+
+                return fresh ? true : subscribe(topic, vapidPublicKey, csrfToken);
+            }).catch(function () {
+                return false;
+            });
         }
 
         if (Notification.permission === 'denied') {
@@ -159,5 +204,41 @@
         }, Promise.resolve());
     }
 
-    window.LigaPush = { autoPrompt: ensure, autoPromptAll: autoPromptAll };
+    /**
+     * Si en este aparato los avisos llegan de verdad: permiso concedido y una
+     * suscripción viva en el navegador. Es lo que debe decir el estado de la
+     * página, no la marca de `localStorage`.
+     */
+    function isActive() {
+        if (!supported() || Notification.permission !== 'granted') {
+            return Promise.resolve(false);
+        }
+
+        return current().then(function (subscription) {
+            return subscription !== null;
+        }).catch(function () {
+            return false;
+        });
+    }
+
+    /**
+     * Un iPhone o iPad con la web abierta en el navegador, sin instalar: ahí
+     * Apple no da avisos web. Sólo con la web añadida a la pantalla de inicio
+     * (iOS 16.4 o posterior).
+     */
+    function iosNeedsInstall() {
+        var ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
+            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var standalone = window.navigator.standalone === true
+            || window.matchMedia('(display-mode: standalone)').matches;
+
+        return ios && !standalone;
+    }
+
+    window.LigaPush = {
+        autoPrompt: ensure,
+        autoPromptAll: autoPromptAll,
+        isActive: isActive,
+        iosNeedsInstall: iosNeedsInstall,
+    };
 })();

@@ -31,31 +31,48 @@
         var vapidKey = document.querySelector('meta[name="vapid-public-key"]')?.content;
         var csrf = document.querySelector('meta[name="csrf-token"]')?.content;
 
-        if (!vapidKey || !('Notification' in window)) {
+        if (!vapidKey) {
             return;
         }
 
         box.classList.remove('hidden');
         box.classList.add('flex');
 
+        // En un iPhone sin instalar la web, Apple no da avisos: no hay botón
+        // que sirva, sólo decir cómo conseguirlos.
+        if (window.LigaPush.iosNeedsInstall()) {
+            label.textContent = 'EN IPHONE, LOS AVISOS SÓLO LLEGAN CON LA WEB AÑADIDA A LA PANTALLA DE INICIO';
+            button.classList.add('hidden');
+
+            return;
+        }
+
+        if (!('Notification' in window)) {
+            box.classList.add('hidden');
+
+            return;
+        }
+
+        // El estado se lee de la suscripción real del navegador (isActive), no
+        // de una marca guardada: la marca decía «activados» aunque el servidor
+        // ya no tuviera la suscripción, y los avisos no llegaban.
         function paint() {
-            var granted = Notification.permission === 'granted';
-            var subscribed = granted && window.localStorage.getItem('liga-push-chat') === '1';
+            window.LigaPush.isActive().then(function (active) {
+                if (active) {
+                    label.textContent = 'AVISOS DEL NAVEGADOR: ACTIVADOS';
+                    button.classList.add('hidden');
 
-            if (subscribed) {
-                label.textContent = 'AVISOS DEL NAVEGADOR: ACTIVADOS';
-                button.classList.add('hidden');
+                    return;
+                }
 
-                return;
-            }
+                label.textContent = Notification.permission === 'denied'
+                    ? 'AVISOS BLOQUEADOS EN ESTE NAVEGADOR'
+                    : 'AVISOS DEL NAVEGADOR: DESACTIVADOS';
 
-            label.textContent = Notification.permission === 'denied'
-                ? 'AVISOS BLOQUEADOS EN ESTE NAVEGADOR'
-                : 'AVISOS DEL NAVEGADOR: DESACTIVADOS';
-
-            // Bloqueado sólo se arregla desde los ajustes del navegador, así
-            // que ofrecer un botón que no puede funcionar sería engañar.
-            button.classList.toggle('hidden', Notification.permission === 'denied');
+                // Bloqueado sólo se arregla desde los ajustes del navegador, así
+                // que ofrecer un botón que no puede funcionar sería engañar.
+                button.classList.toggle('hidden', Notification.permission === 'denied');
+            });
         }
 
         button.addEventListener('click', function () {
