@@ -8,6 +8,7 @@ use App\Models\Season;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Derives a season's league table live from `Game` rows. Nothing here is
@@ -16,6 +17,8 @@ use Illuminate\Support\Collection;
  */
 final class StandingsService
 {
+    private const VERSION_KEY = 'standings:version';
+
     /**
      * El club va precargado en los equipos porque `Team::$crest_path` y
      * `$short_name` son accesores que pasan POR él: sin esto, cada escudo de
@@ -89,6 +92,96 @@ final class StandingsService
      */
     public function tablesFor(Season $season): array
     {
+        // En caché: la piden la portada, Clasificación e Historia en cada
+        // visita, y antes se recalculaba entera cada vez, varias veces por
+        // página. La clave lleva una versión que sube con cualquier cambio que
+        // toque una tabla (ver `flush()` y AppServiceProvider), así que nunca
+        // se sirve una tabla vieja; el día de caducidad sólo limpia las
+        // versiones que ya nadie pide.
+        //
+        // Se guardan SÓLO números y ids, nunca objetos: la caché no
+        // deserializa clases (`cache.serializable_classes` en false, contra
+        // ataques si se filtra el APP_KEY), y una tabla guardada con sus
+        // modelos volvía rota —un 500 en Clasificación, visto en local el
+        // 2026-10-21 antes de desplegar—. Los equipos y las zonas se vuelven a
+        // cargar al leerla: dos consultas en vez de recalcular la temporada.
+        $plain = Cache::remember(
+            'standings:'.$season->getKey().':v'.Cache::get(self::VERSION_KEY, 0),
+            now()->addDay(),
+            fn (): array => $this->flatten($this->computeTablesFor($season)),
+        );
+
+        return $this->hydrate($plain);
+    }
+
+    /**
+     * Las tablas reducidas a datos simples, lo único que la caché admite.
+     *
+     * @param  array<int, array{heading: ?string, rows: Collection<int, StandingRow>, zones: Collection<int, mixed>, champion: ?Team, division_id?: ?int}>  $tables
+     * @return array<int, array{heading: ?string, division_id: ?int, champion_id: ?int, rows: list<array<int, int>>}>
+     */
+    private function flatten(array $tables): array
+    {
+        return array_map(fn (array $table): array => [
+            'heading' => $table['heading'],
+            'division_id' => $table['division_id'] ?? null,
+            'champion_id' => $table['champion']?->getKey(),
+            'rows' => $table['rows']->map(fn (StandingRow $row): array => [
+                $row->team->getKey(), $row->played, $row->won, $row->drawn, $row->lost, $row->goals_for, $row->goals_against,
+            ])->values()->all(),
+        ], $tables);
+    }
+
+    /**
+     * De vuelta a tablas con sus modelos: los equipos (con su club) y las
+     * zonas de todas las divisiones, en una consulta cada uno.
+     *
+     * @param  array<int, array{heading: ?string, division_id: ?int, champion_id: ?int, rows: list<array<int, int>>}>  $plain
+     * @return array<int, array{heading: ?string, rows: Collection<int, StandingRow>, zones: Collection<int, mixed>, champion: ?Team}>
+     */
+    private function hydrate(array $plain): array
+    {
+        $teamIds = collect($plain)->flatMap(fn (array $table) => array_column($table['rows'], 0))->unique()->values();
+        $teams = Team::query()->whereKey($teamIds)->with('club')->get()->keyBy(fn (Team $team) => $team->getKey());
+
+        $divisionIds = collect($plain)->pluck('division_id')->filter()->values();
+        $zones = $divisionIds->isEmpty()
+            ? collect()
+            : Division::query()->whereKey($divisionIds)->with('standingZones')->get()
+                ->mapWithKeys(fn (Division $division) => [$division->getKey() => $division->standingZones]);
+
+        return array_map(function (array $table) use ($teams, $zones): array {
+            $rows = collect($table['rows'])
+                // Un equipo borrado desde que se guardó: la caché ya se habrá
+                // invalidado, pero por si acaso no se cae la página.
+                ->filter(fn (array $row) => $teams->has($row[0]))
+                ->map(fn (array $row) => new StandingRow($teams[$row[0]], ...array_slice($row, 1)))
+                ->values();
+
+            return [
+                'heading' => $table['heading'],
+                'rows' => $rows,
+                'zones' => $table['division_id'] !== null ? ($zones[$table['division_id']] ?? collect()) : collect(),
+                'champion' => $table['champion_id'] !== null ? $teams->get($table['champion_id']) : null,
+            ];
+        }, $plain);
+    }
+
+    /**
+     * Invalida todas las tablas en caché: lo llaman los modelos que cambian una
+     * clasificación —partidos, jornadas, equipos, clubes, divisiones, zonas y
+     * temporadas— al guardarse o borrarse.
+     */
+    public static function flush(): void
+    {
+        Cache::forever(self::VERSION_KEY, ((int) Cache::get(self::VERSION_KEY, 0)) + 1);
+    }
+
+    /**
+     * @return array<int, array{heading: ?string, rows: Collection<int, StandingRow>, zones: Collection<int, mixed>, champion: ?Team}>
+     */
+    private function computeTablesFor(Season $season): array
+    {
         $divisions = $season->divisions()->has('teams')->with('standingZones')->orderBy('id')->get();
         $remaining = $this->remainingGames($season->getKey());
 
@@ -113,6 +206,7 @@ final class StandingsService
 
                 return [
                     'heading' => $division->name,
+                    'division_id' => $division->getKey(),
                     'rows' => $rows,
                     // Las franjas de ascenso y descenso son de la división, así
                     // que la tabla sin división de arriba simplemente no tiene.
