@@ -29,6 +29,31 @@ class ClubResourceTest extends TestCase
         Livewire::test(ListClubs::class)->assertOk();
     }
 
+    /**
+     * El presidente ve el saldo de cada club en la lista (decisión del
+     * propietario, 2026-10-21): el inicial más lo aprobado; lo propuesto no
+     * suma, pero se avisa.
+     */
+    public function test_the_list_shows_each_clubs_current_balance(): void
+    {
+        $club = Club::factory()->create(['name' => 'Saldo FC', 'initial_balance' => 1_000_000]);
+        $season = \App\Models\Season::factory()->create();
+
+        \App\Models\BudgetMovement::query()->create([
+            'club_id' => $club->id, 'season_id' => $season->id, 'type' => \App\Models\BudgetMovement::TYPE_EXPENSE,
+            'amount' => 250_000, 'reason' => 'Fichaje', 'status' => \App\Models\BudgetMovement::STATUS_APPROVED,
+        ]);
+        \App\Models\BudgetMovement::query()->create([
+            'club_id' => $club->id, 'season_id' => $season->id, 'type' => \App\Models\BudgetMovement::TYPE_INCOME,
+            'amount' => 5_000_000, 'reason' => 'Venta propuesta', 'status' => \App\Models\BudgetMovement::STATUS_PROPOSED,
+        ]);
+
+        Livewire::test(ListClubs::class)
+            ->assertOk()
+            ->assertSee('750.000')
+            ->assertSee('1 movimiento pendiente');
+    }
+
     public function test_create_page_renders_successfully(): void
     {
         Livewire::test(CreateClub::class)->assertOk();
