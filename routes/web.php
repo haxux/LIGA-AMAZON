@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CronController;
+use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\Site\ChatController;
 use App\Http\Controllers\Site\ClubProfileController;
@@ -26,6 +27,10 @@ use Illuminate\Support\Facades\Route;
  * bootstrap/app.php, outside this group, so uptime monitoring is never
  * throttled.
  */
+// El manifest de la web instalable (ver ManifestController). Fuera del límite
+// de peticiones: el navegador lo pide solo, al cargar cualquier página.
+Route::get('/manifest.webmanifest', ManifestController::class)->name('site.manifest');
+
 Route::middleware('throttle:60,1')->group(function (): void {
     // La raíz es la portada, que es donde lleva el botón de la marca. Hasta el
     // 2026-10-13 era Clasificación; su nombre de ruta no cambió, sólo la

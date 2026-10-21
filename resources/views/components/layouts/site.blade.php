@@ -12,6 +12,16 @@
         <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png" sizes="512x512">
         <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
+        {{-- La web instalable como app (ver ManifestController): el manifest
+             para Android y el ordenador, y lo que el iPhone lee por su cuenta
+             para abrirla a pantalla completa con su nombre bajo el icono. --}}
+        <link rel="manifest" href="{{ route('site.manifest') }}">
+        <meta name="theme-color" content="{{ config('site.theme_color') }}">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <meta name="apple-mobile-web-app-title" content="{{ config('site.short_name') }}">
+
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
