@@ -41,7 +41,7 @@
         <x-site.season-honours :champions="$champions" :scorers="$scorers" />
 
         @foreach ($tables as $table)
-            <x-site.standings-table :heading="$table['heading']" :rows="$table['rows']" :zones="$table['zones']" />
+            <x-site.standings-table :heading="$table['heading']" :rows="$table['rows']" :zones="$table['zones']" :champion="$table['champion'] ?? null" />
         @endforeach
     @endif
 </x-layouts.site>

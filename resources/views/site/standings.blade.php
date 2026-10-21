@@ -20,6 +20,6 @@
     </div>
 
     @foreach ($tables as $table)
-        <x-site.standings-table :heading="$table['heading']" :rows="$table['rows']" :zones="$table['zones']" :form="$form" />
+        <x-site.standings-table :heading="$table['heading']" :rows="$table['rows']" :zones="$table['zones']" :champion="$table['champion'] ?? null" :form="$form" />
     @endforeach
 </x-layouts.site>

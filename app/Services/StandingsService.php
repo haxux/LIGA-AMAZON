@@ -82,14 +82,20 @@ final class StandingsService
      * blanco. Duplicada en dos sitios, esa regla se arregla en uno y se olvida
      * en el otro.
      *
-     * @return array<int, array{heading: ?string, rows: Collection<int, StandingRow>, zones: Collection<int, mixed>}>
+     * Cada tabla lleva además su campeón, si ya lo es matemáticamente (ver
+     * `clinchedChampion()`); si no, null.
+     *
+     * @return array<int, array{heading: ?string, rows: Collection<int, StandingRow>, zones: Collection<int, mixed>, champion: ?Team}>
      */
     public function tablesFor(Season $season): array
     {
         $divisions = $season->divisions()->has('teams')->with('standingZones')->orderBy('id')->get();
+        $remaining = $this->remainingGames($season->getKey());
 
         if ($divisions->isEmpty()) {
-            return [['heading' => null, 'rows' => $this->forSeason($season), 'zones' => collect()]];
+            $rows = $this->forSeason($season);
+
+            return [['heading' => null, 'rows' => $rows, 'zones' => collect(), 'champion' => $this->clinchedChampion($rows, $remaining)]];
         }
 
         // Los partidos de la temporada, UNA vez para todas las divisiones: son
@@ -98,18 +104,84 @@ final class StandingsService
         $games = $this->leagueGames($season->getKey());
 
         return $divisions
-            ->map(fn (Division $division) => [
-                'heading' => $division->name,
-                'rows' => $this->buildTable(
+            ->map(function (Division $division) use ($season, $games, $remaining) {
+                $rows = $this->buildTable(
                     Team::query()->where('division_id', $division->getKey())->with('club')->orderBy('id')->get(),
                     $season->getKey(),
                     $games,
-                ),
-                // Las franjas de ascenso y descenso son de la división, así que
-                // la tabla sin división de arriba simplemente no tiene.
-                'zones' => $division->standingZones,
-            ])
+                );
+
+                return [
+                    'heading' => $division->name,
+                    'rows' => $rows,
+                    // Las franjas de ascenso y descenso son de la división, así
+                    // que la tabla sin división de arriba simplemente no tiene.
+                    'zones' => $division->standingZones,
+                    'champion' => $this->clinchedChampion($rows, $remaining),
+                ];
+            })
             ->all();
+    }
+
+    /**
+     * El campeón, en cuanto ya no le puede alcanzar nadie: sus puntos superan
+     * a lo máximo que cualquier otro puede sumar con lo que le queda —sus
+     * puntos más tres por cada partido de liga sin jugar—.
+     *
+     * Estrictamente por encima: con un empate posible a puntos decidiría la
+     * diferencia de goles, que todavía no se sabe. Con el calendario entero
+     * jugado, en cambio, la tabla ya es la definitiva y el primero es campeón
+     * aunque empate a puntos con el segundo.
+     *
+     * Cuenta con que el calendario está creado entero, que es como se monta
+     * la liga: un partido que aún no existe no se cuenta entre los pendientes.
+     *
+     * @param  Collection<int, StandingRow>  $rows  ya ordenadas
+     * @param  array<int, int>  $remaining  partidos pendientes por equipo
+     */
+    public function clinchedChampion(Collection $rows, array $remaining): ?Team
+    {
+        $leader = $rows->first();
+
+        if ($leader === null || $leader->played === 0 || $rows->count() < 2) {
+            return null;
+        }
+
+        $pending = fn (StandingRow $row) => $remaining[$row->team->getKey()] ?? 0;
+
+        if ($rows->every(fn (StandingRow $row) => $pending($row) === 0)) {
+            return $leader->team;
+        }
+
+        $chase = $rows->slice(1)->max(fn (StandingRow $row) => $row->points + 3 * $pending($row));
+
+        return $leader->points > $chase ? $leader->team : null;
+    }
+
+    /**
+     * Los partidos de liga que le quedan a cada equipo de la temporada: sin
+     * marcador y sin anular (uno anulado cuenta como jugado, ver
+     * `leagueGames()`).
+     *
+     * @return array<int, int>
+     */
+    private function remainingGames(int $seasonId): array
+    {
+        $remaining = [];
+
+        $games = Game::query()
+            ->whereNull('voided_at')
+            ->where(fn (Builder $query) => $query->whereNull('home_score')->orWhereNull('away_score'))
+            ->whereHas('matchday', fn (Builder $query) => $query->where('season_id', $seasonId))
+            ->get(['home_team_id', 'away_team_id']);
+
+        foreach ($games as $game) {
+            foreach ([$game->home_team_id, $game->away_team_id] as $teamId) {
+                $remaining[$teamId] = ($remaining[$teamId] ?? 0) + 1;
+            }
+        }
+
+        return $remaining;
     }
 
     private function buildTable(Collection $teams, int $seasonId, ?Collection $games = null): Collection

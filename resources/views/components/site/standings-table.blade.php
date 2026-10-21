@@ -1,4 +1,4 @@
-@props(['heading', 'rows', 'zones' => null, 'form' => null, 'legend' => true, 'extra' => null, 'spaced' => true])
+@props(['heading', 'rows', 'zones' => null, 'form' => null, 'legend' => true, 'extra' => null, 'spaced' => true, 'champion' => null])
 
 {{-- La tabla de una división. El puesto va en una chapa inclinada del color de
      su zona (Champions, ascenso, descenso…), con la raya del borde de la fila
@@ -74,11 +74,24 @@
                         <a href="{{ route('site.clubs.show', ['club' => $row->team->club_id, 'temporada' => $row->team->season_id]) }}"
                            class="flex min-w-0 items-center gap-2.5 hover:text-brand">
                             <x-site.team-crest :team="$row->team" size="size-6" />
+                            {{-- El primero va como todos (decisión del propietario,
+                                 2026-10-21): ir primero no es ser campeón. Sólo el
+                                 campeón matemático (`champion`, ver
+                                 StandingsService::clinchedChampion) va en el color
+                                 de la liga y con su corona. --}}
+                            @php($isChampion = $champion !== null && (int) $champion->getKey() === (int) $row->team->getKey())
                             <span @class([
-                                'truncate font-display text-base text-white sm:text-lg',
-                                'font-extrabold uppercase italic' => $position === 1,
-                                'font-semibold' => $position !== 1,
+                                'truncate font-display text-base font-semibold sm:text-lg',
+                                'text-white' => ! $isChampion,
+                                'font-extrabold uppercase italic text-brand' => $isChampion,
                             ])>{{ $row->team->name }}</span>
+                            @if ($isChampion)
+                                <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-brand" fill="currentColor" role="img" aria-label="Campeón">
+                                    <title>Campeón</title>
+                                    <path d="M3 8l4.5 3.5L12 4l4.5 7.5L21 8l-2 11H5z" />
+                                    <rect x="5" y="20" width="14" height="1.6" rx="0.8" />
+                                </svg>
+                            @endif
                         </a>
                     </td>
                     @if ($extra)
