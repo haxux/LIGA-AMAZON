@@ -37,6 +37,10 @@
          equipos— el pie quedaba a media pantalla y debajo se veía el fondo
          amarillo vacío. --}}
     <body class="flex min-h-screen flex-col bg-brand-weave font-sans text-ink">
+        {{-- Lo primero del <body>: la animación de entrada de la app instalada,
+             que tiene que pintarse antes que la página. --}}
+        <x-site.app-intro :season="app(App\Services\SeasonResolver::class)->active()?->name" />
+
         @php
             // El técnico se lee del guard `club`, el de su panel, que vive en la
             // misma sesión que el sitio: `auth()` a secas devuelve el guard del
