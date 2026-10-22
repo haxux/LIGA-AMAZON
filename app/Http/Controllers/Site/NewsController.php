@@ -66,16 +66,17 @@ class NewsController extends Controller
         $club = $item->team?->club;
 
         // Para seguir leyendo al terminar: lo último del mismo club, a través
-        // de las temporadas. Si el club no tiene tres, o la noticia no es de
-        // ningún club, se completa con lo último de la liga.
+        // de las temporadas. Si el club no tiene cuatro, o la noticia no es de
+        // ningún club, se completa con lo último de la liga. Cuatro: la cuarta
+        // sólo se ve en el móvil y la app (ver la vista).
         $others = News::published()->whereKeyNot($item->getKey())->with('team.club')->latest('published_at');
 
         $sameClub = $club
-            ? (clone $others)->whereHas('team', fn ($team) => $team->where('club_id', $club->getKey()))->take(3)->get()
+            ? (clone $others)->whereHas('team', fn ($team) => $team->where('club_id', $club->getKey()))->take(4)->get()
             : collect();
 
         $more = $sameClub->concat(
-            (clone $others)->whereKeyNot($sameClub->pluck('id')->all())->take(3 - $sameClub->count())->get()
+            (clone $others)->whereKeyNot($sameClub->pluck('id')->all())->take(4 - $sameClub->count())->get()
         );
 
         return view('site.news.show', [

@@ -6,10 +6,10 @@
     $months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     $longDate = fn ($date) => $date->day.' de '.$months[$date->month - 1].($date->year !== now()->year ? ' de '.$date->year : '');
 
-    // La portada: las tres más recientes en grande, cuando hay bastantes para
-    // que el resto no quede en nada. Las demás, agrupadas por día, que es
-    // como llegan: en tandas.
-    $featured = $items->count() >= 4 ? $items->take(3) : collect();
+    // Lo primero, las cinco más recientes en un carrusel (decisión del
+    // propietario, 2026-10-22). Con una sola no hay nada que pasar y va como
+    // tarjeta. Las demás, agrupadas por día, que es como llegan: en tandas.
+    $featured = $items->count() >= 2 ? $items->take(5) : collect();
     $byDay = $items->slice($featured->count())
         ->groupBy(fn ($item) => $item->published_at?->toDateString() ?? '');
 
@@ -92,15 +92,8 @@
         </p>
     @endif
 
-    {{-- La portada: la última en grande, con el título en una placa sólida
-         sobre la foto (sin degradado), y las dos siguientes al lado. --}}
     @if ($featured->isNotEmpty())
-        <div class="mb-10 grid gap-4 lg:grid-cols-3 lg:grid-rows-2">
-            @foreach ($featured as $item)
-                <x-site.news-feature :item="$item" :large="$loop->first"
-                                     :class="$loop->first ? 'aspect-[4/3] lg:col-span-2 lg:row-span-2 lg:aspect-auto lg:min-h-[460px]' : 'aspect-[16/10] lg:aspect-auto'" />
-            @endforeach
-        </div>
+        <x-site.news-carousel :items="$featured" />
     @endif
 
     @foreach ($byDay as $day => $dayItems)

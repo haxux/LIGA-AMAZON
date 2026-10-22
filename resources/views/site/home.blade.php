@@ -155,9 +155,14 @@
     @if ($moreNews->isNotEmpty())
         <x-site.section-title title="Más noticias" kicker="Lo último" :href="route('site.news.index')" />
 
+        {{-- Cuatro en el móvil y en la app (decisión del propietario,
+             2026-10-22), que van de una en una o de dos en dos; en escritorio
+             la cuarta se esconde, porque la fila es de tres. --}}
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($moreNews as $item)
-                <x-site.news-card :item="$item" />
+                <div @class(['contents', 'lg:hidden' => $loop->iteration > 3])>
+                    <x-site.news-card :item="$item" />
+                </div>
             @endforeach
         </div>
     @endif

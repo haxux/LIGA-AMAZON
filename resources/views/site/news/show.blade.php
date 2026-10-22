@@ -75,7 +75,10 @@
 
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($more as $other)
-                    <x-site.news-card :item="$other" />
+                    {{-- La cuarta, sólo fuera de escritorio: como en la portada. --}}
+                    <div @class(['contents', 'lg:hidden' => $loop->iteration > 3])>
+                        <x-site.news-card :item="$other" />
+                    </div>
                 @endforeach
             </div>
         </section>

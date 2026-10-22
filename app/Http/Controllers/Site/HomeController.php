@@ -101,8 +101,9 @@ class HomeController extends SiteController
                 ->orderBy('name')
                 ->get(),
 
-            // La primera va en grande arriba; las otras tres, al final.
-            'news' => News::published()->with('team.club')->latest('published_at')->take(4)->get(),
+            // La primera va en grande arriba; las otras cuatro, al final (la
+            // cuarta sólo en el móvil y la app, ver la vista).
+            'news' => News::published()->with('team.club')->latest('published_at')->take(5)->get(),
         ]);
     }
 

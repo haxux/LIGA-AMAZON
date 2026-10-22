@@ -1,8 +1,11 @@
 {{-- Una noticia destacada: la foto entera de fondo y el título en una placa
      sólida abajo a la izquierda, sin degradado. La usan la portada de
      Noticias y la de la liga. `large` es la grande; sin él, las de al lado.
-     La altura la decide quien la usa, por `class`. --}}
-@props(['item', 'large' => false])
+     La altura la decide quien la usa, por `class`, y el encuadre de la foto
+     `focus`: desde arriba por omisión, para no cortar caras; el carrusel la
+     centra, porque en su formato tan apaisado desde arriba sólo quedaba el
+     fondo de la grada. --}}
+@props(['item', 'large' => false, 'focus' => 'object-top'])
 
 @php($club = $item->team?->club)
 
@@ -10,7 +13,7 @@
    {{ $attributes->merge(['class' => 'group relative block overflow-hidden rounded-md bg-surface-muted focus-visible:outline-2 focus-visible:outline-brand']) }}>
     @if ($item->cover_path)
         <img src="{{ Storage::disk(config('filesystems.uploads'))->url($item->cover_path) }}" alt=""
-             class="absolute inset-0 size-full object-cover object-top">
+             class="absolute inset-0 size-full object-cover {{ $focus }}">
     @else
         <div class="bg-hatch absolute inset-0"></div>
     @endif
