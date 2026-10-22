@@ -15,9 +15,10 @@
             ? 'PRÓXIMA JORNADA'.($matchday->date ? ' · '.$matchday->date->format('d/m/Y') : '')
             : 'PRÓXIMOS PARTIDOS';
 
-        // La última noticia va arriba en grande; las demás, al final.
-        $lead = $news->first();
-        $moreNews = $news->slice(1);
+        // Arriba, las cinco más recientes en un carrusel (decisión del
+        // propietario, 2026-10-22); las siguientes, al final.
+        $lead = $news->take(5);
+        $moreNews = $news->slice(5);
 
         // Cada cabecera con la ilustración y la tabla de su tema.
         $leaderKinds = ['goles', 'asistencias', 'porterias'];
@@ -49,15 +50,18 @@
         @endif
     </header>
 
-    {{-- Lo primero: la última noticia en grande y, al lado, la jornada —lo que
-         se juega y lo que acaba de pasar— en filas de marcador. --}}
-    @if ($lead || $upcoming->isNotEmpty() || $results->isNotEmpty())
-        <div @class(['grid items-start gap-6', 'lg:grid-cols-2' => $lead !== null])>
-            @if ($lead)
-                <x-site.news-feature :item="$lead" large class="aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[480px]" />
+    {{-- Lo primero: las últimas noticias en un carrusel (con una sola, la
+         noticia en grande) y, al lado, la jornada —lo que se juega y lo que
+         acaba de pasar— en filas de marcador. --}}
+    @if ($lead->isNotEmpty() || $upcoming->isNotEmpty() || $results->isNotEmpty())
+        <div @class(['grid items-start gap-6', 'lg:grid-cols-2' => $lead->isNotEmpty()])>
+            @if ($lead->count() > 1)
+                <x-site.news-carousel :items="$lead" slide="aspect-[4/3] lg:aspect-auto lg:h-[520px]" />
+            @elseif ($lead->isNotEmpty())
+                <x-site.news-feature :item="$lead->first()" large class="aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[480px]" />
             @endif
 
-            <div @class(['grid gap-6', 'lg:grid-cols-2' => $lead === null])>
+            <div @class(['grid gap-6', 'lg:grid-cols-2' => $lead->isEmpty()])>
                 @if ($upcoming->isNotEmpty())
                     <div>
                         <h2 class="mb-2 font-mono text-[10px] tracking-[0.12em] text-ink/70">{{ $proxima }}</h2>

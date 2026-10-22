@@ -101,9 +101,10 @@ class HomeController extends SiteController
                 ->orderBy('name')
                 ->get(),
 
-            // La primera va en grande arriba; las otras cuatro, al final (la
-            // cuarta sólo en el móvil y la app, ver la vista).
-            'news' => News::published()->with('team.club')->latest('published_at')->take(5)->get(),
+            // Las cinco primeras, en el carrusel de arriba; las cuatro
+            // siguientes, al final (la cuarta sólo en el móvil y la app, ver
+            // la vista).
+            'news' => News::published()->with('team.club')->latest('published_at')->take(9)->get(),
         ]);
     }
 

@@ -1,7 +1,9 @@
-{{-- Las noticias más recientes en un carrusel, lo primero de la página de
-     Noticias (decisión del propietario, 2026-10-22): avanza solo cada pocos
-     segundos y también se mueve a mano —con el dedo, las flechas o los
-     puntos—.
+{{-- Las noticias más recientes en un carrusel, lo primero de la portada
+     (decisión del propietario, 2026-10-22): avanza solo cada pocos segundos y
+     también se mueve a mano —con el dedo, las flechas o los puntos—.
+
+     `slide` es el tamaño de cada noticia y `focus` el encuadre de su foto: los
+     pone quien lo usa, porque en la portada ocupa media pantalla.
 
      Se apoya en el desplazamiento nativo con «snap»: sin JavaScript sigue
      siendo una tira que se desliza con el dedo, y el script sólo añade los
@@ -9,11 +11,11 @@
      encima, al tocarlo o enfocarlo con el teclado, con la pestaña oculta, y
      no arranca solo si el teléfono pide reducir el movimiento: entonces queda
      el botón de reproducir. --}}
-@props(['items', 'interval' => 6000])
+@props(['items', 'interval' => 6000, 'slide' => 'aspect-[4/3] lg:aspect-auto lg:h-[480px]', 'focus' => 'object-top'])
 
 @php($count = $items->count())
 
-<section {{ $attributes->merge(['class' => 'relative mb-10']) }}
+<section {{ $attributes->merge(['class' => 'relative']) }}
          data-news-carousel data-interval="{{ $interval }}"
          aria-roledescription="carrusel" aria-label="Últimas noticias">
     <div data-track
@@ -23,7 +25,7 @@
             <div class="w-full shrink-0 snap-start"
                  role="group" aria-roledescription="noticia" aria-label="{{ $loop->iteration }} de {{ $count }}"
                  data-slide>
-                <x-site.news-feature :item="$item" large focus="object-top lg:object-center" class="aspect-[4/3] sm:aspect-[16/9] lg:aspect-auto lg:h-[480px]" />
+                <x-site.news-feature :item="$item" large :focus="$focus" :class="$slide" />
             </div>
         @endforeach
     </div>
