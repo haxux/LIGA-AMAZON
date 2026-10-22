@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\Game;
 use App\Models\Message;
 use App\Models\News;
+use App\Models\Offer;
 use App\Models\PushSubscription;
+use App\Models\Transfer;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -117,6 +119,65 @@ class PushNotificationService
             Str::limit($message->body, 80),
             route('site.chat'),
         );
+    }
+
+    /**
+     * Una oferta que se mueve en el chat —nueva, contraoferta, aceptada o
+     * rechazada— avisa al otro participante del hilo, por el mismo tema que
+     * los mensajes (decisión del propietario, 2026-10-22). Quien la movió no
+     * se avisa a sí mismo.
+     *
+     * @param  'sent'|'countered'|'accepted'|'rejected'  $event
+     */
+    public function offerMoved(Offer $offer, string $event): void
+    {
+        $notice = $this->offerNotice($offer, $event);
+
+        if ($notice !== null) {
+            $this->sendToUser($notice['to'], PushSubscription::TOPIC_CHAT, $notice['title'], $notice['body'], route('site.chat'));
+        }
+    }
+
+    /**
+     * Qué se avisa de una oferta y a quién, sin mandarlo: el otro participante
+     * del hilo, un título con quién la movió y qué hizo, y la operación.
+     *
+     * @param  'sent'|'countered'|'accepted'|'rejected'  $event
+     * @return array{to: User, title: string, body: string}|null
+     */
+    public function offerNotice(Offer $offer, string $event): ?array
+    {
+        // Una copia leída de nuevo, y no `loadMissing()` sobre la que llega:
+        // cargarle relaciones a ESA instancia las dejaba fijadas para quien
+        // la siga usando. Pasó con OfferService::accept, que leía el club del
+        // jugador ya cargado aquí y no veía que se había ido a otro club.
+        $offer = $offer->fresh(['conversation.participants', 'mover', 'player']);
+
+        if ($offer === null) {
+            return null;
+        }
+
+        $mover = $offer->mover;
+        $recipient = $mover ? $offer->conversation?->other($mover) : null;
+
+        if ($recipient === null) {
+            return null;
+        }
+
+        $who = $mover->name;
+        $terms = $offer->isFree()
+            ? 'cesión '.(Transfer::LOAN_TERMS[$offer->loan_term] ?? 'sin plazo')
+            : number_format((int) $offer->amount, 0, ',', '.');
+        $what = (Offer::KINDS_SHORT[$offer->kind] ?? 'Oferta').' · '.$offer->playerName().' · '.$terms;
+
+        $title = match ($event) {
+            'sent' => 'Nueva oferta de '.$who,
+            'countered' => 'Contraoferta de '.$who,
+            'accepted' => $who.' aceptó la oferta',
+            'rejected' => $who.' rechazó la oferta',
+        };
+
+        return ['to' => $recipient, 'title' => $title, 'body' => $what];
     }
 
     private function sendToTopic(string $topic, string $title, string $body, string $url): void

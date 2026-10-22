@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Observers\OfferObserver;
 use App\Services\BudgetService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
@@ -16,6 +18,7 @@ use Illuminate\Validation\ValidationException;
  * administrador, que la ejecuta registrando el traspaso — que es lo único que
  * mueve dinero y jugadores en esta aplicación.
  */
+#[ObservedBy(OfferObserver::class)]
 #[Fillable([
     'conversation_id', 'player_id', 'fc_id', 'external_player', 'kind', 'from_club_id', 'amount',
     'loan_term', 'tension', 'counterpart', 'status', 'moved_by', 'transfer_id',

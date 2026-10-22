@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\BudgetMovement;
 use App\Models\Club;
 use App\Models\Conversation;
+use App\Models\Offer;
 use App\Models\Player;
 use App\Models\SquadMembership;
 use App\Models\Team;
@@ -106,19 +107,69 @@ final class TransferService
     }
 
     /**
-     * El aviso al técnico que lo propuso, en su chat: nombre del jugador y lo
-     * pactado, que es lo que quiere leer.
+     * El aviso de lo que decidió el administrador, en el chat: nombre del
+     * jugador y lo pactado, que es lo que se quiere leer.
+     *
+     * A los DOS técnicos del trato (decisión del propietario, 2026-10-22): al
+     * que lo propuso —el que aceptó la oferta— y al otro lado de esa oferta,
+     * que antes no se enteraba de si su fichaje salía. A cada uno desde su
+     * lado: la «Venta» de uno es el «Fichaje» del otro, y el club que se nombra
+     * es siempre el de enfrente. El mensaje avisa al teléfono como cualquier
+     * otro del chat.
      */
     private function announce(Transfer $transfer, User $admin, bool $approved): void
     {
-        $coach = $transfer->proposer;
+        $proposer = $transfer->proposer;
 
-        if ($coach === null || $coach->is($admin)) {
+        if ($proposer === null || $proposer->is($admin)) {
             return;
         }
 
+        // Con el presidente al otro lado (un club de fuera), el traspaso ya
+        // está escrito desde el lado del técnico, y es el único a quien avisar.
+        if ($transfer->from_club_id === null || $transfer->to_club_id === null) {
+            $counterpart = $transfer->external_club
+                ?? ($transfer->isIncoming() ? $transfer->fromClub?->name : $transfer->toClub?->name);
+
+            $this->tell($admin, $proposer, $transfer, $transfer->type, $counterpart, $approved);
+
+            return;
+        }
+
+        // Entre dos clubes de la liga el traspaso se escribe siempre desde el
+        // que recibe («Fichaje», o «Cesión» si es prestado), lo propusiera quien
+        // lo propusiera. Así que el lado de cada uno sale de SU club y no de
+        // quién aceptó: antes al que vendía le llegaba «Fichaje aprobado» con
+        // su propio club como el de enfrente.
+        $other = Offer::query()->where('transfer_id', $transfer->getKey())
+            ->with('conversation.participants')
+            ->first()?->conversation?->other($proposer);
+
+        $coaches = collect([$proposer, $other])
+            ->filter(fn (?User $coach) => $coach !== null && $coach->isCoach() && ! $coach->is($admin))
+            ->unique(fn (User $coach) => $coach->getKey());
+
+        foreach ($coaches as $coach) {
+            $receives = (int) $coach->club_id === (int) $transfer->to_club_id;
+
+            $type = $receives
+                ? $transfer->type
+                : ($transfer->isLoan() ? Transfer::TYPE_LOAN_OUT : Transfer::TYPE_SALE);
+
+            $counterpart = $receives ? $transfer->fromClub?->name : $transfer->toClub?->name;
+
+            $this->tell($admin, $coach, $transfer, $type, $counterpart, $approved);
+        }
+    }
+
+    /**
+     * Un aviso, desde el lado de quien lo lee: `$type` es la operación vista
+     * por su club y `$counterpart`, el club de enfrente.
+     */
+    private function tell(User $admin, User $coach, Transfer $transfer, string $type, ?string $counterpart, bool $approved): void
+    {
         // Con su género, que en castellano un «Venta rechazado» canta.
-        [$what, $yes, $no] = match ($transfer->type) {
+        [$what, $yes, $no] = match ($type) {
             Transfer::TYPE_SALE => ['Venta', 'aprobada', 'rechazada'],
             Transfer::TYPE_LOAN_IN => ['Cesión', 'aprobada', 'rechazada'],
             Transfer::TYPE_LOAN_OUT => ['Cesión de salida', 'aprobada', 'rechazada'],
@@ -128,11 +179,6 @@ final class TransferService
         $terms = $transfer->isLoan()
             ? 'plazo de '.(Transfer::LOAN_TERMS[$transfer->loan_term] ?? 'sin fijar')
             : number_format((int) $transfer->fee, 0, ',', '.');
-
-        // El club del OTRO lado, nunca el suyo: en una propuesta de salida
-        // todavía puede no haberlo, y entonces no se nombra ninguno.
-        $counterpart = $transfer->external_club
-            ?? ($transfer->isIncoming() ? $transfer->fromClub?->name : $transfer->toClub?->name);
 
         Conversation::announce($admin, $coach, sprintf(
             '%s %s: %s%s. %s.',
