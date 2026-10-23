@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * Una suscripción push de un navegador. Ver la migración para el porqué de
@@ -34,6 +35,15 @@ class PushSubscription extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * A quién avisa del chat este navegador: las cuentas que tenía abiertas
+     * al apuntarse (ver la migración de `push_subscription_user`).
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
     }
 
     public function hasTopic(string $topic): bool

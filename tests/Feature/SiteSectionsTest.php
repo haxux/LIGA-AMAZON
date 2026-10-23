@@ -116,7 +116,10 @@ class SiteSectionsTest extends TestCase
 
         $other = GameComment::factory()->create(['game_id' => $game->id]);
         $this->app['auth']->forgetGuards();
-        $this->actingAs(User::factory()->create())->delete(route('site.comments.destroy', $other))->assertRedirect();
+        // El administrador, por SU puerta (`web`): los `actingAs(..., 'club')`
+        // de arriba dejaron `club` como puerta por defecto del test, y sin
+        // nombrarla lo habría sentado en la del técnico.
+        $this->actingAs(User::factory()->create(), 'web')->delete(route('site.comments.destroy', $other))->assertRedirect();
         $this->assertDatabaseMissing('game_comments', ['id' => $other->id]);
     }
 

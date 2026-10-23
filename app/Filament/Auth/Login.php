@@ -6,6 +6,8 @@ use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Checkbox;
+use Filament\Schemas\Components\Component;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -91,5 +93,20 @@ class Login extends BaseLogin
             'email' => mb_strtolower(trim((string) ($this->data['email'] ?? ''))),
             'ip' => request()->ip(),
         ];
+    }
+
+    /**
+     * «Recordarme», dicho claro y marcado de entrada para los técnicos
+     * (decisión del propietario, 2026-10-23): entran sobre todo desde el
+     * móvil, y la sesión de dos horas les obligaba a escribir la contraseña
+     * una y otra vez. Para el administrador queda desmarcada: su cuenta
+     * aprueba traspasos y mueve presupuestos, y un teléfono perdido con ella
+     * abierta pesa más. Quien entra desde un ordenador ajeno la desmarca.
+     */
+    protected function getRememberFormComponent(): Component
+    {
+        return Checkbox::make('remember')
+            ->label('Mantener la sesión abierta en este dispositivo')
+            ->default(Filament::getId() === 'club');
     }
 }

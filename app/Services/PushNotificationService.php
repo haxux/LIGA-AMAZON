@@ -192,8 +192,10 @@ class PushNotificationService
 
     private function sendToUser(User $user, string $topic, string $title, string $body, string $url): void
     {
+        // Por la tabla de cuentas de cada navegador (ver la migración de
+        // `push_subscription_user`): un teléfono puede avisar a varias.
         $subscriptions = PushSubscription::query()
-            ->where('user_id', $user->getKey())
+            ->whereHas('users', fn ($users) => $users->whereKey($user->getKey()))
             ->whereJsonContains('topics', $topic)
             ->get();
 

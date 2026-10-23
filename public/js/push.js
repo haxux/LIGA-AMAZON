@@ -94,8 +94,17 @@
     // quedarse muda para siempre.
     var RESYNC_MS = 12 * 60 * 60 * 1000;
 
+    // Qué cuentas había abiertas al apuntarse (una huella que pone el layout):
+    // si cambian —se entra en otra o se sale de una—, hay que volver a decirle
+    // al servidor a quién avisa del chat este navegador.
+    function accounts() {
+        var meta = document.querySelector('meta[name="push-accounts"]');
+
+        return meta ? meta.content : '';
+    }
+
     function remember(topic, endpoint) {
-        window.localStorage.setItem('liga-push-' + topic, JSON.stringify({ endpoint: endpoint, at: Date.now() }));
+        window.localStorage.setItem('liga-push-' + topic, JSON.stringify({ endpoint: endpoint, at: Date.now(), who: accounts() }));
     }
 
     function remembered(topic) {
@@ -157,7 +166,8 @@
         if (Notification.permission === 'granted') {
             return current().then(function (subscription) {
                 var mark = remembered(topic);
-                var fresh = subscription && mark && mark.endpoint === subscription.endpoint && Date.now() - mark.at < RESYNC_MS;
+                var fresh = subscription && mark && mark.endpoint === subscription.endpoint
+                    && mark.who === accounts() && Date.now() - mark.at < RESYNC_MS;
 
                 return fresh ? true : subscribe(topic, vapidPublicKey, csrfToken);
             }).catch(function () {
@@ -235,7 +245,33 @@
         return ios && !standalone;
     }
 
+    /**
+     * Deja de recibir un tema en este navegador. Lo usa el layout con el chat
+     * cuando ya no queda ninguna cuenta abierta: si no, el teléfono seguiría
+     * avisando de los mensajes de quien cerró su sesión.
+     */
+    function release(topic, csrfToken) {
+        if (!remembered(topic)) {
+            return Promise.resolve(false);
+        }
+
+        return current().then(function (subscription) {
+            window.localStorage.removeItem('liga-push-' + topic);
+
+            if (!subscription) {
+                return false;
+            }
+
+            return postSubscription('DELETE', { endpoint: subscription.endpoint, topic: topic }, csrfToken).then(function () {
+                return true;
+            });
+        }).catch(function () {
+            return false;
+        });
+    }
+
     window.LigaPush = {
+        release: release,
         autoPrompt: ensure,
         autoPromptAll: autoPromptAll,
         isActive: isActive,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Site;
 
+use App\Support\SiteAccount;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -16,7 +17,7 @@ class ChatController extends SiteController
 {
     public function __invoke(): View|RedirectResponse
     {
-        $user = auth('club')->user() ?? auth()->user();
+        $user = app(SiteAccount::class)->active();
 
         if ($user === null) {
             return redirect()->route('filament.club.auth.login');

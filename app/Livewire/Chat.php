@@ -11,6 +11,7 @@ use App\Models\Transfer;
 use App\Models\User;
 use App\Services\OfferService;
 use App\Services\SeasonResolver;
+use App\Support\SiteAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\RateLimiter;
@@ -106,7 +107,7 @@ class Chat extends Component
      */
     public function user(): ?User
     {
-        return auth('club')->user() ?? auth()->user();
+        return app(SiteAccount::class)->active();
     }
 
     public function conversation(): ?Conversation

@@ -10,6 +10,7 @@ use App\Models\SquadMembership;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\SeasonResolver;
+use App\Support\SiteAccount;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
@@ -81,7 +82,7 @@ class StartingElevenEditor extends Component
      */
     public function canEdit(): bool
     {
-        $user = auth('club')->user();
+        $user = app(SiteAccount::class)->coach();
         $team = Team::query()->find($this->teamId);
 
         if (! $user instanceof User || $team === null) {

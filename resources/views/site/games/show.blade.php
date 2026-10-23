@@ -175,8 +175,9 @@
 
     {{-- Lo que dicen los técnicos del partido. Los lee cualquiera; comenta
          quien ha entrado como técnico. --}}
-    @php($coachUser = auth('club')->user()?->isCoach() ? auth('club')->user() : null)
-    @php($adminUser = auth()->user()?->isAdmin() ? auth()->user() : null)
+    {{-- La cuenta con la que se está usando el sitio (ver SiteAccount). --}}
+    @php($coachUser = app(App\Support\SiteAccount::class)->coach())
+    @php($adminUser = app(App\Support\SiteAccount::class)->admin())
 
     <section id="comentarios" class="mt-8 scroll-mt-24">
         <h2 class="mb-3 -skew-x-6 font-display text-2xl font-extrabold uppercase italic tracking-wide text-ink">

@@ -12,6 +12,7 @@ use App\Services\ClubSeasonService;
 use App\Services\ClubSeasonStats;
 use App\Services\Competition;
 use App\Services\SeasonResolver;
+use App\Support\SiteAccount;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -214,7 +215,7 @@ class ClubProfileController extends SiteController
      */
     private function coachMayEditLineup(Team $team): bool
     {
-        $user = auth('club')->user();
+        $user = app(SiteAccount::class)->coach();
 
         return $user !== null
             && $user->isCoach()

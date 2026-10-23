@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Site;
 use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\GameComment;
+use App\Support\SiteAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -19,7 +20,7 @@ class GameCommentController extends Controller
 {
     public function store(Request $request, Game $game): RedirectResponse
     {
-        $coach = auth('club')->user();
+        $coach = app(SiteAccount::class)->coach();
 
         abort_unless($coach?->isCoach() === true, 403, 'Sólo los técnicos pueden comentar.');
 
@@ -41,8 +42,8 @@ class GameCommentController extends Controller
 
     public function destroy(GameComment $comment): RedirectResponse
     {
-        $coach = auth('club')->user();
-        $admin = auth()->user()?->isAdmin() ? auth()->user() : null;
+        $coach = app(SiteAccount::class)->coach();
+        $admin = app(SiteAccount::class)->admin();
 
         $mine = $coach !== null && (int) $comment->user_id === (int) $coach->getKey();
 

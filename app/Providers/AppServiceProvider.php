@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use App\Http\Controllers\Auth\GuardLogoutController;
 use App\Http\Responses\PanelLoginResponse;
-use Filament\Auth\Http\Controllers\LogoutController;
-use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use App\Models\Club;
 use App\Models\Division;
 use App\Models\Game;
@@ -14,6 +12,11 @@ use App\Models\Season;
 use App\Models\StandingZone;
 use App\Models\Team;
 use App\Services\StandingsService;
+use App\Support\SiteAccount;
+use Filament\Auth\Http\Controllers\LogoutController;
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -55,5 +58,9 @@ class AppServiceProvider extends ServiceProvider
             $model::saved(fn () => StandingsService::flush());
             $model::deleted(fn () => StandingsService::flush());
         }
+
+        // Quien acaba de entrar por una puerta pasa a usar el sitio con esa
+        // cuenta: es la que acaba de elegir (ver SiteAccount).
+        Event::listen(Login::class, fn (Login $event) => app(SiteAccount::class)->remember($event->guard));
     }
 }

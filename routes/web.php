@@ -3,6 +3,7 @@
 use App\Http\Controllers\CronController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\Site\AccountSwitchController;
 use App\Http\Controllers\Site\ChatController;
 use App\Http\Controllers\Site\ClubProfileController;
 use App\Http\Controllers\Site\ClubsController;
@@ -67,6 +68,11 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/copas', CupsController::class)->name('site.cups.index');
     Route::get('/copas/{cup}', CupController::class)->name('site.cups.show');
     Route::get('/chat', ChatController::class)->name('site.chat');
+
+    // El selector de cuentas de la cabecera (ver AccountSwitchController).
+    Route::post('/cuenta/cambiar', [AccountSwitchController::class, 'switch'])->name('site.account.switch');
+    Route::get('/cuenta/anadir/{guard}', [AccountSwitchController::class, 'add'])->name('site.account.add');
+    Route::post('/cuenta/salir', [AccountSwitchController::class, 'logout'])->name('site.account.logout');
     Route::get('/noticias', [NewsController::class, 'index'])->name('site.news.index');
     Route::get('/noticias/{slug}', [NewsController::class, 'show'])->name('site.news.show');
 

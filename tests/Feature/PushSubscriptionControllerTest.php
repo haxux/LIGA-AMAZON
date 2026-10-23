@@ -135,7 +135,10 @@ class PushSubscriptionControllerTest extends TestCase
             // Partidos y noticias sí: las dos se leen sin entrar. El chat no,
             // que el servidor rechazaría esa alta sin sesión.
             ->assertSee("['matches', 'news']", false)
-            ->assertDontSee("'chat'", false);
+            ->assertDontSee("['matches', 'news', 'chat']", false)
+            // Y si este navegador recibía el chat de alguien que ya salió, lo
+            // suelta (decisión del 2026-10-23, con el selector de cuentas).
+            ->assertSee("window.LigaPush.release('chat'", false);
     }
 
     /**

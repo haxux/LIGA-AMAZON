@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use App\Http\Controllers\Site\AccountSwitchController;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse as Responsable;
 use Filament\Facades\Filament;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,15 @@ class PanelLoginResponse implements Responsable
     {
         $home = Filament::getUrl();
         $intended = session()->pull('url.intended');
+
+        // Entrando desde «Añadir otra cuenta» del sitio público (ver
+        // AccountSwitchController): de vuelta a la página donde estaba. Una
+        // clave propia, para no reabrir el problema de `url.intended` de abajo.
+        $back = session()->pull(AccountSwitchController::RETURN_KEY);
+
+        if (is_string($back) && parse_url($back, PHP_URL_HOST) === parse_url($home, PHP_URL_HOST)) {
+            return redirect()->to($back);
+        }
 
         return redirect()->to($this->belongsToThisPanel($intended, $home) ? $intended : $home);
     }

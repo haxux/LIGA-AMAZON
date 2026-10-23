@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PushSubscription;
+use App\Support\SiteAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -48,7 +49,12 @@ class PushSubscriptionController extends Controller
             'topic' => ['required', Rule::in([PushSubscription::TOPIC_MATCHES, PushSubscription::TOPIC_NEWS, PushSubscription::TOPIC_CHAT])],
         ]);
 
-        $user = auth('club')->user() ?? auth()->user();
+        // El chat avisa a TODAS las cuentas abiertas en este navegador, no sólo
+        // a la que se está usando: un teléfono con la de técnico y la de
+        // administrador recibe los mensajes de las dos (ver SiteAccount).
+        $siteAccount = app(SiteAccount::class);
+        $accounts = $siteAccount->accounts();
+        $user = $siteAccount->active();
 
         if ($data['topic'] === PushSubscription::TOPIC_CHAT && $user === null) {
             return response()->json(['message' => 'Hay que iniciar sesión para activar las notificaciones de chat.'], 401);
@@ -64,6 +70,14 @@ class PushSubscriptionController extends Controller
             'topics' => $topics,
             'user_id' => $data['topic'] === PushSubscription::TOPIC_CHAT ? $user->getKey() : $subscription->user_id,
         ])->save();
+
+        // Las cuentas de este navegador, tal cual están ahora: al salir de una
+        // o entrar en otra, el navegador vuelve a apuntarse (push.js) y esto
+        // las deja al día. Así un teléfono que cambia de manos no sigue
+        // recibiendo el chat de quien ya cerró su sesión.
+        if ($data['topic'] === PushSubscription::TOPIC_CHAT) {
+            $subscription->users()->sync($accounts->map(fn ($account) => $account->getKey())->values()->all());
+        }
 
         return response()->json(['status' => 'subscribed', 'topics' => $topics]);
     }
