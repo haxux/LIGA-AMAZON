@@ -9,12 +9,17 @@ use App\Models\Offer;
 use App\Models\PushSubscription;
 use App\Models\Transfer;
 use App\Models\User;
+use App\Models\WallPost;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
 use Throwable;
+
+// El de Laravel, explícito: con Swoole instalado, el `defer()` global es el
+// suyo y sólo funciona dentro de una corrutina.
+use function Illuminate\Support\defer;
 
 /**
  * El envío de notificaciones push del sitio: partido terminado, recordatorio
@@ -178,6 +183,30 @@ class PushNotificationService
         };
 
         return ['to' => $recipient, 'title' => $title, 'body' => $what];
+    }
+
+    /**
+     * Una respuesta en «A Segunda» avisa a quien escribió la publicación (no a
+     * todos: avisar de cada publicación llenaría los teléfonos), por el mismo
+     * tema que el chat, que es el de quien tiene sesión.
+     */
+    public function wallReply(WallPost $reply): void
+    {
+        $reply->loadMissing(['author', 'parent.author']);
+
+        $author = $reply->parent?->author;
+
+        if ($author === null || $author->is($reply->author)) {
+            return;
+        }
+
+        $this->sendToUser(
+            $author,
+            PushSubscription::TOPIC_CHAT,
+            ($reply->author?->name ?? 'Alguien').' respondió en A Segunda',
+            Str::limit($reply->body ?? 'Una foto', 80),
+            route('site.wall.show', $reply->parent_id),
+        );
     }
 
     private function sendToTopic(string $topic, string $title, string $body, string $url): void

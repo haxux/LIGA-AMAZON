@@ -113,7 +113,7 @@
                     ['label' => 'Copas nacionales', 'url' => route('site.cups.index', ['tipo' => 'nacionales']), 'active' => request()->routeIs('site.cups.index') && request('tipo') === 'nacionales'],
                     ['label' => 'Copas internacionales', 'url' => route('site.cups.index', ['tipo' => 'internacionales']), 'active' => request()->routeIs('site.cups.index') && request('tipo') === 'internacionales'],
                 ]],
-                ['label' => 'Noticias', 'url' => route('site.news.index'), 'active' => request()->routeIs('site.news.*')],
+                ['label' => 'Noticias', 'url' => route('site.news.index'), 'active' => request()->routeIs('site.news.*', 'site.wall.*')],
             ];
 
             // Sólo para el técnico: su club y su chat, a un clic desde

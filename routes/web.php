@@ -18,6 +18,7 @@ use App\Http\Controllers\Site\NewsController;
 use App\Http\Controllers\Site\PlayerController;
 use App\Http\Controllers\Site\ScorersController;
 use App\Http\Controllers\Site\StandingsController;
+use App\Http\Controllers\Site\WallController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -68,6 +69,13 @@ Route::middleware('throttle:60,1')->group(function (): void {
     Route::get('/copas', CupsController::class)->name('site.cups.index');
     Route::get('/copas/{cup}', CupController::class)->name('site.cups.show');
     Route::get('/chat', ChatController::class)->name('site.chat');
+
+    // «A Segunda», el foro interno de técnicos y presidente (ver WallController).
+    Route::get('/noticias/a-segunda', [WallController::class, 'index'])->name('site.wall.index');
+    Route::post('/noticias/a-segunda', [WallController::class, 'store'])->name('site.wall.store');
+    Route::get('/noticias/a-segunda/{post}', [WallController::class, 'show'])->whereNumber('post')->name('site.wall.show');
+    Route::post('/noticias/a-segunda/{post}/reaccion', [WallController::class, 'react'])->whereNumber('post')->name('site.wall.react');
+    Route::delete('/noticias/a-segunda/{post}', [WallController::class, 'destroy'])->whereNumber('post')->name('site.wall.destroy');
 
     // El selector de cuentas de la cabecera (ver AccountSwitchController).
     Route::post('/cuenta/cambiar', [AccountSwitchController::class, 'switch'])->name('site.account.switch');

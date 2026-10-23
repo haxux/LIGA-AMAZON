@@ -20,6 +20,8 @@
 @endphp
 
 <x-layouts.site :title="'Noticias — Liga Amazon'">
+    <x-site.news-tabs current="news" />
+
     <h1 class="font-display mb-1 -skew-x-6 text-4xl font-extrabold uppercase italic tracking-wide text-ink sm:text-5xl">Noticias</h1>
     <div class="mb-6 font-mono text-[10px] tracking-[0.14em] text-ink/70">
         {{ $selectedClub ? mb_strtoupper($selectedClub->name) : 'TODA LA LIGA' }}
