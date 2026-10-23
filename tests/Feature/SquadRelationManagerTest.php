@@ -56,6 +56,51 @@ class SquadRelationManagerTest extends TestCase
             ->assertCanNotSeeTableRecords([$past]);
     }
 
+    /**
+     * Dar de baja tiene vuelta atrás: añadirlo de nuevo reabre SU ficha, con el
+     * dorsal nuevo, en vez de chocar con la cerrada (Stefan Medina, 2026-10-23).
+     */
+    public function test_a_released_player_can_be_brought_back(): void
+    {
+        $team = Team::factory()->create();
+        $player = Player::factory()->create(['club_id' => $team->club_id]);
+        $membership = SquadMembership::factory()->create(['team_id' => $team->id, 'player_id' => $player->id, 'shirt_number' => 2]);
+        $membership->close();
+
+        $this->manager($team)
+            ->mountTableAction('create')
+            ->setTableActionData([
+                'player_id' => $player->id,
+                'shirt_number' => 4,
+                'type' => SquadMembership::TYPE_OWNED,
+            ])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(1, SquadMembership::query()->where('team_id', $team->id)->where('player_id', $player->id)->count());
+        $membership->refresh();
+        $this->assertNull($membership->left_at);
+        $this->assertSame(4, $membership->shirt_number);
+    }
+
+    /** Quien sigue en la plantilla no se añade dos veces. */
+    public function test_a_player_still_in_the_squad_cannot_be_added_twice(): void
+    {
+        $team = Team::factory()->create();
+        $player = Player::factory()->create(['club_id' => $team->club_id]);
+        SquadMembership::factory()->create(['team_id' => $team->id, 'player_id' => $player->id, 'shirt_number' => 2]);
+
+        $this->manager($team)
+            ->mountTableAction('create')
+            ->setTableActionData([
+                'player_id' => $player->id,
+                'shirt_number' => 4,
+                'type' => SquadMembership::TYPE_OWNED,
+            ])
+            ->callMountedTableAction()
+            ->assertHasTableActionErrors(['player_id']);
+    }
+
     public function test_a_player_can_be_added_to_the_squad(): void
     {
         $team = Team::factory()->create();

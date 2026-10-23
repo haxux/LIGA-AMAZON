@@ -51,9 +51,13 @@ class SquadRelationManager extends RelationManager
                         ->sortBy(fn (Player $player) => [$player->club?->name, $player->name])
                         ->mapWithKeys(fn (Player $player) => [$player->id => "{$player->club?->short_name} · {$player->name}"])
                         ->all())
+                    // Sólo choca con quien SIGUE en la plantilla: a uno dado de
+                    // baja se le reincorpora su ficha (ver la acción de crear).
                     ->unique(
                         ignoreRecord: true,
-                        modifyRuleUsing: fn (Unique $rule) => $rule->where('team_id', $this->getOwnerRecord()->getKey()),
+                        modifyRuleUsing: fn (Unique $rule) => $rule
+                            ->where('team_id', $this->getOwnerRecord()->getKey())
+                            ->whereNull('left_at'),
                     ),
                 TextInput::make('shirt_number')
                     ->label('Shirt')
@@ -90,7 +94,29 @@ class SquadRelationManager extends RelationManager
             ])
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['player.club']))
             ->headerActions([
-                CreateAction::make(),
+                // Un jugador dado de baja de esta plantilla que vuelve: se reabre
+                // SU ficha en vez de crear otra. La base sólo admite una por
+                // jugador y equipo, y antes «Dar de baja» no tenía vuelta atrás:
+                // al añadirlo de nuevo, el panel chocaba con la ficha cerrada
+                // (pasó con Stefan Medina el 2026-10-23). Reabrirla además
+                // conserva lo que hizo antes de irse.
+                CreateAction::make()
+                    ->using(function (array $data): SquadMembership {
+                        $team = $this->getOwnerRecord();
+
+                        $closed = $team->allMemberships()
+                            ->where('player_id', $data['player_id'])
+                            ->whereNotNull('left_at')
+                            ->first();
+
+                        if ($closed === null) {
+                            return $team->memberships()->create($data);
+                        }
+
+                        $closed->forceFill([...$data, 'left_at' => null])->save();
+
+                        return $closed;
+                    }),
             ])
             ->recordActions([
                 EditAction::make(),
