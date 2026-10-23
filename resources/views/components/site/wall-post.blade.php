@@ -18,10 +18,20 @@
 <article id="publicacion-{{ $post->getKey() }}"
          {{ $attributes->merge(['class' => 'scroll-mt-24 '.($compact ? 'py-3' : 'rounded-md bg-surface p-4 sm:p-5')]) }}>
     <header class="flex items-center gap-3">
-        @if ($club)
-            <x-site.club-crest :club="$club" :size="$compact ? 'size-7' : 'size-10'" />
+        {{-- La foto de perfil de quien escribe (decisión del propietario,
+             2026-10-23: aquí habla la persona, no el club); sin foto, sus
+             iniciales. El club ya va en la línea de abajo. --}}
+        @if ($author?->photo_path)
+            <img src="{{ Storage::disk(config('filesystems.uploads'))->url($author->photo_path) }}" alt=""
+                 @class(['shrink-0 rounded-full object-cover ring-1 ring-white/15', 'size-7' => $compact, 'size-10' => ! $compact])>
         @else
-            <span @class(['grid shrink-0 place-items-center rounded-full bg-brand/15 font-display font-bold text-brand', 'size-7 text-xs' => $compact, 'size-10 text-sm' => ! $compact])>P</span>
+            <span @class([
+                'grid shrink-0 place-items-center rounded-full font-display font-bold',
+                'bg-brand/15 text-brand' => $author?->isAdmin(),
+                'bg-white/10 text-white/80' => ! $author?->isAdmin(),
+                'size-7 text-xs' => $compact,
+                'size-10 text-sm' => ! $compact,
+            ])>{{ Illuminate\Support\Str::of($author?->name ?? '?')->squish()->explode(' ')->take(2)->map(fn ($word) => mb_strtoupper(mb_substr($word, 0, 1)))->implode('') }}</span>
         @endif
 
         <span class="min-w-0 flex-1">
