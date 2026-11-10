@@ -6,6 +6,12 @@
         {{ mb_strtoupper($selectedSeason->name) }}
         ·
         {{ mb_strtoupper($competition->isAll() ? 'Todas las competiciones' : $competition->label) }}
+        @if ($divisionName)
+            · {{ mb_strtoupper($divisionName) }}
+        @endif
+        @if ($selectedFecha)
+            · JORNADA {{ $selectedFecha }}
+        @endif
     </div>
 
     @php
@@ -18,8 +24,10 @@
             'division' => $selectedDivision,
             'fecha' => $selectedFecha,
         ];
+        // Al cambiar de competición, la división y la jornada se sueltan: sólo
+        // la liga las tiene.
         $filterUrl = fn (string $name) => fn ($value) => route('site.scorers', array_filter(
-            array_merge($current, [$name => $value]),
+            array_merge($current, [$name => $value], $name === 'competicion' ? ['division' => null, 'fecha' => null] : []),
             fn ($v) => $v !== null && $v !== '',
         ));
     @endphp
@@ -30,9 +38,9 @@
 
          La temporada sigue siendo un desplegable porque la lista crece cada
          año; el resto tiene pocas opciones y van a la vista. La competición
-         sólo se ofrece si hay copas (sin ellas «Todo» y «Liga» son la misma
-         lista). División y jornada son de la liga: al elegirlas las copas
-         quedan fuera de las cifras. --}}
+         sólo se ofrece si hay copas nacionales (sin ellas «Todo» y «Liga» son
+         la misma lista; las internacionales no cuentan por ahora). División y
+         jornada son de la liga: sólo aparecen con «Liga» elegida. --}}
     <div class="mb-8 grid gap-3 rounded-md border-t-4 border-brand bg-surface p-4">
         <form method="GET" action="{{ route('site.scorers') }}"
               class="grid gap-1.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-center sm:gap-4">
@@ -60,12 +68,12 @@
                                   :selected="$competition->key" :url="$filterUrl('competicion')" />
         @endif
 
-        @if (count($divisionOptions) > 2)
+        @if ($showLeagueFilters && count($divisionOptions) > 2)
             <x-site.stat-segments label="DIVISIÓN" :options="$divisionOptions"
                                   :selected="$selectedDivision ?? ''" :url="$filterUrl('division')" />
         @endif
 
-        @if (count($fechaOptions) > 1)
+        @if ($showLeagueFilters && count($fechaOptions) > 1)
             <x-site.stat-segments label="JORNADA" :options="$fechaOptions" ruler
                                   :selected="$selectedFecha ?? ''" :url="$filterUrl('fecha')" />
         @endif

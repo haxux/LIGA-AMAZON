@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CupScope;
 use App\Observers\GameObserver;
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -215,6 +216,16 @@ class Game extends Model
     public function scopeInLeague(Builder $query): Builder
     {
         return $query->whereNotNull('matchday_id');
+    }
+
+    /**
+     * Todos menos los de copas internacionales.
+     */
+    public function scopeNotInInternationalCup(Builder $query): Builder
+    {
+        return $query
+            ->whereDoesntHave('cupTie.round.cup', fn (Builder $cup) => $cup->where('scope', CupScope::International))
+            ->whereDoesntHave('cupGroup.cup', fn (Builder $cup) => $cup->where('scope', CupScope::International));
     }
 
     /**

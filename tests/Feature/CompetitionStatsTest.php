@@ -132,6 +132,19 @@ class CompetitionStatsTest extends TestCase
         $this->assertSame(1, $row->count);
     }
 
+    public function test_the_stats_total_leaves_out_international_cup_goals(): void
+    {
+        $this->cup->update(['scope' => \App\Enums\CupScope::International]);
+        GameEvent::factory()->for($this->cupGame(2, 0))->for($this->player)->goal()->create();
+        GameEvent::factory()->for($this->leagueGame(1, 0))->for($this->player)->goal()->create();
+
+        $todo = Competition::forSeason($this->season, international: false)->first();
+        $rows = app(GoalscorersService::class)->topScorers($this->season, 10, null, $todo);
+
+        $this->assertSame(1, $rows->firstWhere(fn (ScorerRow $r) => $r->player->is($this->player))->count);
+        $this->assertSame(2, app(GoalscorersService::class)->topScorers($this->season)->first()->count, 'Sin el filtro siguen sumando.');
+    }
+
     public function test_the_leaderboard_splits_league_from_cup(): void
     {
         $league = $this->leagueGame(3, 1);

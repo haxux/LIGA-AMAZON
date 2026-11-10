@@ -141,7 +141,7 @@ class ScorersPageTest extends TestCase
             ->assertSee('Goleador De Primera')
             ->assertSee('Goleador De Segunda');
 
-        $this->get('/estadisticas?division='.$primera->id)
+        $this->get('/estadisticas?competicion=liga&division='.$primera->id)
             ->assertOk()
             ->assertSee('Goleador De Primera')
             ->assertDontSee('Goleador De Segunda');
@@ -155,7 +155,7 @@ class ScorersPageTest extends TestCase
         $this->golEn($season, $division, 1, 'Gol De La Uno');
         $this->golEn($season, $division, 7, 'Gol De La Siete');
 
-        $this->get('/estadisticas?fecha=7')
+        $this->get('/estadisticas?competicion=liga&fecha=7')
             ->assertOk()
             ->assertSee('Gol De La Siete')
             ->assertDontSee('Gol De La Uno');
@@ -171,28 +171,56 @@ class ScorersPageTest extends TestCase
         $division = Division::factory()->create(['season_id' => $season->id]);
         $this->golEn($season, $division, 1, 'Sigo Saliendo');
 
-        $this->get('/estadisticas?division=99999&fecha=12345')
+        $this->get('/estadisticas?competicion=liga&division=99999&fecha=12345')
             ->assertOk()
             ->assertSee('Sigo Saliendo');
     }
 
     /**
-     * División y jornada son cosas de la liga: un partido de copa no cuelga de
-     * ninguna. Pedir una copa Y una división a la vez no deja nada, y eso es lo
-     * correcto — pero tiene que quedarse vacío, no reventar.
+     * División y jornada son cosas de la liga: sólo se ofrecen con «Liga»
+     * elegida, y con «Todo» o una copa lo que traiga la URL se ignora.
      */
-    public function test_asking_for_a_cup_and_a_division_at_once_is_empty_but_not_broken(): void
+    public function test_division_and_matchday_filters_only_show_with_the_league_selected(): void
+    {
+        $season = Season::factory()->create(['is_current' => true]);
+        Division::factory()->count(2)->create(['season_id' => $season->id]);
+        $division = $season->divisions()->first();
+        $this->golEn($season, $division, 1, 'Goleador De Liga');
+        $this->golEn($season, $division, 2, 'Otro De Liga');
+        $copa = Cup::factory()->create(['season_id' => $season->id]);
+
+        $this->get('/estadisticas')->assertOk()->assertDontSee('DIVISIÓN')->assertDontSee('JORNADA');
+
+        $this->get('/estadisticas?competicion=copa:'.$copa->id.'&division='.$division->id)
+            ->assertOk()
+            ->assertDontSee('DIVISIÓN')
+            ->assertDontSee('JORNADA')
+            ->assertDontSee('Goleador De Liga');
+
+        $this->get('/estadisticas?competicion=liga')->assertOk()->assertSee('DIVISIÓN')->assertSee('JORNADA');
+
+        // Con la división elegida, el subtítulo lo dice: ya no parece «todo».
+        $this->get('/estadisticas?competicion=liga&division='.$division->id.'&fecha=2')
+            ->assertOk()
+            ->assertSee(mb_strtoupper($division->name))
+            ->assertSee('JORNADA 2');
+    }
+
+    public function test_international_cups_are_neither_offered_nor_counted(): void
     {
         $season = Season::factory()->create(['is_current' => true]);
         $division = Division::factory()->create(['season_id' => $season->id]);
         $this->golEn($season, $division, 1, 'Goleador De Liga');
+        $copa = Cup::factory()->create(['season_id' => $season->id, 'name' => 'Copa Nacional']);
+        $mundial = Cup::factory()->international()->create(['season_id' => $season->id, 'name' => 'Copa Mundial']);
 
-        $copa = Cup::factory()->create(['season_id' => $season->id]);
+        $this->get('/estadisticas')->assertOk()->assertSee('Copa Nacional')->assertDontSee('Copa Mundial');
 
-        $this->get('/estadisticas?competicion=copa:'.$copa->id.'&division='.$division->id)
+        // Una internacional inventada en la URL cae en «Todo».
+        $this->get('/estadisticas?competicion=copa:'.$mundial->id)
             ->assertOk()
-            ->assertDontSee('Goleador De Liga')
-            ->assertSee('Sin datos todavía');
+            ->assertSee('TODAS LAS COMPETICIONES')
+            ->assertSee('Goleador De Liga');
     }
 
     public function test_the_season_filter_renders_and_defaults_to_the_current_season(): void
@@ -259,7 +287,7 @@ class ScorersPageTest extends TestCase
         // La división vigente sale en el menú de Equipos de la cabecera, así que lo
         // que no debe aparecer es su goleador, no su nombre.
 
-        $this->get('/estadisticas?temporada='.$old->id.'&division='.$currentDivision->id)
+        $this->get('/estadisticas?temporada='.$old->id.'&competicion=liga&division='.$currentDivision->id)
             ->assertOk()
             ->assertSee('Goleador De Antes')
             ->assertDontSee('Goleador De Ahora');

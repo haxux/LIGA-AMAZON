@@ -22,15 +22,20 @@ class ScorersController extends SiteController
 
         // Separadas por competición desde la Fase 15 (decisión del propietario):
         // la liga y cada copa por su lado, y «Todo» para la suma.
-        $competitions = Competition::forSeason($season);
+        // Las internacionales no cuentan por ahora: ni se ofrecen ni suman en «Todo».
+        $competitions = Competition::forSeason($season, international: false);
         $competition = Competition::resolve($competitions, $request->string('competicion')->toString());
 
         // División y jornada ("fecha") sólo existen en la liga: las opciones
         // inventadas en la URL caen en «todas», como la competición.
         $divisions = $season->divisions()->orderBy('id')->get();
-        $division = $divisions->firstWhere('id', $request->integer('division'));
+        // División y jornada sólo con la liga elegida: con «Todo» o una copa
+        // no se ofrecen, y lo que venga en la URL se ignora.
+        $league = $competition->isLeague();
+        $division = $league ? $divisions->firstWhere('id', $request->integer('division')) : null;
 
         $numbers = $season->matchdays()
+            ->when(! $league, fn ($query) => $query->whereRaw('1 = 0'))
             ->when($division, fn ($query) => $query->where('division_id', $division->getKey()))
             ->orderBy('number')
             ->pluck('number')
@@ -48,8 +53,10 @@ class ScorersController extends SiteController
             'selectedSeason' => $season,
             'competition' => $competition,
             'competitionOptions' => Competition::asSelectOptions($competitions),
+            'showLeagueFilters' => $league,
             'divisionOptions' => ['' => 'Todas'] + $divisions->pluck('name', 'id')->all(),
             'selectedDivision' => $division?->getKey(),
+            'divisionName' => $division?->name,
             'fechaOptions' => ['' => 'Todas'] + $numbers->mapWithKeys(fn (int $n) => [$n => 'Jornada '.$n])->all(),
             'selectedFecha' => $number,
         ]);

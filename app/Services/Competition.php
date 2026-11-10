@@ -34,11 +34,16 @@ final class Competition
         public readonly string $key,
         public readonly string $label,
         public readonly ?int $cupId = null,
+        public readonly bool $domesticOnly = false,
     ) {}
 
-    public static function all(): self
+    /**
+     * @param  bool  $domesticOnly  la suma sin las copas internacionales (las
+     *                              Estadísticas no las cuentan por ahora)
+     */
+    public static function all(bool $domesticOnly = false): self
     {
-        return new self(self::ALL, 'Todo');
+        return new self(self::ALL, 'Todo', null, $domesticOnly);
     }
 
     public static function league(): self
@@ -64,6 +69,7 @@ final class Competition
     /**
      * Las que se pueden elegir en una temporada: todo, la liga y una entrada
      * por copa. Sin copas quedan dos, y entonces el selector no se pinta.
+     * Sin `$international`, ni se ofrecen esas copas ni entran en «Todo».
      *
      * @return Collection<int, self>
      */
@@ -77,7 +83,7 @@ final class Competition
                 ->orderBy('name')
                 ->get();
 
-        return collect([self::all(), self::league()])
+        return collect([self::all(! $international), self::league()])
             ->concat($cups->map(fn (Cup $cup) => self::cup($cup)))
             ->values();
     }
@@ -136,6 +142,7 @@ final class Competition
         return match (true) {
             $this->cupId !== null => $games->inCup($this->cupId),
             $this->key === self::LEAGUE => $games->inLeague(),
+            $this->domesticOnly => $games->notInInternationalCup(),
             default => $games,
         };
     }
@@ -149,6 +156,7 @@ final class Competition
         return match (true) {
             $this->cupId !== null => (int) ($game->cup()?->getKey() ?? 0) === $this->cupId,
             $this->key === self::LEAGUE => $game->matchday_id !== null,
+            $this->domesticOnly => $game->cup()?->scope !== CupScope::International,
             default => true,
         };
     }
