@@ -153,7 +153,7 @@ class ClubSeasonServiceTest extends TestCase
         $this->assertSame(1, $stats->clean_sheets);
     }
 
-    public function test_a_game_voided_against_both_is_a_loss_without_goals_or_points(): void
+    public function test_a_game_voided_against_both_is_a_draw_without_goals(): void
     {
         $rival = $this->teamNamed('Tapajós SC');
         $won = $this->game($rival, for: 3, against: 1, number: 1);
@@ -164,11 +164,11 @@ class ClubSeasonServiceTest extends TestCase
 
         $this->assertSame(2, $stats->played);
         $this->assertSame(1, $stats->won);
-        $this->assertSame(0, $stats->drawn);
-        $this->assertSame(1, $stats->lost);
+        $this->assertSame(1, $stats->drawn);
+        $this->assertSame(0, $stats->lost);
         $this->assertSame(3, $stats->goals_for);
         $this->assertSame(1, $stats->goals_against);
-        $this->assertSame(3, $stats->points);
+        $this->assertSame(4, $stats->points);
     }
 
     private function squadPlayer(Team $team, string $position): Player

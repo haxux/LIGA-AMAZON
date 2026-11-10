@@ -82,6 +82,10 @@ en_servidor "$PHP /usr/local/bin/composer install --no-dev --optimize-autoloader
 en_servidor "$PHP artisan package:discover"
 en_servidor "$PHP artisan migrate --force"
 en_servidor "$PHP artisan config:cache && $PHP artisan route:cache && $PHP artisan view:cache"
+# Las tablas de clasificación viven un día en caché y sólo se invalidan al
+# cambiar un partido, no al cambiar el código que las calcula: sin esto, un
+# arreglo de la tabla no se ve hasta el día siguiente (visto el 2026-11-10).
+en_servidor "$PHP artisan tinker --execute='App\\Services\\StandingsService::flush();'"
 
 paso "Comprobando el sitio"
 for ruta in / /clasificacion /partidos /copas /estadisticas /equipos /noticias /historia; do

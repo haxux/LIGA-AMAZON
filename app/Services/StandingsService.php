@@ -351,7 +351,7 @@ final class StandingsService
 
             // El cast sólo puede tocar a un anulado a ambos —los demás llegan
             // con los dos marcadores—, y a ése no se le leen los goles:
-            // `accumulate()` lo da por perdido sin moverlos.
+            // `accumulate()` lo da por empatado sin moverlos.
             $this->accumulate($rows, $game->home_team_id, (int) $game->home_score, (int) $game->away_score, $voided);
             $this->accumulate($rows, $game->away_team_id, (int) $game->away_score, (int) $game->home_score, $voided);
         }
@@ -365,11 +365,12 @@ final class StandingsService
     /**
      * @param  array<int, array{team: Team, played: int, won: int, drawn: int, lost: int, goals_for: int, goals_against: int}>  $rows
      *
-     * Un partido anulado a ambos (`Game::isVoidedWithoutWinner()`) es derrota
-     * para los dos —jugado y perdido, 0 puntos, sin mover goles—; es la regla
-     * de "pasó de fecha sin jugarse" y la del reglamento (propietario,
-     * 2026-11-10). Anulado contra uno solo llega con su 3-0 reglamentario y
-     * cuenta como cualquier resultado: 3 puntos al otro, 0 al responsable.
+     * Un partido anulado a ambos (`Game::isVoidedWithoutWinner()`) es empate
+     * —jugado y empatado, 1 punto a cada uno, sin mover goles—, como lo
+     * enseñan los resultados con su 0-0 (propietario, 2026-11-10; esa misma
+     * mañana se había puesto como derrota para los dos). Anulado contra uno
+     * solo llega con su 3-0 reglamentario y cuenta como cualquier resultado:
+     * 3 puntos al otro, 0 al responsable.
      */
     private function accumulate(array &$rows, int $teamId, int $for, int $against, bool $voided = false): void
     {
@@ -380,7 +381,7 @@ final class StandingsService
         $rows[$teamId]['played']++;
 
         if ($voided) {
-            $rows[$teamId]['lost']++;
+            $rows[$teamId]['drawn']++;
 
             return;
         }

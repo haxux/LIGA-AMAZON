@@ -32,7 +32,7 @@ final class VoidGameActions
                         ->options([
                             'home' => ($record->homeTeam?->name ?? 'Local').' (local) — gana el visitante '.Game::FORFEIT_SCORE.'-0',
                             'away' => ($record->awayTeam?->name ?? 'Visitante').' (visitante) — gana el local '.Game::FORFEIT_SCORE.'-0',
-                            'both' => 'Ambos equipos — 0-0, sin puntos para nadie',
+                            'both' => 'Ambos equipos — empate 0-0, un punto para cada uno',
                         ])
                         ->required(),
                 ])

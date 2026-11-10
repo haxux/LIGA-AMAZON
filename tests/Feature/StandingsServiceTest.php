@@ -175,7 +175,7 @@ class StandingsServiceTest extends TestCase
         }
     }
 
-    public function test_a_game_voided_against_both_is_a_loss_for_both_without_goals_or_points(): void
+    public function test_a_game_voided_against_both_is_a_draw_for_both_without_goals(): void
     {
         $season = Season::factory()->create();
         $matchday = Matchday::factory()->for($season)->create();
@@ -192,11 +192,11 @@ class StandingsServiceTest extends TestCase
         foreach ([$homeRow, $awayRow] as $row) {
             $this->assertSame(1, $row->played);
             $this->assertSame(0, $row->won);
-            $this->assertSame(0, $row->drawn);
-            $this->assertSame(1, $row->lost);
+            $this->assertSame(1, $row->drawn);
+            $this->assertSame(0, $row->lost);
             $this->assertSame(0, $row->goals_for);
             $this->assertSame(0, $row->goals_against);
-            $this->assertSame(0, $row->points);
+            $this->assertSame(1, $row->points);
         }
     }
 
@@ -218,8 +218,8 @@ class StandingsServiceTest extends TestCase
         $this->assertSame([1, 1, 0, 3], [$awayRow->played, $awayRow->won, $awayRow->lost, $awayRow->points]);
     }
 
-    /** La racha lo lee igual que la tabla: a ambos es derrota, no el empate de su 0-0. */
-    public function test_the_form_streak_treats_a_game_voided_against_both_as_a_loss(): void
+    /** La racha lo lee igual que la tabla: a ambos es empate. */
+    public function test_the_form_streak_treats_a_game_voided_against_both_as_a_draw(): void
     {
         $season = Season::factory()->create();
         $matchday = Matchday::factory()->for($season)->create();
@@ -232,8 +232,8 @@ class StandingsServiceTest extends TestCase
 
         $this->assertCount(2, $form);
         foreach ($form as $row) {
-            $this->assertSame(['D'], $row['results']);
-            $this->assertSame(0, $row['points']);
+            $this->assertSame(['E'], $row['results']);
+            $this->assertSame(1, $row['points']);
         }
     }
 
@@ -254,8 +254,8 @@ class StandingsServiceTest extends TestCase
         $rows = (new StandingsService)->fromGames(collect([$a, $b, $c]), collect([$both->fresh(), $one->fresh()]));
         $byTeam = fn (Team $t) => $rows->firstWhere(fn (StandingRow $r) => $r->team->is($t));
 
-        $this->assertSame([2, 1, 1, 3], [$byTeam($a)->played, $byTeam($a)->won, $byTeam($a)->lost, $byTeam($a)->points]);
-        $this->assertSame([1, 0, 1, 0], [$byTeam($b)->played, $byTeam($b)->won, $byTeam($b)->lost, $byTeam($b)->points]);
+        $this->assertSame([2, 1, 0, 4], [$byTeam($a)->played, $byTeam($a)->won, $byTeam($a)->lost, $byTeam($a)->points]);
+        $this->assertSame([1, 0, 0, 1], [$byTeam($b)->played, $byTeam($b)->won, $byTeam($b)->lost, $byTeam($b)->points]);
         $this->assertSame([1, 0, 1, 0], [$byTeam($c)->played, $byTeam($c)->won, $byTeam($c)->lost, $byTeam($c)->points]);
     }
 

@@ -45,7 +45,7 @@ class VoidGameTest extends TestCase
         $this->assertFalse($game->isVoidedWithoutWinner());
     }
 
-    public function test_a_forfeit_awards_points_in_the_table_but_a_double_void_does_not(): void
+    public function test_a_forfeit_awards_three_points_and_a_double_void_one_each(): void
     {
         $game = $this->game();
         $game->voidAgainst('home');
@@ -53,9 +53,11 @@ class VoidGameTest extends TestCase
         $rows = (new StandingsService)->forSeason($game->matchday->season);
         $this->assertSame(3, $rows->firstWhere(fn ($r) => $r->team->is($game->awayTeam))->points);
 
+        // Anulado a ambos: empate, un punto a cada uno (propietario, 2026-11-10).
         $game->voidAgainst('both');
         $rows = (new StandingsService)->forSeason($game->matchday->season);
-        $this->assertSame(0, $rows->firstWhere(fn ($r) => $r->team->is($game->awayTeam))->points);
+        $this->assertSame(1, $rows->firstWhere(fn ($r) => $r->team->is($game->awayTeam))->points);
+        $this->assertSame(1, $rows->firstWhere(fn ($r) => $r->team->is($game->homeTeam))->points);
         $this->assertSame(['home', 'away'], $game->fresh()->penalizedSides());
     }
 
@@ -104,7 +106,7 @@ class VoidGameTest extends TestCase
         foreach ([$game->home_team_id, $game->away_team_id] as $teamId) {
             $row = $rows->firstWhere(fn ($r) => $r->team->getKey() === $teamId);
             $this->assertSame(1, $row->played, 'Un anulado tiene que contar como jugado');
-            $this->assertSame(0, $row->points, 'Y no repartir nada');
+            $this->assertSame(1, $row->points, 'Y es un empate, aunque haya perdido su 0-0');
             $this->assertSame(0, $row->goals_for);
         }
     }

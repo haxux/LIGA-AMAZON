@@ -142,10 +142,10 @@ final class ClubSeasonService
         $counters = ['won' => 0, 'drawn' => 0, 'lost' => 0, 'goals_for' => 0, 'goals_against' => 0];
 
         foreach ($played as $game) {
-            // Anulado a ambos: derrota para los dos, sin goles — mismo criterio
-            // que `StandingsService::accumulate()`.
+            // Anulado a ambos: empate, sin goles — mismo criterio que
+            // `StandingsService::accumulate()`.
             if ($game->isVoidedWithoutWinner()) {
-                $counters['lost']++;
+                $counters['drawn']++;
 
                 continue;
             }
