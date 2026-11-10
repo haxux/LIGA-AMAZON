@@ -175,7 +175,7 @@ class StandingsServiceTest extends TestCase
         }
     }
 
-    public function test_a_voided_game_counts_as_played_but_awards_no_points_or_result(): void
+    public function test_a_game_voided_against_both_is_a_loss_for_both_without_goals_or_points(): void
     {
         $season = Season::factory()->create();
         $matchday = Matchday::factory()->for($season)->create();
@@ -193,11 +193,70 @@ class StandingsServiceTest extends TestCase
             $this->assertSame(1, $row->played);
             $this->assertSame(0, $row->won);
             $this->assertSame(0, $row->drawn);
-            $this->assertSame(0, $row->lost);
+            $this->assertSame(1, $row->lost);
             $this->assertSame(0, $row->goals_for);
             $this->assertSame(0, $row->goals_against);
             $this->assertSame(0, $row->points);
         }
+    }
+
+    /** Anulado contra uno solo: 3 puntos y victoria al otro, derrota y 0 al responsable. */
+    public function test_a_game_voided_against_one_team_is_a_win_for_the_other(): void
+    {
+        $season = Season::factory()->create();
+        $matchday = Matchday::factory()->for($season)->create();
+        $home = Team::factory()->for($season)->create();
+        $away = Team::factory()->for($season)->create();
+
+        $this->playGame($matchday, $home, $away, 0, 0)->voidAgainst('home');
+
+        $rows = (new StandingsService)->forSeason($season);
+        $homeRow = $rows->firstWhere(fn (StandingRow $r) => $r->team->is($home));
+        $awayRow = $rows->firstWhere(fn (StandingRow $r) => $r->team->is($away));
+
+        $this->assertSame([1, 0, 1, 0], [$homeRow->played, $homeRow->won, $homeRow->lost, $homeRow->points]);
+        $this->assertSame([1, 1, 0, 3], [$awayRow->played, $awayRow->won, $awayRow->lost, $awayRow->points]);
+    }
+
+    /** La racha lo lee igual que la tabla: a ambos es derrota, no el empate de su 0-0. */
+    public function test_the_form_streak_treats_a_game_voided_against_both_as_a_loss(): void
+    {
+        $season = Season::factory()->create();
+        $matchday = Matchday::factory()->for($season)->create();
+        $home = Team::factory()->for($season)->create();
+        $away = Team::factory()->for($season)->create();
+
+        $this->playGame($matchday, $home, $away, 0, 0)->voidAgainst('both');
+
+        $form = (new \App\Services\SeasonOverview)->form($season);
+
+        $this->assertCount(2, $form);
+        foreach ($form as $row) {
+            $this->assertSame(['D'], $row['results']);
+            $this->assertSame(0, $row['points']);
+        }
+    }
+
+    /** Un grupo de copa es una liga pequeña: la misma regla (mismo código). */
+    public function test_a_cup_group_table_applies_the_same_voiding_rules(): void
+    {
+        $season = Season::factory()->create();
+        $matchday = Matchday::factory()->for($season)->create();
+        $a = Team::factory()->for($season)->create();
+        $b = Team::factory()->for($season)->create();
+        $c = Team::factory()->for($season)->create();
+
+        $both = $this->playGame($matchday, $a, $b, 0, 0);
+        $both->voidAgainst('both');
+        $one = $this->playGame($matchday, $a, $c, 0, 0);
+        $one->voidAgainst('away');
+
+        $rows = (new StandingsService)->fromGames(collect([$a, $b, $c]), collect([$both->fresh(), $one->fresh()]));
+        $byTeam = fn (Team $t) => $rows->firstWhere(fn (StandingRow $r) => $r->team->is($t));
+
+        $this->assertSame([2, 1, 1, 3], [$byTeam($a)->played, $byTeam($a)->won, $byTeam($a)->lost, $byTeam($a)->points]);
+        $this->assertSame([1, 0, 1, 0], [$byTeam($b)->played, $byTeam($b)->won, $byTeam($b)->lost, $byTeam($b)->points]);
+        $this->assertSame([1, 0, 1, 0], [$byTeam($c)->played, $byTeam($c)->won, $byTeam($c)->lost, $byTeam($c)->points]);
     }
 
     public function test_games_from_another_season_do_not_affect_this_seasons_table(): void

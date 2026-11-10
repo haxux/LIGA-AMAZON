@@ -173,14 +173,17 @@ final class SeasonOverview
         // Ya vienen del más reciente al más antiguo, así que los primeros que
         // caen de cada equipo son justo sus últimos.
         foreach ($league as $game) {
+            // Anulado a ambos: derrota para los dos, no el empate que parece su 0-0.
+            $both = $game->isVoidedWithoutWinner();
+
             foreach ([[$game->homeTeam, $game->home_score, $game->away_score], [$game->awayTeam, $game->away_score, $game->home_score]] as [$team, $own, $other]) {
                 if ($team === null || count($perTeam[$team->getKey()]['results'] ?? []) >= $howMany) {
                     continue;
                 }
 
                 $perTeam[$team->getKey()] ??= ['team' => $team, 'points' => 0, 'results' => []];
-                $perTeam[$team->getKey()]['points'] += $own > $other ? 3 : ($own === $other ? 1 : 0);
-                $perTeam[$team->getKey()]['results'][] = $own > $other ? 'V' : ($own === $other ? 'E' : 'D');
+                $perTeam[$team->getKey()]['points'] += $both ? 0 : ($own > $other ? 3 : ($own === $other ? 1 : 0));
+                $perTeam[$team->getKey()]['results'][] = $both ? 'D' : ($own > $other ? 'V' : ($own === $other ? 'E' : 'D'));
             }
         }
 

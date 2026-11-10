@@ -349,9 +349,9 @@ final class StandingsService
         foreach ($games as $game) {
             $voided = $game->isVoidedWithoutWinner();
 
-            // El cast sólo puede tocar a un anulado sin ganador —los demás
-            // llegan con los dos marcadores—, y a ése no se le leen los goles:
-            // `accumulate()` se sale en cuanto cuenta el partido como jugado.
+            // El cast sólo puede tocar a un anulado a ambos —los demás llegan
+            // con los dos marcadores—, y a ése no se le leen los goles:
+            // `accumulate()` lo da por perdido sin moverlos.
             $this->accumulate($rows, $game->home_team_id, (int) $game->home_score, (int) $game->away_score, $voided);
             $this->accumulate($rows, $game->away_team_id, (int) $game->away_score, (int) $game->home_score, $voided);
         }
@@ -365,10 +365,11 @@ final class StandingsService
     /**
      * @param  array<int, array{team: Team, played: int, won: int, drawn: int, lost: int, goals_for: int, goals_against: int}>  $rows
      *
-     * Un partido anulado (`Game::isVoided()`) cuenta para jugados y para nada
-     * más: ni gana, ni empata, ni pierde, ni mueve goles ni puntos. Es la
-     * regla de "pasó de fecha sin jugarse" — se cuenta como jugado, pero no
-     * reparte nada a ninguno de los dos.
+     * Un partido anulado a ambos (`Game::isVoidedWithoutWinner()`) es derrota
+     * para los dos —jugado y perdido, 0 puntos, sin mover goles—; es la regla
+     * de "pasó de fecha sin jugarse" y la del reglamento (propietario,
+     * 2026-11-10). Anulado contra uno solo llega con su 3-0 reglamentario y
+     * cuenta como cualquier resultado: 3 puntos al otro, 0 al responsable.
      */
     private function accumulate(array &$rows, int $teamId, int $for, int $against, bool $voided = false): void
     {
@@ -379,6 +380,8 @@ final class StandingsService
         $rows[$teamId]['played']++;
 
         if ($voided) {
+            $rows[$teamId]['lost']++;
+
             return;
         }
 
