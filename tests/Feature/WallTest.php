@@ -151,6 +151,41 @@ class WallTest extends TestCase
         $this->assertSame($post->id, WallPost::query()->where('body', 'De acuerdo')->sole()->parent_id);
     }
 
+    public function test_a_new_post_tells_everyone_but_its_author(): void
+    {
+        foreach ([$this->coach, $this->other, $this->admin] as $user) {
+            PushSubscription::create([
+                'endpoint' => 'https://push.example/'.$user->id,
+                'public_key' => 'k', 'auth_token' => 'a',
+                'topics' => [PushSubscription::TOPIC_CHAT],
+            ])->users()->attach($user);
+        }
+
+        $sent = [];
+        $client = \Mockery::mock(WebPush::class);
+        $client->shouldReceive('queueNotification')->andReturnUsing(function ($subscription, $payload) use (&$sent): void {
+            $sent[] = [$subscription->getEndpoint(), json_decode($payload, true)['title']];
+        });
+        $client->shouldReceive('flush')->andReturn([]);
+        $push = app(PushNotificationService::class);
+        (new \ReflectionProperty($push, 'client'))->setValue($push, $client);
+        $this->instance(PushNotificationService::class, $push);
+        $this->withoutDefer();
+
+        $this->publish($this->coach, 'Primera');
+
+        $this->assertEqualsCanonicalizing([
+            ['https://push.example/'.$this->other->id, 'Nueva publicación en A Segunda'],
+            ['https://push.example/'.$this->admin->id, 'Nueva publicación en A Segunda'],
+        ], $sent);
+
+        // Una respuesta no es una publicación nueva: avisa sólo a su autor.
+        $sent = [];
+        $this->publish($this->other, 'Respuesta', WallPost::query()->sole());
+        $this->assertCount(1, $sent);
+        $this->assertStringContainsString((string) $this->coach->id, $sent[0][0]);
+    }
+
     public function test_the_reply_push_goes_to_the_author_and_not_to_oneself(): void
     {
         // Un navegador por técnico; el cliente de push, de mentira, apunta a
@@ -175,6 +210,7 @@ class WallTest extends TestCase
         $this->withoutDefer();
 
         $post = $this->publish($this->coach);
+        $sent = []; // el aviso de la publicación nueva tiene su propia prueba
         $this->publish($this->other, 'Respuesta', $post);
         $this->publish($this->coach, 'Me respondo a mí mismo', $post);
 

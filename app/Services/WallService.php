@@ -84,6 +84,8 @@ final class WallService
 
         if ($parent !== null) {
             $this->push->wallReply($post);
+        } else {
+            $this->push->wallPost($post);
         }
 
         return $post;

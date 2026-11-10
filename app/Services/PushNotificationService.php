@@ -186,6 +186,28 @@ class PushNotificationService
     }
 
     /**
+     * Una publicación nueva en «A Segunda» avisa a todos los demás que tienen
+     * sesión (técnicos y presidente) y activaron los avisos, por el tema del
+     * chat, que es el de quien tiene sesión. A quien la escribió, no.
+     */
+    public function wallPost(WallPost $post): void
+    {
+        $post->loadMissing('author');
+
+        $subscriptions = PushSubscription::query()
+            ->whereHas('users', fn ($users) => $users->whereKeyNot($post->user_id))
+            ->whereJsonContains('topics', PushSubscription::TOPIC_CHAT)
+            ->get();
+
+        $this->broadcast(
+            $subscriptions,
+            'Nueva publicación en A Segunda',
+            ($post->author?->name ?? 'Alguien').': '.Str::limit($post->body ?? 'Una foto', 80),
+            route('site.wall.show', $post),
+        );
+    }
+
+    /**
      * Una respuesta en «A Segunda» avisa a quien escribió la publicación (no a
      * todos: avisar de cada publicación llenaría los teléfonos), por el mismo
      * tema que el chat, que es el de quien tiene sesión.
