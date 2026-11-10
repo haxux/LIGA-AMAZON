@@ -20,8 +20,8 @@
                             </a>
                         @endif
                         <div class="divide-y divide-white/[0.06] border-l-2 border-brand/40 pl-3">
-                            {{-- Las dos últimas, de la más antigua a la más nueva. --}}
-                            @foreach ($post->replies->reverse() as $reply)
+                            {{-- Las dos últimas, la más reciente primero. --}}
+                            @foreach ($post->replies as $reply)
                                 <x-site.wall-post :post="$reply" :reader="$reader" compact />
                             @endforeach
                         </div>

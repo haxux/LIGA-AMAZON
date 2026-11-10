@@ -19,10 +19,13 @@
          {{ $attributes->merge(['class' => 'scroll-mt-24 '.($compact ? 'py-3' : 'rounded-md bg-surface p-4 sm:p-5')]) }}>
     <header class="flex items-center gap-3">
         {{-- La foto de perfil de quien escribe (decisión del propietario,
-             2026-10-23: aquí habla la persona, no el club); sin foto, sus
-             iniciales. El club ya va en la línea de abajo. --}}
+             2026-10-23: aquí habla la persona, no el club); sin foto, el
+             escudo de su club; el presidente, sus iniciales. --}}
         @if ($author?->photo_path)
             <img src="{{ Storage::disk(config('filesystems.uploads'))->url($author->photo_path) }}" alt=""
+                 @class(['shrink-0 rounded-full object-cover ring-1 ring-white/15', 'size-7' => $compact, 'size-10' => ! $compact])>
+        @elseif ($club?->crest_path)
+            <img src="{{ Storage::disk(config('filesystems.uploads'))->url($club->crest_path) }}" alt=""
                  @class(['shrink-0 rounded-full object-cover ring-1 ring-white/15', 'size-7' => $compact, 'size-10' => ! $compact])>
         @else
             <span @class([

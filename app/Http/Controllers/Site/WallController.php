@@ -36,7 +36,7 @@ class WallController extends Controller
             ->forReader($reader)
             // Las dos últimas respuestas de cada una, para leer el hilo de un
             // vistazo; el resto, en la publicación.
-            ->with(['replies' => fn ($replies) => $replies->forReader($reader)->latest()->limit(2)])
+            ->with(['replies' => fn ($replies) => $replies->forReader($reader)->reorder()->latest()->limit(2)])
             ->latest()
             ->simplePaginate(15);
 
@@ -57,7 +57,8 @@ class WallController extends Controller
         }
 
         $post = WallPost::query()->whereKey($post->getKey())->forReader($reader)
-            ->with(['replies' => fn ($replies) => $replies->forReader($reader)])
+            // La respuesta más reciente va primero.
+            ->with(['replies' => fn ($replies) => $replies->forReader($reader)->reorder()->latest()])
             ->firstOrFail();
 
         return view('site.wall.show', ['post' => $post, 'reader' => $reader]);

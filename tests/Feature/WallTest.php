@@ -82,6 +82,30 @@ class WallTest extends TestCase
             ->assertSeeInOrder(['JP', 'Josue Puello']);
     }
 
+    public function test_without_a_profile_photo_the_author_shows_the_club_crest(): void
+    {
+        $this->other->club->update(['crest_path' => 'clubs/dominus.png']);
+        $this->publish($this->other, 'Sin foto pero con escudo');
+
+        $this->actingAs($this->coach, 'club')->get(route('site.wall.index'))
+            ->assertOk()
+            ->assertSee('clubs/dominus.png', false);
+    }
+
+    public function test_the_newest_reply_comes_first(): void
+    {
+        $post = $this->publish($this->coach, 'Post');
+        $this->publish($this->other, 'Respuesta vieja', $post);
+        $this->travel(5)->minutes();
+        $this->publish($this->admin, 'Respuesta nueva', $post);
+
+        $this->actingAs($this->coach, 'club')->get(route('site.wall.show', $post))
+            ->assertOk()
+            ->assertSeeInOrder(['Respuesta nueva', 'Respuesta vieja']);
+        $this->get(route('site.wall.index'))
+            ->assertSeeInOrder(['Respuesta nueva', 'Respuesta vieja']);
+    }
+
     public function test_a_photo_is_shrunk_and_saved_as_jpeg(): void
     {
         $this->actingAs($this->coach, 'club')
